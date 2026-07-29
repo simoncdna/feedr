@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { db } from '@/db'
 import { articles, categories, feeds } from '@/db/schema'
 import { fetchFeed } from '@/lib/rss'
+import { isSafeFeedUrl } from '@/lib/url'
 
 export async function createCategory(formData: FormData) {
   const name = String(formData.get('name') ?? '').trim()
@@ -30,7 +31,9 @@ export type AddFeedState = { error: string | null }
 export async function addFeed(_prev: AddFeedState, formData: FormData): Promise<AddFeedState> {
   const url = String(formData.get('url') ?? '').trim()
   const categoryId = Number(formData.get('categoryId'))
-  if (!url || !Number.isInteger(categoryId)) return { error: 'URL ou catégorie invalide' }
+  if (!isSafeFeedUrl(url) || !Number.isInteger(categoryId) || categoryId <= 0) {
+    return { error: 'URL ou catégorie invalide' }
+  }
   let title: string
   try {
     ;({ title } = await fetchFeed(url))
