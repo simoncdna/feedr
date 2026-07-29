@@ -34,4 +34,12 @@ describe('isSafeFeedUrl', () => {
   it('rejette les domaines internes', () => {
     expect(isSafeFeedUrl('http://foo.internal/x')).toBe(false)
   })
+
+  it('rejette les littéraux IPv6 loopback/link-local/ULA et accepte toujours les URLs publiques', () => {
+    expect(isSafeFeedUrl('https://example.com')).toBe(true)
+    expect(isSafeFeedUrl('http://[::1]/x')).toBe(false)
+    expect(isSafeFeedUrl('http://[::ffff:127.0.0.1]/x')).toBe(false)
+    expect(isSafeFeedUrl('http://[fe80::1]/x')).toBe(false)
+    expect(isSafeFeedUrl('http://[fc00::1]/x')).toBe(false)
+  })
 })
