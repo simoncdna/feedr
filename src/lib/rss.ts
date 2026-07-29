@@ -92,3 +92,17 @@ export async function fetchFeed(url: string): Promise<{ title: string; items: Ra
   const feed = await parser.parseURL(url)
   return formatFeed(feed, url)
 }
+
+export function selectNewItems(
+  items: NormalizedItem[],
+  knownGuids: Set<string>,
+): NormalizedItem[] {
+  const seen = new Set(knownGuids)
+  const fresh: NormalizedItem[] = []
+  for (const item of items) {
+    if (seen.has(item.guid)) continue
+    seen.add(item.guid)
+    fresh.push(item)
+  }
+  return fresh
+}
