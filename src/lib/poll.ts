@@ -36,6 +36,7 @@ async function pollFeed(feed: FeedRow): Promise<InsertedArticle[]> {
       id: r.id, title: r.title, feedTitle: feed.title, categoryNotify: feed.notify,
     }))
   } catch (err) {
+    console.error(`pollFeed failed for ${feed.url}`, err)
     await db.update(feeds)
       .set({
         lastPolledAt: new Date(),
@@ -59,7 +60,12 @@ export async function runPoll() {
   const errors = results.filter((r) => r.status === 'rejected').length
 
   const payloads = buildNotifications(inserted)
-  const sent = await sendNotifications(payloads)
+  let sent = 0
+  try {
+    sent = await sendNotifications(payloads)
+  } catch (err) {
+    console.error('sendNotifications failed', err)
+  }
 
   await db.delete(articles).where(
     and(eq(articles.bookmarked, false), lt(articles.publishedAt, purgeCutoff(new Date()))),
