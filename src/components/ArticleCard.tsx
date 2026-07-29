@@ -35,13 +35,14 @@ export function ArticleCard({ article }: { article: ArticleCardData }) {
           src={article.imageUrl}
           alt=""
           loading="lazy"
+          referrerPolicy="no-referrer"
           className="h-20 w-20 shrink-0 rounded-lg object-cover"
         />
       )}
       <form action={toggleBookmark.bind(null, article.id, !article.bookmarked)}>
         <button
           aria-label={article.bookmarked ? 'Retirer le bookmark' : 'Bookmarker'}
-          className={article.bookmarked ? 'text-orange-500' : 'text-neutral-400'}
+          className={`-m-2 p-2 ${article.bookmarked ? 'text-orange-500' : 'text-neutral-400'}`}
         >
           <svg viewBox="0 0 24 24" className="h-5 w-5" fill={article.bookmarked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
             <path d="M6 4h12v17l-6-4-6 4z" strokeLinejoin="round" />

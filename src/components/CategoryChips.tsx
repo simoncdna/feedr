@@ -14,9 +14,20 @@ export function CategoryChips({
     }`
   return (
     <div className="flex gap-2 overflow-x-auto pb-2 [-webkit-overflow-scrolling:touch]">
-      <Link href="/" className={chip(activeId === null)}>Tout</Link>
+      <Link
+        href="/"
+        className={chip(activeId === null)}
+        aria-current={activeId === null ? 'page' : undefined}
+      >
+        Tout
+      </Link>
       {categories.map((c) => (
-        <Link key={c.id} href={`/?category=${c.id}`} className={chip(activeId === c.id)}>
+        <Link
+          key={c.id}
+          href={`/?category=${c.id}`}
+          className={chip(activeId === c.id)}
+          aria-current={activeId === c.id ? 'page' : undefined}
+        >
           {c.name}
         </Link>
       ))}
