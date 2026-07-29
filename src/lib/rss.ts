@@ -44,7 +44,8 @@ export function extractImage(item: RawItem): string | null {
 }
 
 export function normalizeItem(item: RawItem, now: Date): NormalizedItem | null {
-  const link = item.link?.trim() ?? ''
+  const candidate = item.link?.trim() ?? ''
+  const link = /^https?:\/\//i.test(candidate) ? candidate : ''
   const guid = (item.guid ?? item.id)?.trim() || link
   if (!guid) return null
   const parsed = item.isoDate ? new Date(item.isoDate) : now

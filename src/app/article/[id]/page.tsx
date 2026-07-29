@@ -44,6 +44,9 @@ export default async function ArticlePage({
           ...sanitizeHtml.defaults.allowedAttributes,
           img: ['src', 'alt'],
         },
+        transformTags: {
+          a: sanitizeHtml.simpleTransform('a', { rel: 'noopener noreferrer' }),
+        },
       })
     : null
 

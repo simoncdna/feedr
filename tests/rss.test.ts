@@ -108,6 +108,16 @@ describe('normalizeItem', () => {
     const r = normalizeItem({ guid: 'not-a-url', title: 't' }, NOW)
     expect(r?.link).toBe('')
   })
+
+  it('rejette un lien non http(s) (ex. javascript:) et garde le guid', () => {
+    const r = normalizeItem({ link: 'javascript:alert(1)', guid: 'g' }, NOW)
+    expect(r?.link).toBe('')
+    expect(r?.guid).toBe('g')
+  })
+
+  it('rejette un item dont le seul identifiant est un lien javascript:', () => {
+    expect(normalizeItem({ link: 'javascript:alert(1)', title: 't' }, NOW)).toBeNull()
+  })
 })
 
 describe('extractImage', () => {
