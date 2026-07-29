@@ -54,6 +54,14 @@ Une seule app **Next.js (App Router)** déployée sur Vercel :
 - **Bookmarks** (`/bookmarks`) : liste des articles épinglés.
 - **Réglages** (`/settings`) : CRUD catégories (nom, toggle notify), CRUD flux (URL + catégorie), bouton « Activer les notifications sur cet appareil » (abonnement Web Push).
 
+## UI / Direction visuelle
+
+- **Style** : épuré type lecteur (esprit Reeder) — fond neutre, typographie soignée, cartes discrètes, une seule couleur d'accent.
+- **Thème** : clair et sombre, automatique selon le réglage système (`prefers-color-scheme`).
+- **Navigation** : tab bar fixe en bas, 3 onglets — Fil, Bookmarks, Réglages. Les catégories sont des chips horizontales scrollables en haut du Fil (avec « Tout » par défaut).
+- **Cartes du fil** : titre + extrait de 2-3 lignes + vignette carrée à droite quand l'article a une image ; nom du flux et date relative en méta ; icône bookmark.
+- Mobile-first (cible iPhone), mais utilisable sur desktop.
+
 ## PWA
 
 - Manifest : nom, icônes, `display: standalone`, thème.
