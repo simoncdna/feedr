@@ -37,7 +37,7 @@ export default async function ArticlePage({
 
   return (
     <div>
-      <div className="px-4 pt-2 lg:px-10 lg:pt-8">
+      <div className="px-4 pt-2 lg:px-6 lg:pt-6">
         <Link href="/" className="mono-label -m-2 p-2 transition-colors hover:text-foreground">
           ← Feed
         </Link>
