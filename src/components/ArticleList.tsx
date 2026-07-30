@@ -22,7 +22,7 @@ export function ArticleList({
     <div>
       {articles.map((a, i) => (
         <div key={a.id}>
-          {i > 0 && <div aria-hidden="true" className="mx-4 border-t border-rule lg:mx-6" />}
+          {i > 0 && <div aria-hidden="true" className="mx-4 border-t border-rule lg:mx-0" />}
           <SwipeRow bookmarked={a.bookmarked} action={toggleBookmark.bind(null, a.id, !a.bookmarked)}>
             <ArticleCard
               article={a}
