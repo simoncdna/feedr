@@ -16,7 +16,9 @@ self.addEventListener('notificationclick', (event) => {
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((wins) => {
       const win = wins[0]
-      if (win) return win.navigate(url).then((w) => w?.focus())
+      if (win) {
+        return win.navigate(url).then((w) => w?.focus()).catch(() => clients.openWindow(url))
+      }
       return clients.openWindow(url)
     }),
   )

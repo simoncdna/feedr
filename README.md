@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Feedr
 
-## Getting Started
+Agrégateur RSS personnel en PWA (Next.js + Neon Postgres + Drizzle, Web Push VAPID).
 
-First, run the development server:
+## Setup
 
 ```bash
+npm install
+vercel link
+vercel env pull .env.local   # ou copier .env.example en .env.local et remplir les valeurs
+npx drizzle-kit push
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Variables d'environnement requises
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `DATABASE_URL`
+- `CRON_SECRET`
+- `VAPID_PUBLIC_KEY`
+- `VAPID_PRIVATE_KEY`
+- `VAPID_SUBJECT`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Polling
 
-## Learn More
+Le fil RSS est mis à jour via `GET /api/poll?secret=$CRON_SECRET`, à déclencher toutes
+les 5 minutes via [cron-job.org](https://cron-job.org) (les crons Vercel Hobby ne
+permettent pas une fréquence aussi élevée).
 
-To learn more about Next.js, take a look at the following resources:
+## Tests
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm test
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Déploiement
 
-## Deploy on Vercel
+```bash
+vercel deploy --prod
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Limitations connues (choix assumés)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Pas d'authentification — application personnelle non listée, jugée suffisante.
+- Le garde-fou SSRF sur les URLs de flux ne couvre ni le DNS rebinding ni les
+  redirections HTTP.
