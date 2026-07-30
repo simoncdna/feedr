@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
+import { Suspense } from 'react'
+import { Sidebar } from '@/components/Sidebar'
 import { TabBar } from '@/components/TabBar'
 import { RegisterSW } from '@/components/RegisterSW'
 import './globals.css'
@@ -28,6 +30,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="fr" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body className="bg-background text-foreground antialiased">
         <div className="lg:flex">
+          <Suspense fallback={null}>
+            <Sidebar />
+          </Suspense>
           <main className="mx-auto w-full max-w-lg px-4 pb-28 pt-4 lg:m-0 lg:min-w-0 lg:max-w-none lg:flex-1 lg:p-0">
             {children}
           </main>
