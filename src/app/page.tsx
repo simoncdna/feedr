@@ -54,6 +54,7 @@ export default async function Home({
           articles={rows}
           hrefFor={hrefFor}
           selectedId={selectedId}
+          featuredFirst
           emptyLabel="No articles — add feeds in settings"
         />
       </section>
