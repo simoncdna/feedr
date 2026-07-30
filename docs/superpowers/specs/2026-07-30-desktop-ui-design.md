@@ -103,3 +103,14 @@ Pas de volet détail : contenu actuel restylé (mono-labels de sections, inputs/
 ## Hors périmètre (YAGNI)
 
 - Toggle de thème manuel, navigation clavier (j/k), lu/non-lu, compteurs par catégorie, virtualisation de liste, animation d'entrée des nouveaux items.
+
+## Addendum (décisions prises pendant l'implémentation, sur retours utilisateur)
+
+- **Bascule manuelle light/dark** ajoutée (annule le « pas de toggle » du YAGNI initial) : `data-theme` + localStorage + script pre-hydration, icônes lucide Sun/Moon dans la sidebar (desktop) et une section Appearance dans Settings (mobile). Un meta `theme-color` dédié (`data-theme-override`) suit la bascule.
+- **Interface en anglais** (l'ensemble des strings UI, `lang="en"`, dates relatives en anglais).
+- **Menu catégories** : onglets soulignés sur filet continu (remplace les pills).
+- **Titres** Feed/Bookmarks/Settings : `text-3xl font-bold tracking-tight` (au lieu de 2xl semibold) ; titres d'articles du fil en `text-lg font-semibold`.
+- **Mode sombre** : foreground `#fafafa` (blanc neutre) au lieu du crème `#faf6f1`.
+- **Settings** : contenu aligné en haut à gauche (pas de centrage), icônes de suppression lucide `X`.
+- **Icônes de l'app** : motif « Ondes » graphite `#2b2b2b` / perle `#d6d3cd` (P3) — en cours d'itération, jugé trop proche de Zen Browser ; alternatives Z1-Z5 proposées.
+- **Retour depuis la page push** (`/article/[id]`) : vers `/` directement (un seul tap sur mobile).
