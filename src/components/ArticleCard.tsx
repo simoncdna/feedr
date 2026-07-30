@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { relativeDate, stripHtml } from '@/lib/text'
+import { stripHtml } from '@/lib/text'
 
 export type ArticleCardData = {
   id: number
@@ -14,14 +14,12 @@ export type ArticleCardData = {
 function Meta({ article }: { article: ArticleCardData }) {
   return (
     <p className="mono-label flex min-w-0 items-center gap-1.5">
+      <span className="truncate">{article.feedTitle}</span>
       {article.bookmarked && (
         <svg viewBox="0 0 24 24" className="h-3 w-3 shrink-0 text-accent" fill="currentColor" aria-hidden="true">
           <path d="M6 4h12v17l-6-4-6 4z" />
         </svg>
       )}
-      <span className="truncate">
-        {article.feedTitle} · <span className="text-[0.625rem]">{relativeDate(article.publishedAt)}</span>
-      </span>
     </p>
   )
 }
