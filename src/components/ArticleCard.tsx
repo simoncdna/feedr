@@ -46,7 +46,7 @@ export function ArticleCard({
       )}
       <form action={toggleBookmark.bind(null, article.id, !article.bookmarked)}>
         <button
-          aria-label={article.bookmarked ? 'Retirer le bookmark' : 'Bookmarker'}
+          aria-label={article.bookmarked ? 'Remove bookmark' : 'Bookmark'}
           className={`-m-2 p-2 transition-colors ${
             article.bookmarked ? 'text-accent' : 'text-muted hover:text-foreground'
           }`}

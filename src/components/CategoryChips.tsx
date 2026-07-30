@@ -16,7 +16,7 @@ export function CategoryChips({
   return (
     <div className="flex gap-1 overflow-x-auto pb-2 [-webkit-overflow-scrolling:touch]">
       <Link href="/" className={chip(activeId === null)} aria-current={activeId === null ? 'page' : undefined}>
-        Tout
+        All
       </Link>
       {categories.map((c) => (
         <Link

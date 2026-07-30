@@ -45,7 +45,7 @@ export default async function Home({
       >
         <header className="pb-3 lg:px-6 lg:pt-8">
           <h1 className="text-2xl font-semibold tracking-tight lg:hidden">Feedr</h1>
-          <p className="mono-label hidden lg:block">Fil</p>
+          <p className="mono-label hidden lg:block">Feed</p>
           <div className="mt-3 lg:hidden">
             <CategoryChips categories={cats} activeId={categoryId} />
           </div>
@@ -54,7 +54,7 @@ export default async function Home({
           articles={rows}
           hrefFor={hrefFor}
           selectedId={selectedId}
-          emptyLabel="Aucun article — ajoute des flux dans les réglages"
+          emptyLabel="No articles — add feeds in settings"
         />
       </section>
 
@@ -62,7 +62,7 @@ export default async function Home({
         {showDetail && (
           <div className="pt-2 lg:hidden">
             <Link href={base} className="mono-label -m-2 p-2 transition-colors hover:text-foreground">
-              ← Retour
+              ← Back
             </Link>
           </div>
         )}

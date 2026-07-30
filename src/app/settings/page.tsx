@@ -27,12 +27,12 @@ export default async function SettingsPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-bold">Réglages</h1>
+      <h1 className="text-2xl font-bold">Settings</h1>
 
       <section className="space-y-3 lg:hidden">
-        <h2 className="mono-label border-b border-rule pb-2">Apparence</h2>
+        <h2 className="mono-label border-b border-rule pb-2">Appearance</h2>
         <div className="flex items-center justify-between">
-          <span className="text-sm">Thème clair / sombre</span>
+          <span className="text-sm">Light / dark theme</span>
           <ThemeToggle />
         </div>
       </section>
@@ -43,7 +43,7 @@ export default async function SettingsPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="font-semibold">Catégories</h2>
+        <h2 className="font-semibold">Categories</h2>
         <ul className="space-y-2">
           {cats.map((c) => (
             <li key={c.id} className="flex items-center justify-between gap-2">
@@ -51,9 +51,9 @@ export default async function SettingsPage() {
               <span className="flex items-center gap-3">
                 <form action={toggleCategoryNotify.bind(null, c.id, !c.notify)}>
                   <button
-                    aria-label="Basculer les notifications"
+                    aria-label="Toggle notifications"
                     className={`-m-2 p-2 ${c.notify ? 'text-orange-500' : 'text-neutral-400'}`}
-                    title={c.notify ? 'Notifications activées' : 'Notifications désactivées'}
+                    title={c.notify ? 'Notifications enabled' : 'Notifications disabled'}
                   >
                     <svg viewBox="0 0 24 24" className="h-5 w-5" fill={c.notify ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" aria-hidden="true">
                       <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M10.3 21a1.94 1.94 0 0 0 3.4 0" strokeLinecap="round" strokeLinejoin="round" />
@@ -62,9 +62,9 @@ export default async function SettingsPage() {
                 </form>
                 <form action={deleteCategory.bind(null, c.id)}>
                   <ConfirmSubmitButton
-                    ariaLabel="Supprimer la catégorie"
+                    ariaLabel="Delete category"
                     className="-m-2 p-2 text-neutral-400"
-                    confirmMessage="Supprimer cette catégorie ? Ses flux et articles (y compris bookmarkés) seront supprimés."
+                    confirmMessage="Delete this category? Its feeds and articles (including bookmarked ones) will be deleted."
                   >
                     ✕
                   </ConfirmSubmitButton>
@@ -77,7 +77,7 @@ export default async function SettingsPage() {
           <input
             name="name"
             required
-            placeholder="Nouvelle catégorie"
+            placeholder="New category"
             className="flex-1 rounded-lg border border-neutral-300 bg-transparent px-3 py-2 dark:border-neutral-700"
           />
           <button className="rounded-xl bg-neutral-900 px-4 font-semibold text-white dark:bg-neutral-100 dark:text-neutral-900">
@@ -87,7 +87,7 @@ export default async function SettingsPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="font-semibold">Flux</h2>
+        <h2 className="font-semibold">Feeds</h2>
         <ul className="space-y-2">
           {feedRows.map((f) => (
             <li key={f.id} className="flex items-center justify-between gap-2">
@@ -95,14 +95,14 @@ export default async function SettingsPage() {
                 <span className="block truncate">{f.title}</span>
                 <span className="block text-xs text-neutral-500">
                   {f.categoryName}
-                  {f.lastError && <span className="text-red-600"> · erreur : {f.lastError}</span>}
+                  {f.lastError && <span className="text-red-600"> · error: {f.lastError}</span>}
                 </span>
               </span>
               <form action={deleteFeed.bind(null, f.id)}>
                 <ConfirmSubmitButton
-                  ariaLabel="Supprimer le flux"
+                  ariaLabel="Delete feed"
                   className="-m-2 p-2 text-neutral-400"
-                  confirmMessage="Supprimer ce flux ? Ses articles (y compris bookmarkés) seront supprimés."
+                  confirmMessage="Delete this feed? Its articles (including bookmarked ones) will be deleted."
                 >
                   ✕
                 </ConfirmSubmitButton>
@@ -111,7 +111,7 @@ export default async function SettingsPage() {
           ))}
         </ul>
         {cats.length === 0 ? (
-          <p className="text-sm text-neutral-500">Crée d’abord une catégorie.</p>
+          <p className="text-sm text-neutral-500">Create a category first.</p>
         ) : (
           <AddFeedForm categories={cats.map(({ id, name }) => ({ id, name }))} />
         )}

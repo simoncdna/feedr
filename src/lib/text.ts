@@ -31,11 +31,11 @@ export function stripHtml(html: string): string {
 
 export function relativeDate(date: Date, now: Date = new Date()): string {
   const minutes = Math.round((now.getTime() - date.getTime()) / 60_000)
-  if (minutes < 1) return 'à l’instant'
-  if (minutes < 60) return `il y a ${minutes} min`
+  if (minutes < 1) return 'just now'
+  if (minutes < 60) return `${minutes} min ago`
   const hours = Math.round(minutes / 60)
-  if (hours < 24) return `il y a ${hours} h`
+  if (hours < 24) return `${hours} h ago`
   const days = Math.round(hours / 24)
-  if (days < 7) return `il y a ${days} j`
-  return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+  if (days < 7) return `${days} d ago`
+  return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
 }

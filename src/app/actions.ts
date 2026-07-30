@@ -35,18 +35,18 @@ export async function addFeed(_prev: AddFeedState, formData: FormData): Promise<
   const url = String(formData.get('url') ?? '').trim()
   const categoryId = Number(formData.get('categoryId'))
   if (!isSafeFeedUrl(url) || !Number.isInteger(categoryId) || categoryId <= 0) {
-    return { error: 'URL ou catégorie invalide' }
+    return { error: 'Invalid URL or category' }
   }
   let title: string
   try {
     ;({ title } = await fetchFeed(url))
   } catch {
-    return { error: 'Impossible de lire ce flux RSS' }
+    return { error: 'Could not read this RSS feed' }
   }
   try {
     await db.insert(feeds).values({ url, title, categoryId })
   } catch {
-    return { error: 'Ce flux existe déjà' }
+    return { error: 'This feed already exists' }
   }
   revalidatePath('/settings')
   revalidatePath('/')

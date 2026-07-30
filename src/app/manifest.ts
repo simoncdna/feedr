@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'Feedr',
     short_name: 'Feedr',
-    description: 'Agrégateur RSS personnel',
+    description: 'Personal RSS reader',
     start_url: '/',
     display: 'standalone',
     background_color: '#ffffff',

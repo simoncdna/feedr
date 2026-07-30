@@ -25,7 +25,7 @@ export default async function BookmarksPage() {
     <>
       <h1 className="mb-3 text-2xl font-bold">Bookmarks</h1>
       {rows.length === 0 ? (
-        <p className="mt-12 text-center text-neutral-500">Aucun article bookmarké.</p>
+        <p className="mt-12 text-center text-neutral-500">No bookmarked articles.</p>
       ) : (
         rows.map((a) => <ArticleCard key={a.id} article={a} href={`/article/${a.id}`} />)
       )}

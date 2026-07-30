@@ -11,7 +11,7 @@ const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin']
 
 export const metadata: Metadata = {
   title: 'Feedr',
-  description: 'Agrégateur RSS personnel',
+  description: 'Personal RSS reader',
   appleWebApp: { capable: true, statusBarStyle: 'default', title: 'Feedr' },
 }
 
@@ -27,7 +27,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr" className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body className="bg-background text-foreground antialiased">
         <script
           dangerouslySetInnerHTML={{

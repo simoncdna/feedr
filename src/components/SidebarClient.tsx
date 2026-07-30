@@ -5,9 +5,9 @@ import { usePathname, useSearchParams } from 'next/navigation'
 import { ThemeToggle } from './ThemeToggle'
 
 const nav = [
-  { href: '/', label: 'Fil' },
+  { href: '/', label: 'Feed' },
   { href: '/bookmarks', label: 'Bookmarks' },
-  { href: '/settings', label: 'Réglages' },
+  { href: '/settings', label: 'Settings' },
 ]
 
 export function SidebarClient({
@@ -34,7 +34,7 @@ export function SidebarClient({
         <ThemeToggle />
       </div>
 
-      <nav aria-label="Navigation principale" className="flex flex-col gap-3">
+      <nav aria-label="Main navigation" className="flex flex-col gap-3">
         {nav.map((item) => (
           <Link
             key={item.href}
@@ -51,7 +51,7 @@ export function SidebarClient({
 
       {categories.length > 0 && (
         <div className="flex flex-col gap-1">
-          <p className="mono-label mb-2">Catégories</p>
+          <p className="mono-label mb-2">Categories</p>
           {categories.map((c) => {
             const active = activeCategory === c.id
             return (

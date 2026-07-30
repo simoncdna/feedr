@@ -12,9 +12,9 @@ function EmptyPane({ label }: { label: string }) {
 }
 
 export async function ArticlePane({ articleParam }: { articleParam?: string }) {
-  if (!articleParam) return <EmptyPane label="Sélectionne un article" />
+  if (!articleParam) return <EmptyPane label="Select an article" />
   const id = Number(articleParam)
-  if (!Number.isInteger(id)) return <EmptyPane label="Article introuvable" />
+  if (!Number.isInteger(id)) return <EmptyPane label="Article not found" />
 
   const rows = await db
     .select({
@@ -33,6 +33,6 @@ export async function ArticlePane({ articleParam }: { articleParam?: string }) {
     .limit(1)
 
   const article = rows[0]
-  if (!article) return <EmptyPane label="Article introuvable" />
+  if (!article) return <EmptyPane label="Article not found" />
   return <ArticleDetail article={article} />
 }

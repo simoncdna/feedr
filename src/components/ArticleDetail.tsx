@@ -37,7 +37,7 @@ export function ArticleDetail({ article }: { article: ArticleDetailData }) {
         <h1 className="text-2xl font-semibold leading-tight tracking-tight">{article.title}</h1>
         <form action={toggleBookmark.bind(null, article.id, !article.bookmarked)}>
           <button
-            aria-label={article.bookmarked ? 'Retirer le bookmark' : 'Bookmarker'}
+            aria-label={article.bookmarked ? 'Remove bookmark' : 'Bookmark'}
             className={`-m-2 mt-1 p-2 transition-colors ${
               article.bookmarked ? 'text-accent' : 'text-muted hover:text-foreground'
             }`}
@@ -61,7 +61,7 @@ export function ArticleDetail({ article }: { article: ArticleDetailData }) {
           rel="noopener noreferrer"
           className="cta-link text-sm font-medium"
         >
-          Lire sur le site
+          Read on site
           <span className="cta-arrow" aria-hidden="true">→</span>
         </a>
       </p>

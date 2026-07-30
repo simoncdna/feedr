@@ -70,7 +70,7 @@ describe('normalizeItem', () => {
   it('content null si pas de content:encoded, titre par défaut', () => {
     const r = normalizeItem({ guid: 'g', content: '<p>d</p>' }, NOW)
     expect(r?.content).toBeNull()
-    expect(r?.title).toBe('Sans titre')
+    expect(r?.title).toBe('Untitled')
     expect(r?.description).toBe('<p>d</p>')
   })
 

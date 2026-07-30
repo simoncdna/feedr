@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 
 const tabs = [
   {
-    href: '/', label: 'Fil',
+    href: '/', label: 'Feed',
     icon: (
       <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
         <path d="M4 11a9 9 0 0 1 9 9M4 4a16 16 0 0 1 16 16" strokeLinecap="round" />
@@ -22,7 +22,7 @@ const tabs = [
     ),
   },
   {
-    href: '/settings', label: 'Réglages',
+    href: '/settings', label: 'Settings',
     icon: (
       <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
         <circle cx="12" cy="12" r="3" />
@@ -36,7 +36,7 @@ export function TabBar() {
   const pathname = usePathname()
   return (
     <nav
-      aria-label="Navigation principale"
+      aria-label="Main navigation"
       className="fixed inset-x-0 bottom-0 border-t border-rule bg-background/90 backdrop-blur lg:hidden"
     >
       <div className="mx-auto flex max-w-lg pb-[env(safe-area-inset-bottom)]">
