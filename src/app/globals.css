@@ -48,6 +48,20 @@ body {
   line-height: 1.6;
 }
 
+/* PWA iOS (status bar translucide) : la zone heure/batterie est couverte par une
+   barre fixe de la couleur du fond ; le contenu défile dessous. */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: env(safe-area-inset-top);
+  background: var(--background);
+  z-index: 40;
+  pointer-events: none;
+}
+
 /* Grain « papier journal » : bruit SVG statique en overlay, au-dessus de tout,
    transparent aux interactions. Opacité volontairement subtile. */
 body::before {
@@ -58,17 +72,17 @@ body::before {
   pointer-events: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-repeat: repeat;
-  opacity: 0.12;
+  opacity: 0.08;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) body::before {
-    opacity: 0.16;
+    opacity: 0.11;
   }
 }
 
 :root[data-theme='dark'] body::before {
-  opacity: 0.16;
+  opacity: 0.11;
 }
 
 :focus-visible {
