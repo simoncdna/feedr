@@ -38,8 +38,8 @@ export default async function BookmarksPage({
         className={`${showDetail ? 'hidden lg:block' : ''} lg:overflow-y-auto lg:border-r lg:border-rule`}
       >
         <header className="pb-3 lg:px-6 lg:pt-8">
-          <h1 className="text-2xl font-semibold tracking-tight lg:hidden">Bookmarks</h1>
-          <p className="hidden text-2xl font-semibold tracking-tight lg:block">Bookmarks</p>
+          <h1 className="text-3xl font-bold tracking-tight lg:hidden">Bookmarks</h1>
+          <p className="hidden text-3xl font-bold tracking-tight lg:block">Bookmarks</p>
         </header>
         <ArticleList
           articles={rows}
