@@ -63,7 +63,7 @@ export function ArticleCard({
             />
           )}
           <Link href={href} aria-current={selected ? 'page' : undefined} className="block">
-            <h2 className="text-2xl font-bold leading-tight tracking-tight">{article.title}</h2>
+            <h2 className="line-clamp-2 text-2xl font-bold leading-tight tracking-tight">{article.title}</h2>
             {excerpt && <p className="mt-1.5 line-clamp-1 text-sm text-muted">{excerpt}</p>}
           </Link>
           <div className="mt-2">
@@ -79,7 +79,7 @@ export function ArticleCard({
       {selected && <span aria-hidden="true" className="absolute inset-y-0 left-0 z-10 w-0.5 bg-accent" />}
       <div className="min-w-0 flex-1 px-4 py-4 lg:px-6">
         <Link href={href} aria-current={selected ? 'page' : undefined} className="block">
-          <h2 className="text-lg font-semibold leading-snug tracking-tight">{article.title}</h2>
+          <h2 className="line-clamp-2 text-lg font-semibold leading-snug tracking-tight">{article.title}</h2>
           {excerpt && <p className="mt-1 line-clamp-1 text-sm text-muted">{excerpt}</p>}
         </Link>
         <div className="mt-2">
