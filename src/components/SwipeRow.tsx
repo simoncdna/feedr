@@ -1,9 +1,11 @@
 'use client'
 
-import { useRef, useState, useTransition } from 'react'
+import { useEffect, useRef, useState, useTransition } from 'react'
 
 const THRESHOLD = 72
 const MAX_PULL = 120
+const CONFIRM_HOLD_PX = -56
+const CONFIRM_HOLD_MS = 350
 
 export function SwipeRow({
   action,
@@ -15,16 +17,27 @@ export function SwipeRow({
   children: React.ReactNode
 }) {
   const [dx, setDx] = useState(0)
-  const [snapping, setSnapping] = useState(false)
+  const [settling, setSettling] = useState(false)
   const start = useRef<{ x: number; y: number } | null>(null)
   const horizontal = useRef(false)
+  const holdTimer = useRef<number | null>(null)
   const [pending, startTransition] = useTransition()
 
+  useEffect(() => {
+    return () => {
+      if (holdTimer.current !== null) window.clearTimeout(holdTimer.current)
+    }
+  }, [])
+
   function onTouchStart(e: React.TouchEvent) {
+    if (holdTimer.current !== null) {
+      window.clearTimeout(holdTimer.current)
+      holdTimer.current = null
+    }
     const t = e.touches[0]
     start.current = { x: t.clientX, y: t.clientY }
     horizontal.current = false
-    setSnapping(false)
+    setSettling(false)
   }
 
   function onTouchMove(e: React.TouchEvent) {
@@ -43,16 +56,25 @@ export function SwipeRow({
   }
 
   function onTouchEnd() {
-    if (horizontal.current && dx <= -THRESHOLD) {
+    const shouldTrigger = horizontal.current && dx <= -THRESHOLD
+    setSettling(true)
+    if (shouldTrigger) {
       startTransition(() => action())
+      // Pause de confirmation : la rangée reste entrouverte sur l'icône,
+      // puis se referme — le temps que l'état serveur revienne.
+      setDx(CONFIRM_HOLD_PX)
+      holdTimer.current = window.setTimeout(() => {
+        setDx(0)
+        holdTimer.current = null
+      }, CONFIRM_HOLD_MS)
+    } else {
+      setDx(0)
     }
-    setSnapping(true)
-    setDx(0)
     start.current = null
     horizontal.current = false
   }
 
-  const armed = dx <= -THRESHOLD
+  const armed = dx <= -THRESHOLD || (dx < 0 && settling)
 
   return (
     <div
@@ -64,10 +86,13 @@ export function SwipeRow({
     >
       <div
         aria-hidden="true"
-        className={`absolute inset-y-0 right-0 flex w-32 items-center justify-end pr-6 transition-colors lg:hidden ${
+        className={`absolute inset-y-0 right-0 flex w-32 items-center justify-end pr-6 lg:hidden ${
           armed || pending ? 'text-accent' : 'text-muted'
         }`}
-        style={{ opacity: dx < 0 || pending ? 1 : 0 }}
+        style={{
+          opacity: dx < 0 || pending ? 1 : 0,
+          transition: 'opacity 180ms ease, color 120ms ease',
+        }}
       >
         <svg
           viewBox="0 0 24 24"
@@ -75,6 +100,10 @@ export function SwipeRow({
           fill={bookmarked ? 'none' : 'currentColor'}
           stroke="currentColor"
           strokeWidth="1.5"
+          style={{
+            transform: armed || pending ? 'scale(1.15)' : 'scale(1)',
+            transition: 'transform 160ms cubic-bezier(0.22, 1, 0.36, 1)',
+          }}
         >
           <path d="M6 4h12v17l-6-4-6 4z" strokeLinejoin="round" />
         </svg>
@@ -83,7 +112,7 @@ export function SwipeRow({
         className="bg-background"
         style={{
           transform: dx ? `translateX(${dx}px)` : undefined,
-          transition: snapping ? 'transform 200ms cubic-bezier(0.22, 1, 0.36, 1)' : undefined,
+          transition: settling ? 'transform 260ms cubic-bezier(0.22, 1, 0.36, 1)' : undefined,
         }}
       >
         {children}
