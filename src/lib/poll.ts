@@ -2,11 +2,11 @@ import { and, eq, lt } from 'drizzle-orm'
 import { db } from '@/db'
 import { articles, categories, feeds } from '@/db/schema'
 import { fetchFeed, normalizeItem, selectNewItems, type NormalizedItem } from '@/lib/rss'
-import { buildNotifications, type InsertedArticle } from '@/lib/notify'
+import { groupNotificationsByUser, type InsertedArticle } from '@/lib/notify'
 import { isExpired, purgeCutoff } from '@/lib/purge'
 import { sendNotifications } from '@/lib/push'
 
-type FeedRow = { id: number; url: string; title: string; notify: boolean }
+type FeedRow = { id: number; url: string; title: string; notify: boolean; userId: string | null }
 
 async function pollFeed(feed: FeedRow): Promise<InsertedArticle[]> {
   try {
@@ -34,7 +34,7 @@ async function pollFeed(feed: FeedRow): Promise<InsertedArticle[]> {
       .set({ lastPolledAt: new Date(), lastError: null })
       .where(eq(feeds.id, feed.id))
     return rows.map((r) => ({
-      id: r.id, title: r.title, feedTitle: feed.title, categoryNotify: feed.notify,
+      id: r.id, title: r.title, feedTitle: feed.title, categoryNotify: feed.notify, userId: feed.userId,
     }))
   } catch (err) {
     console.error(`pollFeed failed for ${feed.url}`, err)
@@ -50,7 +50,9 @@ async function pollFeed(feed: FeedRow): Promise<InsertedArticle[]> {
 
 export async function runPoll() {
   const feedRows: FeedRow[] = await db
-    .select({ id: feeds.id, url: feeds.url, title: feeds.title, notify: categories.notify })
+    .select({
+      id: feeds.id, url: feeds.url, title: feeds.title, notify: categories.notify, userId: categories.userId,
+    })
     .from(feeds)
     .innerJoin(categories, eq(feeds.categoryId, categories.id))
 
@@ -60,17 +62,20 @@ export async function runPoll() {
     .flatMap((r) => r.value)
   const errors = results.filter((r) => r.status === 'rejected').length
 
-  const payloads = buildNotifications(inserted)
+  const byUser = groupNotificationsByUser(inserted)
+  const notified = [...byUser.values()].reduce((total, payloads) => total + payloads.length, 0)
   let sent = 0
-  try {
-    sent = await sendNotifications(payloads)
-  } catch (err) {
-    console.error('sendNotifications failed', err)
+  for (const [userId, payloads] of byUser) {
+    try {
+      sent += await sendNotifications(payloads, userId)
+    } catch (err) {
+      console.error('sendNotifications failed', err)
+    }
   }
 
   await db.delete(articles).where(
     and(eq(articles.bookmarked, false), lt(articles.createdAt, purgeCutoff(new Date()))),
   )
 
-  return { feeds: feedRows.length, newArticles: inserted.length, notified: payloads.length, sent, errors }
+  return { feeds: feedRows.length, newArticles: inserted.length, notified, sent, errors }
 }

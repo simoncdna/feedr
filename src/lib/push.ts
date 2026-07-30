@@ -4,9 +4,9 @@ import { db } from '@/db'
 import { pushSubscriptions } from '@/db/schema'
 import type { PushPayload } from '@/lib/notify'
 
-export async function sendNotifications(payloads: PushPayload[]): Promise<number> {
+export async function sendNotifications(payloads: PushPayload[], userId: string): Promise<number> {
   if (payloads.length === 0) return 0
-  const subs = await db.select().from(pushSubscriptions)
+  const subs = await db.select().from(pushSubscriptions).where(eq(pushSubscriptions.userId, userId))
   if (subs.length === 0) return 0
 
   webpush.setVapidDetails(
