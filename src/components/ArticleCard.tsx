@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { toggleBookmark } from '@/app/actions'
 import { relativeDate, stripHtml } from '@/lib/text'
 
 export type ArticleCardData = {
@@ -12,28 +11,11 @@ export type ArticleCardData = {
   feedTitle: string
 }
 
-function BookmarkForm({ article, className = '' }: { article: ArticleCardData; className?: string }) {
-  return (
-    <form action={toggleBookmark.bind(null, article.id, !article.bookmarked)} className={className}>
-      <button
-        aria-label={article.bookmarked ? 'Remove bookmark' : 'Bookmark'}
-        className={`-m-2 p-2 transition-colors ${
-          article.bookmarked ? 'text-accent' : 'text-muted hover:text-foreground'
-        }`}
-      >
-        <svg viewBox="0 0 24 24" className="h-5 w-5" fill={article.bookmarked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-          <path d="M6 4h12v17l-6-4-6 4z" strokeLinejoin="round" />
-        </svg>
-      </button>
-    </form>
-  )
-}
-
 function Meta({ article }: { article: ArticleCardData }) {
   return (
     <p className="mono-label flex min-w-0 items-center gap-1.5">
       {article.bookmarked && (
-        <svg viewBox="0 0 24 24" className="h-3 w-3 shrink-0 text-accent lg:hidden" fill="currentColor" aria-hidden="true">
+        <svg viewBox="0 0 24 24" className="h-3 w-3 shrink-0 text-accent" fill="currentColor" aria-hidden="true">
           <path d="M6 4h12v17l-6-4-6 4z" />
         </svg>
       )}
@@ -72,10 +54,7 @@ export function ArticleCard({
               className="mb-3 aspect-[2/1] w-full rounded object-cover"
             />
           )}
-          <div className="flex items-center justify-between gap-3">
-            <Meta article={article} />
-            <BookmarkForm article={article} className="hidden lg:block" />
-          </div>
+          <Meta article={article} />
           <Link href={href} aria-current={selected ? 'page' : undefined} className="block">
             <h2 className="mt-1 text-2xl font-bold leading-tight tracking-tight">{article.title}</h2>
             {excerpt && <p className="mt-1.5 line-clamp-3 text-sm text-muted">{excerpt}</p>}
@@ -95,7 +74,6 @@ export function ArticleCard({
           {excerpt && <p className="mt-1 line-clamp-2 text-sm text-muted">{excerpt}</p>}
         </Link>
       </div>
-      <BookmarkForm article={article} className="hidden self-center pr-4 lg:block" />
       {article.imageUrl && (
         // eslint-disable-next-line @next/next/no-img-element
         <img

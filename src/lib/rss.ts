@@ -33,7 +33,11 @@ export function extractImage(item: RawItem): string | null {
     }
   }
   const media = item.mediaContent?.find(
-    (m) => m.$?.url && (m.$.medium === 'image' || m.$.type?.startsWith('image/')),
+    (m) =>
+      m.$?.url &&
+      (m.$.medium === 'image' ||
+        m.$.type?.startsWith('image/') ||
+        (!m.$.medium && !m.$.type && /\.(jpe?g|png|gif|webp|avif)($|\?)/i.test(m.$.url))),
   )
   if (media?.$?.url) return media.$.url
   const thumbnail = item.mediaThumbnail?.find((m) => m.$?.url)

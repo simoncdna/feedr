@@ -38,6 +38,11 @@ export default async function Home({
   const hrefFor = (id: number) => (categoryId ? `${base}&article=${id}` : `/?article=${id}`)
   const showDetail = Boolean(article)
 
+  // L'article mis en avant est le plus récent qui possède une image ;
+  // le reste du fil garde l'ordre chronologique.
+  const hero = rows.find((r) => r.imageUrl) ?? rows[0]
+  const ordered = hero ? [hero, ...rows.filter((r) => r.id !== hero.id)] : rows
+
   return (
     <div className="lg:grid lg:h-dvh lg:grid-cols-[24rem_1fr]">
       <section
@@ -51,7 +56,7 @@ export default async function Home({
           </div>
         </header>
         <ArticleList
-          articles={rows}
+          articles={ordered}
           hrefFor={hrefFor}
           selectedId={selectedId}
           featuredFirst

@@ -138,6 +138,18 @@ describe('extractImage', () => {
     })).toBe('https://ex.com/m.jpg')
   })
 
+  it('prend media:content sans medium/type si l’URL est une image (Le Monde)', () => {
+    expect(extractImage({
+      mediaContent: [{ $: { url: 'https://img.lemonde.fr/2026/photo.jpg' } }],
+    })).toBe('https://img.lemonde.fr/2026/photo.jpg')
+  })
+
+  it('ignore media:content sans medium/type si l’URL n’est pas une image', () => {
+    expect(extractImage({
+      mediaContent: [{ $: { url: 'https://ex.com/clip.mp4' } }],
+    })).toBeNull()
+  })
+
   it('sinon, première balise <img> du HTML', () => {
     expect(extractImage({ content: `<p>x</p><img class="c" src='https://ex.com/h.png'>` }))
       .toBe('https://ex.com/h.png')
