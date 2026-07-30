@@ -3,11 +3,14 @@
 import { eq, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { db } from '@/db'
-import { articles, categories, feeds } from '@/db/schema'
+import {
+  articles, categories, feeds, invitations,
+} from '@/db/schema'
 import { user } from '@/db/auth-schema'
 import { fetchFeed } from '@/lib/rss'
 import { isSafeFeedUrl } from '@/lib/url'
-import { requireUser } from '@/lib/session'
+import { invitationStatus } from '@/lib/invitations'
+import { getUser, requireUser } from '@/lib/session'
 
 export async function createCategory(formData: FormData) {
   const name = String(formData.get('name') ?? '').trim()
@@ -78,5 +81,33 @@ export async function claimOwnerRole() {
     SET role = 'owner', is_anonymous = false
     WHERE id = ${sessionUser.id}
       AND NOT EXISTS (SELECT 1 FROM ${user} WHERE role = 'owner')
+  `)
+}
+
+// Consumes a signup/recovery invitation token for the current session.
+// Signup: any anonymous session may consume a still-valid token.
+// Recovery: kept for future use — the targetUserId check is enforced, but no
+// UI path currently calls this for kind 'recovery' (see InviteClient / report:
+// no clean Better Auth 1.6.25 API exists to mint a session for an arbitrary
+// user pre-auth, so recovery tokens are display-only for now).
+export async function consumeInvitation(token: string): Promise<{ ok: boolean; kind?: string }> {
+  const inv = (await db.select().from(invitations).where(eq(invitations.token, token)).limit(1))[0]
+  if (!inv || invitationStatus(inv) !== 'valid') return { ok: false }
+  const sessionUser = await getUser()
+  if (!sessionUser) return { ok: false }
+  if (inv.kind === 'recovery' && inv.targetUserId && inv.targetUserId !== sessionUser.id) {
+    return { ok: false }
+  }
+  await db.update(invitations).set({ usedAt: new Date() }).where(eq(invitations.id, inv.id))
+  return { ok: true, kind: inv.kind }
+}
+
+// Marks the current (now-passkey-equipped) session user as no longer anonymous.
+export async function completeSignup() {
+  const sessionUser = await requireUser()
+  await db.execute(sql`
+    UPDATE ${user}
+    SET is_anonymous = false
+    WHERE id = ${sessionUser.id}
   `)
 }
