@@ -31,7 +31,7 @@ export function ArticleDetail({ article }: { article: ArticleDetailData }) {
   return (
     <article className="px-4 py-6 lg:mx-auto lg:max-w-2xl lg:px-10 lg:py-12">
       <p className="mono-label">
-        {article.feedTitle} · {relativeDate(article.publishedAt)}
+        {article.feedTitle} · <span className="text-[0.625rem]">{relativeDate(article.publishedAt)}</span>
       </p>
       <div className="mt-2 flex items-start justify-between gap-4">
         <h1 className="text-2xl font-semibold leading-tight tracking-tight">{article.title}</h1>

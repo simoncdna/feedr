@@ -27,7 +27,7 @@ export function ArticleCard({
       {selected && <span aria-hidden="true" className="absolute inset-y-0 left-0 w-0.5 bg-accent" />}
       <div className="min-w-0 flex-1">
         <p className="mono-label">
-          {article.feedTitle} · {relativeDate(article.publishedAt)}
+          {article.feedTitle} · <span className="text-[0.625rem]">{relativeDate(article.publishedAt)}</span>
         </p>
         <Link href={href} aria-current={selected ? 'page' : undefined} className="block">
           <h2 className="mt-1 text-lg font-semibold leading-snug tracking-tight">{article.title}</h2>

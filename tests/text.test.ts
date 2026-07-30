@@ -18,8 +18,8 @@ describe('stripHtml', () => {
 describe('relativeDate', () => {
   const now = new Date('2026-07-29T12:00:00Z')
   it('minutes / heures / jours', () => {
-    expect(relativeDate(new Date('2026-07-29T11:55:00Z'), now)).toBe('5 min ago')
-    expect(relativeDate(new Date('2026-07-29T09:00:00Z'), now)).toBe('3 h ago')
-    expect(relativeDate(new Date('2026-07-27T12:00:00Z'), now)).toBe('2 d ago')
+    expect(relativeDate(new Date('2026-07-29T11:55:00Z'), now)).toBe('5m ago')
+    expect(relativeDate(new Date('2026-07-29T09:00:00Z'), now)).toBe('3h ago')
+    expect(relativeDate(new Date('2026-07-27T12:00:00Z'), now)).toBe('2d ago')
   })
 })
