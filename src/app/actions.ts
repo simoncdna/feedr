@@ -14,7 +14,7 @@ import { user } from '@/db/auth-schema'
 import { auth } from '@/lib/auth'
 import { fetchFeed } from '@/lib/rss'
 import { isSafeFeedUrl } from '@/lib/url'
-import { invitationStatus } from '@/lib/invitations'
+import { generateInvitationToken, invitationExpiry, invitationStatus } from '@/lib/invitations'
 import { getUser, requireUser } from '@/lib/session'
 
 export async function createCategory(formData: FormData) {
@@ -110,6 +110,27 @@ export async function toggleBookmark(id: number, bookmarked: boolean) {
   revalidatePath('/')
   revalidatePath('/bookmarks')
   revalidatePath(`/article/${id}`)
+}
+
+// Owner-only: mints an invitation link. `signup` bootstraps a brand-new
+// account; `recovery` is targeted at an existing user (see consumeInvitation
+// note — recovery is currently display-only, no session-minting API path).
+export async function createInvitation(
+  kind: 'signup' | 'recovery',
+  targetUserId?: string,
+): Promise<{ url: string }> {
+  const sessionUser = await requireUser()
+  if (sessionUser.role !== 'owner') throw new Error('Forbidden')
+  const token = generateInvitationToken()
+  await db.insert(invitations).values({
+    token,
+    kind,
+    createdBy: sessionUser.id,
+    targetUserId: targetUserId ?? null,
+    expiresAt: invitationExpiry(),
+  })
+  revalidatePath('/settings')
+  return { url: `/invite/${token}` }
 }
 
 export async function signOutAction() {

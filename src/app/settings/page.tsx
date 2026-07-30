@@ -1,14 +1,20 @@
-import { asc, eq } from 'drizzle-orm'
+import {
+  and, asc, desc, eq, gt, isNull,
+} from 'drizzle-orm'
 import { X } from 'lucide-react'
 import { db } from '@/db'
-import { categories, feeds } from '@/db/schema'
+import { categories, feeds, invitations } from '@/db/schema'
+import { user as authUser } from '@/db/auth-schema'
 import {
-  createCategory, deleteCategory, deleteFeed, toggleCategoryNotify,
+  createCategory, deleteCategory, deleteFeed, signOutAction, toggleCategoryNotify,
 } from '@/app/actions'
 import { AddFeedForm } from '@/components/AddFeedForm'
+import { AddPasskeyButton } from '@/components/AddPasskeyButton'
 import { ConfirmSubmitButton } from '@/components/ConfirmSubmitButton'
 import { EnableNotifications } from '@/components/EnableNotifications'
+import { InvitationsSection } from '@/components/InvitationsSection'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import { invitationStatus } from '@/lib/invitations'
 import { requireUser } from '@/lib/session'
 
 export const dynamic = 'force-dynamic'
@@ -33,6 +39,21 @@ export default async function SettingsPage() {
     .where(eq(categories.userId, user.id))
     .orderBy(asc(categories.name), asc(feeds.title))
 
+  const openInvites = user.role === 'owner'
+    ? (await db
+      .select()
+      .from(invitations)
+      .where(and(
+        eq(invitations.createdBy, user.id),
+        isNull(invitations.usedAt),
+        gt(invitations.expiresAt, new Date()),
+      ))
+      .orderBy(desc(invitations.createdAt))).map((inv) => ({ ...inv, status: invitationStatus(inv) }))
+    : []
+  const allUsers = user.role === 'owner'
+    ? await db.select({ id: authUser.id, name: authUser.name }).from(authUser)
+    : []
+
   return (
     <div className="space-y-12 px-4 lg:max-w-2xl lg:px-8 lg:py-8">
       <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
@@ -44,6 +65,24 @@ export default async function SettingsPage() {
           <ThemeToggle />
         </div>
       </section>
+
+      <section className="space-y-4">
+        <h2 className="mono-label border-b border-rule pb-2">Account</h2>
+        <p className="text-sm">{user.name}</p>
+        <AddPasskeyButton />
+        <form action={signOutAction}>
+          <button className="mono-label rounded border border-rule bg-surface px-3 py-1.5 transition-colors hover:text-foreground motion-reduce:transition-none">
+            Sign out
+          </button>
+        </form>
+      </section>
+
+      {user.role === 'owner' && (
+        <section className="space-y-4">
+          <h2 className="mono-label border-b border-rule pb-2">Invitations</h2>
+          <InvitationsSection invitations={openInvites} users={allUsers} />
+        </section>
+      )}
 
       <section className="space-y-4">
         <h2 className="mono-label border-b border-rule pb-2">Notifications</h2>
