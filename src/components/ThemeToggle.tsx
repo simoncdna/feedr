@@ -11,6 +11,14 @@ function currentTheme(): Theme {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
+function applyThemeColor(theme: Theme) {
+  const color = theme === 'dark' ? '#0c0c0e' : '#ffffff'
+  document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]').forEach((m) => {
+    m.content = color
+    m.removeAttribute('media')
+  })
+}
+
 export function ThemeToggle() {
   const [theme, setTheme] = useState<Theme | null>(null)
 
@@ -21,6 +29,7 @@ export function ThemeToggle() {
   function toggle() {
     const next: Theme = currentTheme() === 'dark' ? 'light' : 'dark'
     document.documentElement.dataset.theme = next
+    applyThemeColor(next)
     try {
       localStorage.theme = next
     } catch {}

@@ -31,7 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="bg-background text-foreground antialiased">
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var t=localStorage.theme;if(t==='dark'||t==='light')document.documentElement.dataset.theme=t}catch(e){}`,
+            __html: `try{var t=localStorage.theme;if(t==='dark'||t==='light'){document.documentElement.dataset.theme=t;var c=t==='dark'?'#0c0c0e':'#ffffff';document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.content=c;m.removeAttribute('media')})}}catch(e){}`,
           }}
         />
         <div className="lg:flex">
