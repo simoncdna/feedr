@@ -1,4 +1,5 @@
 import { asc, eq } from 'drizzle-orm'
+import { X } from 'lucide-react'
 import { db } from '@/db'
 import { categories, feeds } from '@/db/schema'
 import {
@@ -66,7 +67,7 @@ export default async function SettingsPage() {
                     ariaLabel="Delete category"
                     className="-m-2 p-2 text-muted transition-colors hover:text-foreground"
                   >
-                    ✕
+                    <X className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />
                   </ConfirmSubmitButton>
                 </form>
               </span>
@@ -104,7 +105,7 @@ export default async function SettingsPage() {
                   ariaLabel="Delete feed"
                   className="-m-2 p-2 text-muted transition-colors hover:text-foreground"
                 >
-                  ✕
+                  <X className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />
                 </ConfirmSubmitButton>
               </form>
             </li>
