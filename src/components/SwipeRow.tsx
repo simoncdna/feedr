@@ -78,7 +78,7 @@ export function SwipeRow({
 
   return (
     <div
-      className="relative overflow-hidden"
+      className="relative overflow-hidden [touch-action:pan-y]"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}

@@ -12,7 +12,7 @@ const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin']
 export const metadata: Metadata = {
   title: 'Feedr',
   description: 'Personal RSS reader',
-  appleWebApp: { capable: true, statusBarStyle: 'default', title: 'Feedr' },
+  appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'Feedr' },
 }
 
 export const viewport: Viewport = {
