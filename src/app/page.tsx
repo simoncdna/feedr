@@ -23,7 +23,6 @@ export default async function Home({
       id: articles.id,
       title: articles.title,
       description: articles.description,
-      imageUrl: articles.imageUrl,
       publishedAt: articles.publishedAt,
       bookmarked: articles.bookmarked,
       feedTitle: feeds.title,

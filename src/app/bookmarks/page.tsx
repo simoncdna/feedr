@@ -20,7 +20,6 @@ export default async function BookmarksPage({
       id: articles.id,
       title: articles.title,
       description: articles.description,
-      imageUrl: articles.imageUrl,
       publishedAt: articles.publishedAt,
       bookmarked: articles.bookmarked,
       feedTitle: feeds.title,

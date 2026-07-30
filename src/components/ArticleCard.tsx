@@ -6,7 +6,6 @@ export type ArticleCardData = {
   id: number
   title: string
   description: string | null
-  imageUrl: string | null
   publishedAt: Date
   bookmarked: boolean
   feedTitle: string
@@ -34,16 +33,6 @@ export function ArticleCard({
           {excerpt && <p className="mt-1 line-clamp-2 text-sm text-muted">{excerpt}</p>}
         </Link>
       </div>
-      {article.imageUrl && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={article.imageUrl}
-          alt=""
-          loading="lazy"
-          referrerPolicy="no-referrer"
-          className="mt-1 h-16 w-16 shrink-0 rounded object-cover"
-        />
-      )}
       <form action={toggleBookmark.bind(null, article.id, !article.bookmarked)}>
         <button
           aria-label={article.bookmarked ? 'Remove bookmark' : 'Bookmark'}
