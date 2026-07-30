@@ -1,6 +1,6 @@
-import { relations } from 'drizzle-orm'
+import { relations, sql } from 'drizzle-orm'
 import {
-  pgTable, text, timestamp, boolean, integer, index,
+  pgTable, text, timestamp, boolean, integer, index, uniqueIndex,
 } from 'drizzle-orm/pg-core'
 
 export const user = pgTable('user', {
@@ -16,7 +16,10 @@ export const user = pgTable('user', {
     .notNull(),
   isAnonymous: boolean('is_anonymous').default(false),
   role: text('role').default('member'),
-})
+}, (t) => [
+  // Garantie DB : il ne peut exister qu'un seul owner (bootstrap race-proof).
+  uniqueIndex('user_single_owner_idx').on(t.role).where(sql`${t.role} = 'owner'`),
+])
 
 export const session = pgTable('session', {
   id: text('id').primaryKey(),
