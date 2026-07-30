@@ -19,16 +19,19 @@ export function ArticleList({
     return <p className="mono-label mt-16 text-center">{emptyLabel}</p>
   }
   return (
-    <div className="divide-y divide-rule border-b border-rule">
+    <div>
       {articles.map((a, i) => (
-        <SwipeRow key={a.id} bookmarked={a.bookmarked} action={toggleBookmark.bind(null, a.id, !a.bookmarked)}>
-          <ArticleCard
-            article={a}
-            href={hrefFor(a.id)}
-            selected={a.id === selectedId}
-            featured={featuredFirst && i === 0}
-          />
-        </SwipeRow>
+        <div key={a.id}>
+          {i > 0 && <div aria-hidden="true" className="mx-4 border-t border-rule lg:mx-6" />}
+          <SwipeRow bookmarked={a.bookmarked} action={toggleBookmark.bind(null, a.id, !a.bookmarked)}>
+            <ArticleCard
+              article={a}
+              href={hrefFor(a.id)}
+              selected={a.id === selectedId}
+              featured={featuredFirst && i === 0}
+            />
+          </SwipeRow>
+        </div>
       ))}
     </div>
   )
