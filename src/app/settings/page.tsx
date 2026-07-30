@@ -5,6 +5,7 @@ import {
   createCategory, deleteCategory, deleteFeed, toggleCategoryNotify,
 } from '@/app/actions'
 import { AddFeedForm } from '@/components/AddFeedForm'
+import { ConfirmSubmitButton } from '@/components/ConfirmSubmitButton'
 import { EnableNotifications } from '@/components/EnableNotifications'
 
 export const dynamic = 'force-dynamic'
@@ -51,7 +52,13 @@ export default async function SettingsPage() {
                   </button>
                 </form>
                 <form action={deleteCategory.bind(null, c.id)}>
-                  <button aria-label="Supprimer la catégorie" className="-m-2 p-2 text-neutral-400">✕</button>
+                  <ConfirmSubmitButton
+                    ariaLabel="Supprimer la catégorie"
+                    className="-m-2 p-2 text-neutral-400"
+                    confirmMessage="Supprimer cette catégorie ? Ses flux et articles (y compris bookmarkés) seront supprimés."
+                  >
+                    ✕
+                  </ConfirmSubmitButton>
                 </form>
               </span>
             </li>
@@ -83,7 +90,13 @@ export default async function SettingsPage() {
                 </span>
               </span>
               <form action={deleteFeed.bind(null, f.id)}>
-                <button aria-label="Supprimer le flux" className="-m-2 p-2 text-neutral-400">✕</button>
+                <ConfirmSubmitButton
+                  ariaLabel="Supprimer le flux"
+                  className="-m-2 p-2 text-neutral-400"
+                  confirmMessage="Supprimer ce flux ? Ses articles (y compris bookmarkés) seront supprimés."
+                >
+                  ✕
+                </ConfirmSubmitButton>
               </form>
             </li>
           ))}

@@ -4,7 +4,11 @@ import { useEffect } from 'react'
 
 export function RegisterSW() {
   useEffect(() => {
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js')
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker
+        .register('/sw.js')
+        .catch((err) => console.error('SW registration failed', err))
+    }
   }, [])
   return null
 }

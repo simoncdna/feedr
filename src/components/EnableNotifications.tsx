@@ -17,7 +17,10 @@ export function EnableNotifications({ vapidPublicKey }: { vapidPublicKey: string
   async function enable() {
     setStatus('working')
     try {
-      const registration = await navigator.serviceWorker.ready
+      const registration = await Promise.race([
+        navigator.serviceWorker.ready,
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('sw timeout')), 10_000)),
+      ])
       if ((await Notification.requestPermission()) !== 'granted') throw new Error('denied')
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
