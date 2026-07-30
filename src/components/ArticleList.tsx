@@ -1,4 +1,6 @@
+import { toggleBookmark } from '@/app/actions'
 import { ArticleCard, type ArticleCardData } from './ArticleCard'
+import { SwipeRow } from './SwipeRow'
 
 export function ArticleList({
   articles,
@@ -17,7 +19,9 @@ export function ArticleList({
   return (
     <div className="divide-y divide-rule border-b border-rule">
       {articles.map((a) => (
-        <ArticleCard key={a.id} article={a} href={hrefFor(a.id)} selected={a.id === selectedId} />
+        <SwipeRow key={a.id} bookmarked={a.bookmarked} action={toggleBookmark.bind(null, a.id, !a.bookmarked)}>
+          <ArticleCard article={a} href={hrefFor(a.id)} selected={a.id === selectedId} />
+        </SwipeRow>
       ))}
     </div>
   )
