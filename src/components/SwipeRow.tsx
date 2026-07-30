@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from 'react'
 
+const LOCK_PX = 8
 const THRESHOLD = 72
 const MAX_PULL = 120
 const CONFIRM_HOLD_PX = -56
@@ -18,6 +19,7 @@ export function SwipeRow({
 }) {
   const [dx, setDx] = useState(0)
   const [settling, setSettling] = useState(false)
+  const dxRef = useRef(0)
   const start = useRef<{ x: number; y: number } | null>(null)
   const horizontal = useRef(false)
   const holdTimer = useRef<number | null>(null)
@@ -29,46 +31,53 @@ export function SwipeRow({
     }
   }, [])
 
-  function onTouchStart(e: React.TouchEvent) {
+  function setPull(value: number) {
+    dxRef.current = value
+    setDx(value)
+  }
+
+  function onPointerDown(e: React.PointerEvent) {
+    if (e.pointerType === 'mouse') return
     if (holdTimer.current !== null) {
       window.clearTimeout(holdTimer.current)
       holdTimer.current = null
     }
-    const t = e.touches[0]
-    start.current = { x: t.clientX, y: t.clientY }
+    start.current = { x: e.clientX, y: e.clientY }
     horizontal.current = false
     setSettling(false)
   }
 
-  function onTouchMove(e: React.TouchEvent) {
+  function onPointerMove(e: React.PointerEvent) {
     if (!start.current) return
-    const t = e.touches[0]
-    const moveX = t.clientX - start.current.x
-    const moveY = t.clientY - start.current.y
+    const moveX = e.clientX - start.current.x
+    const moveY = e.clientY - start.current.y
     if (!horizontal.current) {
-      if (Math.abs(moveX) > 12 && Math.abs(moveX) > Math.abs(moveY) * 1.5) {
+      if (Math.abs(moveX) > LOCK_PX && Math.abs(moveX) > Math.abs(moveY)) {
         horizontal.current = true
+        // capture : les events continuent d'arriver même si le doigt sort de la rangée
+        ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
       } else {
         return
       }
     }
-    setDx(Math.min(0, Math.max(moveX, -MAX_PULL)))
+    setPull(Math.min(0, Math.max(moveX, -MAX_PULL)))
   }
 
-  function onTouchEnd() {
-    const shouldTrigger = horizontal.current && dx <= -THRESHOLD
+  function onPointerEnd() {
+    if (!start.current) return
+    const shouldTrigger = horizontal.current && dxRef.current <= -THRESHOLD
     setSettling(true)
     if (shouldTrigger) {
       startTransition(() => action())
       // Pause de confirmation : la rangée reste entrouverte sur l'icône,
       // puis se referme — le temps que l'état serveur revienne.
-      setDx(CONFIRM_HOLD_PX)
+      setPull(CONFIRM_HOLD_PX)
       holdTimer.current = window.setTimeout(() => {
-        setDx(0)
+        setPull(0)
         holdTimer.current = null
       }, CONFIRM_HOLD_MS)
     } else {
-      setDx(0)
+      setPull(0)
     }
     start.current = null
     horizontal.current = false
@@ -78,11 +87,12 @@ export function SwipeRow({
 
   return (
     <div
-      className="relative overflow-hidden [touch-action:pan-y]"
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
-      onTouchCancel={onTouchEnd}
+      className="relative overflow-hidden"
+      style={{ touchAction: 'pan-y' }}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerEnd}
+      onPointerCancel={onPointerEnd}
     >
       <div
         aria-hidden="true"
