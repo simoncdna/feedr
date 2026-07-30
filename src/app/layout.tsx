@@ -1,7 +1,11 @@
 import type { Metadata, Viewport } from 'next'
+import { Geist, Geist_Mono } from 'next/font/google'
 import { TabBar } from '@/components/TabBar'
 import { RegisterSW } from '@/components/RegisterSW'
 import './globals.css'
+
+const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
+const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'Feedr',
@@ -14,16 +18,20 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: 'cover',
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#fafafa' },
-    { media: '(prefers-color-scheme: dark)', color: '#0a0a0a' },
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#0c0c0e' },
   ],
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr">
-      <body className="bg-neutral-50 text-neutral-900 antialiased dark:bg-neutral-950 dark:text-neutral-100">
-        <main className="mx-auto max-w-lg px-4 pb-28 pt-4">{children}</main>
+    <html lang="fr" className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body className="bg-background text-foreground antialiased">
+        <div className="lg:flex">
+          <main className="mx-auto w-full max-w-lg px-4 pb-28 pt-4 lg:m-0 lg:min-w-0 lg:max-w-none lg:flex-1 lg:p-0">
+            {children}
+          </main>
+        </div>
         <TabBar />
         <RegisterSW />
       </body>

@@ -7,7 +7,7 @@ const tabs = [
   {
     href: '/', label: 'Fil',
     icon: (
-      <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
         <path d="M4 11a9 9 0 0 1 9 9M4 4a16 16 0 0 1 16 16" strokeLinecap="round" />
         <circle cx="5" cy="19" r="1.5" fill="currentColor" stroke="none" />
       </svg>
@@ -16,7 +16,7 @@ const tabs = [
   {
     href: '/bookmarks', label: 'Bookmarks',
     icon: (
-      <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
         <path d="M6 4h12v17l-6-4-6 4z" strokeLinejoin="round" />
       </svg>
     ),
@@ -24,7 +24,7 @@ const tabs = [
   {
     href: '/settings', label: 'Réglages',
     icon: (
-      <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
         <circle cx="12" cy="12" r="3" />
         <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34h.09a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87v.09a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z" />
       </svg>
@@ -37,7 +37,7 @@ export function TabBar() {
   return (
     <nav
       aria-label="Navigation principale"
-      className="fixed inset-x-0 bottom-0 border-t border-neutral-200 bg-neutral-50/90 backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/90"
+      className="fixed inset-x-0 bottom-0 border-t border-rule bg-background/90 backdrop-blur lg:hidden"
     >
       <div className="mx-auto flex max-w-lg pb-[env(safe-area-inset-bottom)]">
         {tabs.map((tab) => {
@@ -50,12 +50,12 @@ export function TabBar() {
               key={tab.href}
               href={tab.href}
               aria-current={active ? 'page' : undefined}
-              className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-xs ${
-                active ? 'text-orange-500' : 'text-neutral-500 dark:text-neutral-400'
+              className={`flex flex-1 flex-col items-center gap-1 py-2 transition-colors ${
+                active ? 'text-accent' : 'text-muted hover:text-foreground'
               }`}
             >
               {tab.icon}
-              {tab.label}
+              <span className={`mono-label ${active ? 'text-accent' : ''}`}>{tab.label}</span>
             </Link>
           )
         })}
