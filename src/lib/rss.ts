@@ -56,7 +56,7 @@ export function normalizeItem(item: RawItem, now: Date): NormalizedItem | null {
     ?? (item.summary && item.content && item.content !== item.summary ? item.content : null)
   return {
     guid,
-    title: item.title?.trim() || 'Sans titre',
+    title: item.title?.trim() || 'Untitled',
     link: link || (/^https?:\/\//i.test(guid) ? guid : ''),
     description,
     content,

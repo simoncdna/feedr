@@ -14,12 +14,12 @@ export function AddFeedForm({ categories }: { categories: { id: number; name: st
         type="url"
         required
         placeholder="https://exemple.com/feed.xml"
-        className="w-full rounded-lg border border-neutral-300 bg-transparent px-3 py-2 dark:border-neutral-700"
+        className="w-full rounded border border-rule bg-surface px-3 py-1.5 text-sm outline-none focus:border-foreground"
       />
       <select
         name="categoryId"
         required
-        className="w-full rounded-lg border border-neutral-300 bg-transparent px-3 py-2 dark:border-neutral-700"
+        className="w-full rounded border border-rule bg-surface px-3 py-1.5 text-sm outline-none focus:border-foreground"
       >
         {categories.map((c) => (
           <option key={c.id} value={c.id}>{c.name}</option>
@@ -27,11 +27,11 @@ export function AddFeedForm({ categories }: { categories: { id: number; name: st
       </select>
       <button
         disabled={pending}
-        className="rounded-xl bg-orange-500 px-4 py-2 font-semibold text-white disabled:opacity-50"
+        className="mono-label rounded border border-rule bg-surface px-3 py-1.5 transition-colors hover:text-foreground disabled:opacity-50 motion-reduce:transition-none"
       >
-        {pending ? 'Ajout…' : 'Ajouter le flux'}
+        {pending ? 'Adding…' : 'Add feed'}
       </button>
-      {state.error && <p className="text-sm text-red-600">{state.error}</p>}
+      {state.error && <p className="text-sm text-red-500">{state.error}</p>}
     </form>
   )
 }

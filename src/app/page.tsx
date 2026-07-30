@@ -1,7 +1,9 @@
+import Link from 'next/link'
 import { desc, eq } from 'drizzle-orm'
 import { db } from '@/db'
 import { articles, categories, feeds } from '@/db/schema'
-import { ArticleCard } from '@/components/ArticleCard'
+import { ArticleList } from '@/components/ArticleList'
+import { ArticlePane } from '@/components/ArticlePane'
 import { CategoryChips } from '@/components/CategoryChips'
 
 export const dynamic = 'force-dynamic'
@@ -9,10 +11,11 @@ export const dynamic = 'force-dynamic'
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string }>
+  searchParams: Promise<{ category?: string; article?: string }>
 }) {
-  const { category } = await searchParams
+  const { category, article } = await searchParams
   const categoryId = category ? Number(category) : null
+  const selectedId = article ? Number(article) : null
 
   const cats = await db.select().from(categories).orderBy(categories.name)
   const rows = await db
@@ -31,17 +34,40 @@ export default async function Home({
     .orderBy(desc(articles.publishedAt))
     .limit(100)
 
+  const base = categoryId ? `/?category=${categoryId}` : '/'
+  const hrefFor = (id: number) => (categoryId ? `${base}&article=${id}` : `/?article=${id}`)
+  const showDetail = Boolean(article)
+
   return (
-    <>
-      <h1 className="mb-3 text-2xl font-bold">Feedr</h1>
-      <CategoryChips categories={cats} activeId={categoryId} />
-      {rows.length === 0 ? (
-        <p className="mt-12 text-center text-neutral-500">
-          Aucun article. Ajoute des flux dans les réglages.
-        </p>
-      ) : (
-        rows.map((a) => <ArticleCard key={a.id} article={a} />)
-      )}
-    </>
+    <div className="lg:grid lg:h-dvh lg:grid-cols-[24rem_1fr]">
+      <section
+        className={`${showDetail ? 'hidden lg:block' : ''} lg:overflow-y-auto lg:border-r lg:border-rule`}
+      >
+        <header className="pb-3 lg:px-6 lg:pt-8">
+          <h1 className="text-3xl font-bold tracking-tight lg:hidden">Feedr</h1>
+          <p className="hidden text-3xl font-bold tracking-tight lg:block">Feed</p>
+          <div className="mt-3 lg:hidden">
+            <CategoryChips categories={cats} activeId={categoryId} />
+          </div>
+        </header>
+        <ArticleList
+          articles={rows}
+          hrefFor={hrefFor}
+          selectedId={selectedId}
+          emptyLabel="No articles — add feeds in settings"
+        />
+      </section>
+
+      <section className={`${showDetail ? '' : 'hidden'} lg:block lg:overflow-y-auto`}>
+        {showDetail && (
+          <div className="pt-2 lg:hidden">
+            <Link href={base} className="mono-label -m-2 p-2 transition-colors hover:text-foreground">
+              ← Back
+            </Link>
+          </div>
+        )}
+        <ArticlePane articleParam={article} />
+      </section>
+    </div>
   )
 }

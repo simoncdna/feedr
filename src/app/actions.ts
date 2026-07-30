@@ -13,17 +13,20 @@ export async function createCategory(formData: FormData) {
   await db.insert(categories).values({ name })
   revalidatePath('/settings')
   revalidatePath('/')
+  revalidatePath('/', 'layout')
 }
 
 export async function toggleCategoryNotify(id: number, notify: boolean) {
   await db.update(categories).set({ notify }).where(eq(categories.id, id))
   revalidatePath('/settings')
+  revalidatePath('/', 'layout')
 }
 
 export async function deleteCategory(id: number) {
   await db.delete(categories).where(eq(categories.id, id))
   revalidatePath('/settings')
   revalidatePath('/')
+  revalidatePath('/', 'layout')
 }
 
 export type AddFeedState = { error: string | null }
@@ -32,21 +35,22 @@ export async function addFeed(_prev: AddFeedState, formData: FormData): Promise<
   const url = String(formData.get('url') ?? '').trim()
   const categoryId = Number(formData.get('categoryId'))
   if (!isSafeFeedUrl(url) || !Number.isInteger(categoryId) || categoryId <= 0) {
-    return { error: 'URL ou catégorie invalide' }
+    return { error: 'Invalid URL or category' }
   }
   let title: string
   try {
     ;({ title } = await fetchFeed(url))
   } catch {
-    return { error: 'Impossible de lire ce flux RSS' }
+    return { error: 'Could not read this RSS feed' }
   }
   try {
     await db.insert(feeds).values({ url, title, categoryId })
   } catch {
-    return { error: 'Ce flux existe déjà' }
+    return { error: 'This feed already exists' }
   }
   revalidatePath('/settings')
   revalidatePath('/')
+  revalidatePath('/', 'layout')
   return { error: null }
 }
 
@@ -54,6 +58,7 @@ export async function deleteFeed(id: number) {
   await db.delete(feeds).where(eq(feeds.id, id))
   revalidatePath('/settings')
   revalidatePath('/')
+  revalidatePath('/', 'layout')
 }
 
 export async function toggleBookmark(id: number, bookmarked: boolean) {

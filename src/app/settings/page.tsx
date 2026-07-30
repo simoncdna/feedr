@@ -1,4 +1,5 @@
 import { asc, eq } from 'drizzle-orm'
+import { X } from 'lucide-react'
 import { db } from '@/db'
 import { categories, feeds } from '@/db/schema'
 import {
@@ -7,6 +8,7 @@ import {
 import { AddFeedForm } from '@/components/AddFeedForm'
 import { ConfirmSubmitButton } from '@/components/ConfirmSubmitButton'
 import { EnableNotifications } from '@/components/EnableNotifications'
+import { ThemeToggle } from '@/components/ThemeToggle'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,39 +27,47 @@ export default async function SettingsPage() {
     .orderBy(asc(categories.name), asc(feeds.title))
 
   return (
-    <div className="space-y-8">
-      <h1 className="text-2xl font-bold">Réglages</h1>
+    <div className="space-y-12 lg:max-w-2xl lg:px-8 lg:py-8">
+      <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
 
-      <section className="space-y-3">
-        <h2 className="font-semibold">Notifications</h2>
+      <section className="space-y-3 lg:hidden">
+        <h2 className="mono-label border-b border-rule pb-2">Appearance</h2>
+        <div className="flex items-center justify-between">
+          <span className="text-sm">Light / dark theme</span>
+          <ThemeToggle />
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="mono-label border-b border-rule pb-2">Notifications</h2>
         <EnableNotifications vapidPublicKey={process.env.VAPID_PUBLIC_KEY!} />
       </section>
 
-      <section className="space-y-3">
-        <h2 className="font-semibold">Catégories</h2>
-        <ul className="space-y-2">
+      <section className="space-y-4">
+        <h2 className="mono-label border-b border-rule pb-2">Categories</h2>
+        <ul className="divide-y divide-rule">
           {cats.map((c) => (
-            <li key={c.id} className="flex items-center justify-between gap-2">
-              <span>{c.name}</span>
-              <span className="flex items-center gap-3">
+            <li key={c.id} className="flex items-center justify-between gap-2 py-2.5">
+              <span className="text-sm">{c.name}</span>
+              <span className="flex items-center gap-4">
                 <form action={toggleCategoryNotify.bind(null, c.id, !c.notify)}>
                   <button
-                    aria-label="Basculer les notifications"
-                    className={`-m-2 p-2 ${c.notify ? 'text-orange-500' : 'text-neutral-400'}`}
-                    title={c.notify ? 'Notifications activées' : 'Notifications désactivées'}
+                    aria-label="Toggle notifications"
+                    className={`-m-2 p-2 transition-colors ${c.notify ? 'text-accent' : 'text-muted hover:text-foreground'}`}
+                    title={c.notify ? 'Notifications enabled' : 'Notifications disabled'}
                   >
-                    <svg viewBox="0 0 24 24" className="h-5 w-5" fill={c.notify ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" className="h-5 w-5" fill={c.notify ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
                       <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M10.3 21a1.94 1.94 0 0 0 3.4 0" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </button>
                 </form>
                 <form action={deleteCategory.bind(null, c.id)}>
                   <ConfirmSubmitButton
-                    ariaLabel="Supprimer la catégorie"
-                    className="-m-2 p-2 text-neutral-400"
-                    confirmMessage="Supprimer cette catégorie ? Ses flux et articles (y compris bookmarkés) seront supprimés."
+                    confirmMessage="Delete this category? Its feeds and articles (including bookmarked ones) will be deleted."
+                    ariaLabel="Delete category"
+                    className="-m-2 p-2 text-muted transition-colors hover:text-foreground"
                   >
-                    ✕
+                    <X className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />
                   </ConfirmSubmitButton>
                 </form>
               </span>
@@ -68,41 +78,41 @@ export default async function SettingsPage() {
           <input
             name="name"
             required
-            placeholder="Nouvelle catégorie"
-            className="flex-1 rounded-lg border border-neutral-300 bg-transparent px-3 py-2 dark:border-neutral-700"
+            placeholder="New category"
+            className="flex-1 rounded border border-rule bg-surface px-3 py-1.5 text-sm outline-none focus:border-foreground"
           />
-          <button className="rounded-xl bg-neutral-900 px-4 font-semibold text-white dark:bg-neutral-100 dark:text-neutral-900">
-            +
+          <button className="mono-label rounded border border-rule bg-surface px-3 py-1.5 transition-colors hover:text-foreground motion-reduce:transition-none">
+            Add
           </button>
         </form>
       </section>
 
-      <section className="space-y-3">
-        <h2 className="font-semibold">Flux</h2>
-        <ul className="space-y-2">
+      <section className="space-y-4">
+        <h2 className="mono-label border-b border-rule pb-2">Feeds</h2>
+        <ul className="divide-y divide-rule">
           {feedRows.map((f) => (
-            <li key={f.id} className="flex items-center justify-between gap-2">
+            <li key={f.id} className="flex items-center justify-between gap-2 py-2.5">
               <span className="min-w-0">
-                <span className="block truncate">{f.title}</span>
-                <span className="block text-xs text-neutral-500">
+                <span className="block truncate text-sm">{f.title}</span>
+                <span className="mono-label block">
                   {f.categoryName}
-                  {f.lastError && <span className="text-red-600"> · erreur : {f.lastError}</span>}
+                  {f.lastError && <span className="text-red-500"> · error: {f.lastError}</span>}
                 </span>
               </span>
               <form action={deleteFeed.bind(null, f.id)}>
                 <ConfirmSubmitButton
-                  ariaLabel="Supprimer le flux"
-                  className="-m-2 p-2 text-neutral-400"
-                  confirmMessage="Supprimer ce flux ? Ses articles (y compris bookmarkés) seront supprimés."
+                  confirmMessage="Delete this feed? Its articles (including bookmarked ones) will be deleted."
+                  ariaLabel="Delete feed"
+                  className="-m-2 p-2 text-muted transition-colors hover:text-foreground"
                 >
-                  ✕
+                  <X className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />
                 </ConfirmSubmitButton>
               </form>
             </li>
           ))}
         </ul>
         {cats.length === 0 ? (
-          <p className="text-sm text-neutral-500">Crée d’abord une catégorie.</p>
+          <p className="text-sm text-muted">Create a category first.</p>
         ) : (
           <AddFeedForm categories={cats.map(({ id, name }) => ({ id, name }))} />
         )}

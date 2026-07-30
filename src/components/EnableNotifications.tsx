@@ -43,13 +43,13 @@ export function EnableNotifications({ vapidPublicKey }: { vapidPublicKey: string
       <button
         onClick={enable}
         disabled={status === 'working' || status === 'done'}
-        className="rounded-xl bg-orange-500 px-4 py-2 font-semibold text-white disabled:opacity-50"
+        className="mono-label rounded border border-rule bg-surface px-3 py-1.5 transition-colors hover:text-foreground disabled:opacity-50 motion-reduce:transition-none"
       >
-        {status === 'done' ? 'Notifications activées ✓' : 'Activer les notifications sur cet appareil'}
+        {status === 'done' ? 'Notifications enabled ✓' : 'Enable notifications on this device'}
       </button>
       {status === 'error' && (
-        <p className="mt-2 text-sm text-red-600">
-          Échec — vérifie que la PWA est installée (écran d’accueil) et que les notifications sont autorisées.
+        <p className="mt-2 text-sm text-red-500">
+          Failed — check the PWA is installed (home screen) and notifications are allowed.
         </p>
       )}
     </div>
