@@ -11,12 +11,23 @@ function currentTheme(): Theme {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
+// A manual override must win over the media-query-based `theme-color` metas Next
+// renders from `viewport.themeColor`. Mutating those metas in place conflicts with
+// React 19's hoistable-tag hydration (it doesn't recognize its own node anymore and
+// re-inserts a fresh one, leaving stale duplicates). Instead we keep a single
+// dedicated, React-unaware meta tag and place it first: browsers use the first
+// `meta[name="theme-color"]` whose `media` matches, and a tag with no `media`
+// attribute always matches, so ordering it first makes it always win.
 function applyThemeColor(theme: Theme) {
   const color = theme === 'dark' ? '#0c0c0e' : '#ffffff'
-  document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]').forEach((m) => {
-    m.content = color
-    m.removeAttribute('media')
-  })
+  let override = document.querySelector<HTMLMetaElement>('meta[name="theme-color"][data-theme-override]')
+  if (!override) {
+    override = document.createElement('meta')
+    override.setAttribute('name', 'theme-color')
+    override.setAttribute('data-theme-override', '')
+    document.head.insertBefore(override, document.head.querySelector('meta[name="theme-color"]'))
+  }
+  override.content = color
 }
 
 export function ThemeToggle() {
