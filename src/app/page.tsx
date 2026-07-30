@@ -3,6 +3,7 @@ import { desc, eq } from 'drizzle-orm'
 import { db } from '@/db'
 import { articles, categories, feeds } from '@/db/schema'
 import { ArticleList } from '@/components/ArticleList'
+import { ResizablePanes } from '@/components/ResizablePanes'
 import { ArticlePane } from '@/components/ArticlePane'
 import { CategoryChips } from '@/components/CategoryChips'
 
@@ -46,9 +47,9 @@ export default async function Home({
   const ordered = hero ? [hero, ...rows.filter((r) => r.id !== hero.id)] : rows
 
   return (
-    <div className="lg:grid lg:h-dvh lg:grid-cols-[24rem_1fr]">
-      <section
-        className={`${showDetail ? 'hidden lg:block' : ''} lg:overflow-y-auto lg:border-r lg:border-rule`}
+    <ResizablePanes
+      list={<section
+        className={`${showDetail ? 'hidden lg:block' : ''} lg:overflow-y-auto`}
       >
         <header className="sticky top-0 z-10 bg-background/95 px-4 pt-3 backdrop-blur lg:static lg:bg-transparent lg:px-6 lg:pb-3 lg:pt-8 lg:backdrop-blur-none">
           <h1 className="text-3xl font-bold tracking-tight lg:hidden">Feedr</h1>
@@ -64,9 +65,8 @@ export default async function Home({
           featuredFirst
           emptyLabel="No articles — add feeds in settings"
         />
-      </section>
-
-      <section className={`${showDetail ? '' : 'hidden'} lg:block lg:overflow-y-auto`}>
+      </section>}
+      detail={<section className={`${showDetail ? '' : 'hidden'} lg:block lg:overflow-y-auto`}>
         {showDetail && (
           <div className="px-4 pt-2 lg:hidden">
             <Link href={base} className="mono-label -m-2 p-2 transition-colors hover:text-foreground">
@@ -75,7 +75,7 @@ export default async function Home({
           </div>
         )}
         <ArticlePane articleParam={article} />
-      </section>
-    </div>
+      </section>}
+    />
   )
 }

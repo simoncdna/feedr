@@ -3,6 +3,7 @@ import { desc, eq } from 'drizzle-orm'
 import { db } from '@/db'
 import { articles, feeds } from '@/db/schema'
 import { ArticleList } from '@/components/ArticleList'
+import { ResizablePanes } from '@/components/ResizablePanes'
 import { ArticlePane } from '@/components/ArticlePane'
 
 export const dynamic = 'force-dynamic'
@@ -35,9 +36,9 @@ export default async function BookmarksPage({
   const showDetail = Boolean(article)
 
   return (
-    <div className="lg:grid lg:h-dvh lg:grid-cols-[24rem_1fr]">
-      <section
-        className={`${showDetail ? 'hidden lg:block' : ''} lg:overflow-y-auto lg:border-r lg:border-rule`}
+    <ResizablePanes
+      list={<section
+        className={`${showDetail ? 'hidden lg:block' : ''} lg:overflow-y-auto`}
       >
         <header className="px-4 pb-3 lg:px-6 lg:pt-8">
           <h1 className="text-3xl font-bold tracking-tight lg:hidden">Bookmarks</h1>
@@ -49,9 +50,8 @@ export default async function BookmarksPage({
           selectedId={selectedId}
           emptyLabel="No bookmarked articles."
         />
-      </section>
-
-      <section className={`${showDetail ? '' : 'hidden'} lg:block lg:overflow-y-auto`}>
+      </section>}
+      detail={<section className={`${showDetail ? '' : 'hidden'} lg:block lg:overflow-y-auto`}>
         {showDetail && (
           <div className="px-4 pt-2 lg:hidden">
             <Link href="/bookmarks" className="mono-label -m-2 p-2 transition-colors hover:text-foreground">
@@ -60,7 +60,7 @@ export default async function BookmarksPage({
           </div>
         )}
         <ArticlePane articleParam={article} />
-      </section>
-    </div>
+      </section>}
+    />
   )
 }
