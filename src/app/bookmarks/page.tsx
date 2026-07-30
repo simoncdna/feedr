@@ -39,7 +39,7 @@ export default async function BookmarksPage({
       <section
         className={`${showDetail ? 'hidden lg:block' : ''} lg:overflow-y-auto lg:border-r lg:border-rule`}
       >
-        <header className="pb-3 lg:px-6 lg:pt-8">
+        <header className="px-4 pb-3 lg:px-6 lg:pt-8">
           <h1 className="text-3xl font-bold tracking-tight lg:hidden">Bookmarks</h1>
           <p className="hidden text-3xl font-bold tracking-tight lg:block">Bookmarks</p>
         </header>
@@ -53,7 +53,7 @@ export default async function BookmarksPage({
 
       <section className={`${showDetail ? '' : 'hidden'} lg:block lg:overflow-y-auto`}>
         {showDetail && (
-          <div className="pt-2 lg:hidden">
+          <div className="px-4 pt-2 lg:hidden">
             <Link href="/bookmarks" className="mono-label -m-2 p-2 transition-colors hover:text-foreground">
               ← Back
             </Link>

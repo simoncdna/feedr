@@ -38,7 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Suspense fallback={null}>
             <Sidebar />
           </Suspense>
-          <main className="mx-auto w-full max-w-lg px-4 pb-28 pt-4 lg:m-0 lg:min-w-0 lg:max-w-none lg:flex-1 lg:p-0">
+          <main className="mx-auto w-full max-w-lg pb-28 pt-4 lg:m-0 lg:min-w-0 lg:max-w-none lg:flex-1 lg:p-0">
             {children}
           </main>
         </div>

@@ -50,7 +50,7 @@ export default async function Home({
       <section
         className={`${showDetail ? 'hidden lg:block' : ''} lg:overflow-y-auto lg:border-r lg:border-rule`}
       >
-        <header className="sticky top-0 z-10 -mx-4 bg-background/95 px-4 pt-3 backdrop-blur lg:static lg:mx-0 lg:bg-transparent lg:px-6 lg:pb-3 lg:pt-8 lg:backdrop-blur-none">
+        <header className="sticky top-0 z-10 bg-background/95 px-4 pt-3 backdrop-blur lg:static lg:bg-transparent lg:px-6 lg:pb-3 lg:pt-8 lg:backdrop-blur-none">
           <h1 className="text-3xl font-bold tracking-tight lg:hidden">Feedr</h1>
           <p className="hidden text-3xl font-bold tracking-tight lg:block">Feed</p>
           <div className="pt-3 lg:hidden">
@@ -68,7 +68,7 @@ export default async function Home({
 
       <section className={`${showDetail ? '' : 'hidden'} lg:block lg:overflow-y-auto`}>
         {showDetail && (
-          <div className="pt-2 lg:hidden">
+          <div className="px-4 pt-2 lg:hidden">
             <Link href={base} className="mono-label -m-2 p-2 transition-colors hover:text-foreground">
               ← Back
             </Link>
