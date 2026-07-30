@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
+import { ThemeToggle } from './ThemeToggle'
 
 const nav = [
   { href: '/', label: 'Fil' },
@@ -26,9 +27,12 @@ export function SidebarClient({
 
   return (
     <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col gap-10 overflow-y-auto border-r border-rule px-6 py-8 lg:flex">
-      <Link href="/" className="mono-label text-foreground">
-        Feedr
-      </Link>
+      <div className="flex items-center justify-between">
+        <Link href="/" className="mono-label text-foreground">
+          Feedr
+        </Link>
+        <ThemeToggle />
+      </div>
 
       <nav aria-label="Navigation principale" className="flex flex-col gap-3">
         {nav.map((item) => (

@@ -7,6 +7,7 @@ import {
 import { AddFeedForm } from '@/components/AddFeedForm'
 import { ConfirmSubmitButton } from '@/components/ConfirmSubmitButton'
 import { EnableNotifications } from '@/components/EnableNotifications'
+import { ThemeToggle } from '@/components/ThemeToggle'
 
 export const dynamic = 'force-dynamic'
 
@@ -27,6 +28,14 @@ export default async function SettingsPage() {
   return (
     <div className="space-y-8">
       <h1 className="text-2xl font-bold">Réglages</h1>
+
+      <section className="space-y-3 lg:hidden">
+        <h2 className="mono-label border-b border-rule pb-2">Apparence</h2>
+        <div className="flex items-center justify-between">
+          <span className="text-sm">Thème clair / sombre</span>
+          <ThemeToggle />
+        </div>
+      </section>
 
       <section className="space-y-3">
         <h2 className="font-semibold">Notifications</h2>
