@@ -2,6 +2,8 @@ import {
   pgTable, serial, text, boolean, integer, timestamp, uniqueIndex,
 } from 'drizzle-orm/pg-core'
 
+export * from './auth-schema'
+
 export const categories = pgTable('categories', {
   id: serial('id').primaryKey(),
   name: text('name').notNull(),
