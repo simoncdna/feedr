@@ -42,13 +42,13 @@ export default async function Home({
       <section
         className={`${showDetail ? 'hidden lg:block' : ''} lg:overflow-y-auto lg:border-r lg:border-rule`}
       >
-        <header className="pb-3 lg:px-6 lg:pt-8">
+        <header className="pt-2 lg:px-6 lg:pb-3 lg:pt-8">
           <h1 className="text-3xl font-bold tracking-tight lg:hidden">Feedr</h1>
           <p className="hidden text-3xl font-bold tracking-tight lg:block">Feed</p>
-          <div className="mt-3 lg:hidden">
-            <CategoryChips categories={cats} activeId={categoryId} />
-          </div>
         </header>
+        <div className="sticky top-0 z-10 -mx-4 bg-background/95 px-4 pt-4 backdrop-blur lg:hidden">
+          <CategoryChips categories={cats} activeId={categoryId} />
+        </div>
         <ArticleList
           articles={rows}
           hrefFor={hrefFor}
