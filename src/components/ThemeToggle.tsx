@@ -1,14 +1,30 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useSyncExternalStore } from 'react'
 import { Moon, Sun } from 'lucide-react'
 
 type Theme = 'light' | 'dark'
 
-function currentTheme(): Theme {
+function subscribe(onChange: () => void) {
+  const mq = window.matchMedia('(prefers-color-scheme: dark)')
+  mq.addEventListener('change', onChange)
+  const observer = new MutationObserver(onChange)
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
+  return () => {
+    mq.removeEventListener('change', onChange)
+    observer.disconnect()
+  }
+}
+
+function getSnapshot(): Theme {
   const explicit = document.documentElement.dataset.theme
   if (explicit === 'dark' || explicit === 'light') return explicit
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+}
+
+// Rendu serveur : thème inconnu, on affiche un placeholder jusqu'à l'hydratation.
+function getServerSnapshot(): Theme | null {
+  return null
 }
 
 // A manual override must win over the media-query-based `theme-color` metas Next
@@ -31,20 +47,15 @@ function applyThemeColor(theme: Theme) {
 }
 
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme | null>(null)
-
-  useEffect(() => {
-    setTheme(currentTheme())
-  }, [])
+  const theme = useSyncExternalStore<Theme | null>(subscribe, getSnapshot, getServerSnapshot)
 
   function toggle() {
-    const next: Theme = currentTheme() === 'dark' ? 'light' : 'dark'
+    const next: Theme = getSnapshot() === 'dark' ? 'light' : 'dark'
     document.documentElement.dataset.theme = next
     applyThemeColor(next)
     try {
       localStorage.theme = next
     } catch {}
-    setTheme(next)
   }
 
   return (
