@@ -19,81 +19,100 @@ export function SwipeRow({
 }) {
   const [dx, setDx] = useState(0)
   const [settling, setSettling] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
   const dxRef = useRef(0)
-  const start = useRef<{ x: number; y: number } | null>(null)
-  const horizontal = useRef(false)
   const holdTimer = useRef<number | null>(null)
+  const actionRef = useRef(action)
   const [pending, startTransition] = useTransition()
 
   useEffect(() => {
+    actionRef.current = action
+  }, [action])
+
+  useEffect(() => {
+    const el = rootRef.current
+    if (!el) return
+
+    let startX = 0
+    let startY = 0
+    let tracking = false
+    let horizontal = false
+
+    const setPull = (value: number) => {
+      dxRef.current = value
+      setDx(value)
+    }
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return
+      if (holdTimer.current !== null) {
+        window.clearTimeout(holdTimer.current)
+        holdTimer.current = null
+      }
+      startX = e.touches[0].clientX
+      startY = e.touches[0].clientY
+      tracking = true
+      horizontal = false
+      setSettling(false)
+    }
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (!tracking) return
+      const moveX = e.touches[0].clientX - startX
+      const moveY = e.touches[0].clientY - startY
+      if (!horizontal) {
+        if (Math.abs(moveX) > LOCK_PX && Math.abs(moveX) > Math.abs(moveY)) {
+          horizontal = true
+        } else if (Math.abs(moveY) > LOCK_PX) {
+          tracking = false // scroll vertical : on abandonne le geste
+          return
+        } else {
+          return
+        }
+      }
+      // Geste horizontal verrouillé : on empêche WebKit de scroller/annuler.
+      e.preventDefault()
+      setPull(Math.min(0, Math.max(moveX, -MAX_PULL)))
+    }
+
+    const onTouchEnd = () => {
+      if (!tracking) return
+      tracking = false
+      if (!horizontal) return
+      const shouldTrigger = dxRef.current <= -THRESHOLD
+      setSettling(true)
+      if (shouldTrigger) {
+        startTransition(() => actionRef.current())
+        // Pause de confirmation : la rangée reste entrouverte sur l'icône,
+        // puis se referme — le temps que l'état serveur revienne.
+        setPull(CONFIRM_HOLD_PX)
+        holdTimer.current = window.setTimeout(() => {
+          setPull(0)
+          holdTimer.current = null
+        }, CONFIRM_HOLD_MS)
+      } else {
+        setPull(0)
+      }
+      horizontal = false
+    }
+
+    el.addEventListener('touchstart', onTouchStart, { passive: true })
+    el.addEventListener('touchmove', onTouchMove, { passive: false })
+    el.addEventListener('touchend', onTouchEnd, { passive: true })
+    el.addEventListener('touchcancel', onTouchEnd, { passive: true })
     return () => {
+      el.removeEventListener('touchstart', onTouchStart)
+      el.removeEventListener('touchmove', onTouchMove)
+      el.removeEventListener('touchend', onTouchEnd)
+      el.removeEventListener('touchcancel', onTouchEnd)
       if (holdTimer.current !== null) window.clearTimeout(holdTimer.current)
     }
   }, [])
 
-  function setPull(value: number) {
-    dxRef.current = value
-    setDx(value)
-  }
-
-  function onPointerDown(e: React.PointerEvent) {
-    if (e.pointerType === 'mouse') return
-    if (holdTimer.current !== null) {
-      window.clearTimeout(holdTimer.current)
-      holdTimer.current = null
-    }
-    start.current = { x: e.clientX, y: e.clientY }
-    horizontal.current = false
-    setSettling(false)
-  }
-
-  function onPointerMove(e: React.PointerEvent) {
-    if (!start.current) return
-    const moveX = e.clientX - start.current.x
-    const moveY = e.clientY - start.current.y
-    if (!horizontal.current) {
-      if (Math.abs(moveX) > LOCK_PX && Math.abs(moveX) > Math.abs(moveY)) {
-        horizontal.current = true
-        // capture : les events continuent d'arriver même si le doigt sort de la rangée
-        ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
-      } else {
-        return
-      }
-    }
-    setPull(Math.min(0, Math.max(moveX, -MAX_PULL)))
-  }
-
-  function onPointerEnd() {
-    if (!start.current) return
-    const shouldTrigger = horizontal.current && dxRef.current <= -THRESHOLD
-    setSettling(true)
-    if (shouldTrigger) {
-      startTransition(() => action())
-      // Pause de confirmation : la rangée reste entrouverte sur l'icône,
-      // puis se referme — le temps que l'état serveur revienne.
-      setPull(CONFIRM_HOLD_PX)
-      holdTimer.current = window.setTimeout(() => {
-        setPull(0)
-        holdTimer.current = null
-      }, CONFIRM_HOLD_MS)
-    } else {
-      setPull(0)
-    }
-    start.current = null
-    horizontal.current = false
-  }
-
   const armed = dx <= -THRESHOLD || (dx < 0 && settling)
 
   return (
-    <div
-      className="relative overflow-hidden"
-      style={{ touchAction: 'pan-y' }}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerEnd}
-      onPointerCancel={onPointerEnd}
-    >
+    <div ref={rootRef} className="relative overflow-hidden" style={{ touchAction: 'pan-y' }}>
       <div
         aria-hidden="true"
         className={`absolute inset-y-0 right-0 flex w-32 items-center justify-end pr-6 lg:hidden ${
