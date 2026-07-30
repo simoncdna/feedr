@@ -54,7 +54,7 @@ export function SidebarClient({
               <Link
                 key={c.id}
                 href={`/?category=${c.id}`}
-                aria-current={active ? 'true' : undefined}
+                aria-current={active ? 'page' : undefined}
                 className={`flex items-center justify-between gap-2 py-1.5 text-sm transition-colors ${
                   active ? 'font-medium text-accent' : 'text-muted hover:text-foreground'
                 }`}
