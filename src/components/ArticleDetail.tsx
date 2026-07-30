@@ -29,7 +29,7 @@ export function ArticleDetail({ article }: { article: ArticleDetailData }) {
     : null
 
   return (
-    <article className="px-4 py-6 lg:max-w-2xl lg:px-6 lg:py-8">
+    <article className="px-4 py-6 lg:px-6 lg:py-8">
       <div className="flex items-center justify-between gap-3">
         <p className="mono-label">
           {article.feedTitle} · <span className="text-[0.625rem]">{relativeDate(article.publishedAt)}</span>
