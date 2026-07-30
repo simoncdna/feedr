@@ -1,6 +1,8 @@
 'use server'
 
-import { eq, sql } from 'drizzle-orm'
+import {
+  and, eq, isNull, sql,
+} from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { db } from '@/db'
 import {
@@ -98,7 +100,15 @@ export async function consumeInvitation(token: string): Promise<{ ok: boolean; k
   if (inv.kind === 'recovery' && inv.targetUserId && inv.targetUserId !== sessionUser.id) {
     return { ok: false }
   }
-  await db.update(invitations).set({ usedAt: new Date() }).where(eq(invitations.id, inv.id))
+  // Guarded by `isNull(usedAt)` so concurrent calls can't both consume the same
+  // single-use token (the earlier SELECT above is only a fast-path check —
+  // this UPDATE...RETURNING is the actual race-safe gate).
+  const consumed = await db
+    .update(invitations)
+    .set({ usedAt: new Date() })
+    .where(and(eq(invitations.id, inv.id), isNull(invitations.usedAt)))
+    .returning({ id: invitations.id })
+  if (consumed.length === 0) return { ok: false }
   return { ok: true, kind: inv.kind }
 }
 
