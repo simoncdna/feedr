@@ -57,7 +57,9 @@ body::after {
   left: 0;
   right: 0;
   height: env(safe-area-inset-top);
-  background: var(--background);
+  background: color-mix(in srgb, var(--background) 95%, transparent);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   z-index: 40;
   pointer-events: none;
 }
