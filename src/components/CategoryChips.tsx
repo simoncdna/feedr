@@ -1,24 +1,21 @@
 import Link from 'next/link'
 
 export function CategoryChips({
-  categories, activeId,
+  categories,
+  activeId,
 }: {
   categories: { id: number; name: string }[]
   activeId: number | null
 }) {
   const chip = (active: boolean) =>
-    `shrink-0 rounded-full px-3 py-1 text-sm ${
+    `shrink-0 rounded border px-3 py-1 text-sm transition-colors ${
       active
-        ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900'
-        : 'bg-neutral-200 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300'
+        ? 'border-rule bg-surface text-foreground'
+        : 'border-transparent text-muted hover:text-foreground'
     }`
   return (
-    <div className="flex gap-2 overflow-x-auto pb-2 [-webkit-overflow-scrolling:touch]">
-      <Link
-        href="/"
-        className={chip(activeId === null)}
-        aria-current={activeId === null ? 'page' : undefined}
-      >
+    <div className="flex gap-1 overflow-x-auto pb-2 [-webkit-overflow-scrolling:touch]">
+      <Link href="/" className={chip(activeId === null)} aria-current={activeId === null ? 'page' : undefined}>
         Tout
       </Link>
       {categories.map((c) => (

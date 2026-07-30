@@ -40,7 +40,7 @@ export default async function Home({
           Aucun article. Ajoute des flux dans les réglages.
         </p>
       ) : (
-        rows.map((a) => <ArticleCard key={a.id} article={a} />)
+        rows.map((a) => <ArticleCard key={a.id} article={a} href={`/article/${a.id}`} />)
       )}
     </>
   )
