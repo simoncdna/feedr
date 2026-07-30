@@ -39,7 +39,7 @@ export function TabBar() {
       aria-label="Main navigation"
       className="fixed inset-x-0 bottom-0 z-30 border-t border-rule bg-background/90 backdrop-blur lg:hidden"
     >
-      <div className="mx-auto flex max-w-lg pb-[max(calc(env(safe-area-inset-bottom)-8px),0px)]">
+      <div className="mx-auto flex max-w-lg pb-[max(calc(env(safe-area-inset-bottom)-16px),0px)]">
         {tabs.map((tab) => {
           const active =
             tab.href === '/'
