@@ -30,7 +30,7 @@ export function ArticleCard({
           {article.feedTitle} · {relativeDate(article.publishedAt)}
         </p>
         <Link href={href} aria-current={selected ? 'page' : undefined} className="block">
-          <h2 className="mt-1 text-base font-medium leading-snug tracking-tight">{article.title}</h2>
+          <h2 className="mt-1 text-lg font-semibold leading-snug tracking-tight">{article.title}</h2>
           {excerpt && <p className="mt-1 line-clamp-2 text-sm text-muted">{excerpt}</p>}
         </Link>
       </div>
