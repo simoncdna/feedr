@@ -1,11 +1,12 @@
 import Link from 'next/link'
-import { desc, eq } from 'drizzle-orm'
+import { and, desc, eq } from 'drizzle-orm'
 import { db } from '@/db'
 import { articles, categories, feeds } from '@/db/schema'
 import { ArticleList } from '@/components/ArticleList'
 import { ResizablePanes } from '@/components/ResizablePanes'
 import { ArticlePane } from '@/components/ArticlePane'
 import { CategoryChips } from '@/components/CategoryChips'
+import { requireUser } from '@/lib/session'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,11 +15,16 @@ export default async function Home({
 }: {
   searchParams: Promise<{ category?: string; article?: string }>
 }) {
+  const user = await requireUser()
   const { category, article } = await searchParams
   const categoryId = category ? Number(category) : null
   const selectedId = article ? Number(article) : null
 
-  const cats = await db.select().from(categories).orderBy(categories.name)
+  const cats = await db
+    .select()
+    .from(categories)
+    .where(eq(categories.userId, user.id))
+    .orderBy(categories.name)
   const rows = await db
     .select({
       id: articles.id,
@@ -33,7 +39,11 @@ export default async function Home({
     })
     .from(articles)
     .innerJoin(feeds, eq(articles.feedId, feeds.id))
-    .where(categoryId ? eq(feeds.categoryId, categoryId) : undefined)
+    .innerJoin(categories, eq(feeds.categoryId, categories.id))
+    .where(and(
+      categoryId ? eq(feeds.categoryId, categoryId) : undefined,
+      eq(categories.userId, user.id),
+    ))
     .orderBy(desc(articles.publishedAt))
     .limit(100)
 
@@ -74,7 +84,7 @@ export default async function Home({
             </Link>
           </div>
         )}
-        <ArticlePane articleParam={article} />
+        <ArticlePane articleParam={article} userId={user.id} />
       </section>}
     />
   )

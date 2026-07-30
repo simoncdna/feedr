@@ -12,8 +12,12 @@ const nav = [
 
 export function SidebarClient({
   categories,
+  userName,
+  signOut,
 }: {
   categories: { id: number; name: string; notify: boolean }[]
+  userName: string
+  signOut: () => Promise<void>
 }) {
   const pathname = usePathname()
   const params = useSearchParams()
@@ -74,6 +78,15 @@ export function SidebarClient({
           })}
         </div>
       )}
+
+      <div className="mt-auto flex items-center justify-between gap-2 border-t border-rule pt-4">
+        <p className="mono-label truncate">{userName}</p>
+        <form action={signOut}>
+          <button className="mono-label -m-2 p-2 transition-colors hover:text-foreground">
+            Sign out
+          </button>
+        </form>
+      </div>
     </aside>
   )
 }

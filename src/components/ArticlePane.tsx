@@ -1,6 +1,6 @@
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { db } from '@/db'
-import { articles, feeds } from '@/db/schema'
+import { articles, categories, feeds } from '@/db/schema'
 import { ArticleDetail } from './ArticleDetail'
 
 function EmptyPane({ label }: { label: string }) {
@@ -11,7 +11,13 @@ function EmptyPane({ label }: { label: string }) {
   )
 }
 
-export async function ArticlePane({ articleParam }: { articleParam?: string }) {
+export async function ArticlePane({
+  articleParam,
+  userId,
+}: {
+  articleParam?: string
+  userId: string
+}) {
   if (!articleParam) return <EmptyPane label="Select an article" />
   const id = Number(articleParam)
   if (!Number.isInteger(id)) return <EmptyPane label="Article not found" />
@@ -29,7 +35,8 @@ export async function ArticlePane({ articleParam }: { articleParam?: string }) {
     })
     .from(articles)
     .innerJoin(feeds, eq(articles.feedId, feeds.id))
-    .where(eq(articles.id, id))
+    .innerJoin(categories, eq(feeds.categoryId, categories.id))
+    .where(and(eq(articles.id, id), eq(categories.userId, userId)))
     .limit(1)
 
   const article = rows[0]

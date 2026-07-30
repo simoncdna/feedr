@@ -1,10 +1,11 @@
 import Link from 'next/link'
-import { desc, eq } from 'drizzle-orm'
+import { and, desc, eq } from 'drizzle-orm'
 import { db } from '@/db'
-import { articles, feeds } from '@/db/schema'
+import { articles, categories, feeds } from '@/db/schema'
 import { ArticleList } from '@/components/ArticleList'
 import { ResizablePanes } from '@/components/ResizablePanes'
 import { ArticlePane } from '@/components/ArticlePane'
+import { requireUser } from '@/lib/session'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,6 +14,7 @@ export default async function BookmarksPage({
 }: {
   searchParams: Promise<{ article?: string }>
 }) {
+  const user = await requireUser()
   const { article } = await searchParams
   const selectedId = article ? Number(article) : null
 
@@ -30,7 +32,8 @@ export default async function BookmarksPage({
     })
     .from(articles)
     .innerJoin(feeds, eq(articles.feedId, feeds.id))
-    .where(eq(articles.bookmarked, true))
+    .innerJoin(categories, eq(feeds.categoryId, categories.id))
+    .where(and(eq(articles.bookmarked, true), eq(categories.userId, user.id)))
     .orderBy(desc(articles.publishedAt))
 
   const showDetail = Boolean(article)
@@ -59,7 +62,7 @@ export default async function BookmarksPage({
             </Link>
           </div>
         )}
-        <ArticlePane articleParam={article} />
+        <ArticlePane articleParam={article} userId={user.id} />
       </section>}
     />
   )

@@ -9,11 +9,17 @@ import { AddFeedForm } from '@/components/AddFeedForm'
 import { ConfirmSubmitButton } from '@/components/ConfirmSubmitButton'
 import { EnableNotifications } from '@/components/EnableNotifications'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import { requireUser } from '@/lib/session'
 
 export const dynamic = 'force-dynamic'
 
 export default async function SettingsPage() {
-  const cats = await db.select().from(categories).orderBy(asc(categories.name))
+  const user = await requireUser()
+  const cats = await db
+    .select()
+    .from(categories)
+    .where(eq(categories.userId, user.id))
+    .orderBy(asc(categories.name))
   const feedRows = await db
     .select({
       id: feeds.id,
@@ -24,6 +30,7 @@ export default async function SettingsPage() {
     })
     .from(feeds)
     .innerJoin(categories, eq(feeds.categoryId, categories.id))
+    .where(eq(categories.userId, user.id))
     .orderBy(asc(categories.name), asc(feeds.title))
 
   return (
