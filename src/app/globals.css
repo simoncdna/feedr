@@ -14,7 +14,7 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
     --background: #0c0c0e;
-    --foreground: #faf6f1;
+    --foreground: #fafafa;
     --muted: #7c7d86;
     --rule: #26272c;
     --surface: #101013;
@@ -25,7 +25,7 @@
 
 :root[data-theme='dark'] {
   --background: #0c0c0e;
-  --foreground: #faf6f1;
+  --foreground: #fafafa;
   --muted: #7c7d86;
   --rule: #26272c;
   --surface: #101013;

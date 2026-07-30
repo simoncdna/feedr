@@ -45,7 +45,7 @@ export default async function Home({
       >
         <header className="pb-3 lg:px-6 lg:pt-8">
           <h1 className="text-2xl font-semibold tracking-tight lg:hidden">Feedr</h1>
-          <p className="mono-label hidden lg:block">Feed</p>
+          <p className="hidden text-2xl font-semibold tracking-tight lg:block">Feed</p>
           <div className="mt-3 lg:hidden">
             <CategoryChips categories={cats} activeId={categoryId} />
           </div>

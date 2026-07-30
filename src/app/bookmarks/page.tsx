@@ -39,7 +39,7 @@ export default async function BookmarksPage({
       >
         <header className="pb-3 lg:px-6 lg:pt-8">
           <h1 className="text-2xl font-semibold tracking-tight lg:hidden">Bookmarks</h1>
-          <p className="mono-label hidden lg:block">Bookmarks</p>
+          <p className="hidden text-2xl font-semibold tracking-tight lg:block">Bookmarks</p>
         </header>
         <ArticleList
           articles={rows}
