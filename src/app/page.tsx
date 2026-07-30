@@ -24,6 +24,8 @@ export default async function Home({
       title: articles.title,
       description: articles.description,
       imageUrl: articles.imageUrl,
+      author: articles.author,
+      hasVideo: articles.hasVideo,
       publishedAt: articles.publishedAt,
       bookmarked: articles.bookmarked,
       feedTitle: feeds.title,

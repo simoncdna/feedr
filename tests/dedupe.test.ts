@@ -3,7 +3,7 @@ import { selectNewItems, type NormalizedItem } from '@/lib/rss'
 
 const make = (guid: string): NormalizedItem => ({
   guid, title: guid, link: `https://ex.com/${guid}`,
-  description: null, content: null, imageUrl: null,
+  description: null, content: null, imageUrl: null, author: null, hasVideo: false,
   publishedAt: new Date('2026-07-29T10:00:00Z'),
 })
 

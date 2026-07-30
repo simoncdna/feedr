@@ -7,7 +7,8 @@ export type RawItem = {
   link?: string
   content?: string          // RSS: HTML de <description> ; Atom: corps complet de l'entrée
   contentSnippet?: string
-  contentEncoded?: string   // HTML de <content:encoded> (RSS uniquement)
+  contentEncoded?: string   // HTML de <content:encoded>
+  creator?: string          // auteur (author / dc:creator) (RSS uniquement)
   summary?: string          // Atom: résumé/teaser de l'entrée
   isoDate?: string
   enclosure?: { url?: string; type?: string }
@@ -22,6 +23,8 @@ export type NormalizedItem = {
   description: string | null
   content: string | null
   imageUrl: string | null
+  author: string | null
+  hasVideo: boolean
   publishedAt: Date
 }
 
@@ -47,6 +50,22 @@ export function extractImage(item: RawItem): string | null {
   return match?.[1] ?? null
 }
 
+export function detectVideo(item: RawItem): boolean {
+  if (item.enclosure?.type?.startsWith('video/')) return true
+  if (
+    item.mediaContent?.some(
+      (m) =>
+        m.$?.medium === 'video' ||
+        m.$?.type?.startsWith('video/') ||
+        (!m.$?.medium && !m.$?.type && /\.(mp4|webm|mov)($|\?)/i.test(m.$?.url ?? '')),
+    )
+  ) {
+    return true
+  }
+  const html = item.contentEncoded ?? item.content ?? ''
+  return /<video[\s>]|<iframe[^>]+(youtube\.com|youtu\.be|vimeo\.com|dailymotion\.com)/i.test(html)
+}
+
 export function normalizeItem(item: RawItem, now: Date): NormalizedItem | null {
   const candidate = item.link?.trim() ?? ''
   const link = /^https?:\/\//i.test(candidate) ? candidate : ''
@@ -65,6 +84,8 @@ export function normalizeItem(item: RawItem, now: Date): NormalizedItem | null {
     description,
     content,
     imageUrl: extractImage(item),
+    author: item.creator?.trim() || null,
+    hasVideo: detectVideo(item),
     publishedAt: Number.isNaN(parsed.getTime()) ? now : parsed,
   }
 }

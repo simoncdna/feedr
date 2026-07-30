@@ -28,6 +28,8 @@ export const articles = pgTable('articles', {
   description: text('description'),
   content: text('content'),
   imageUrl: text('image_url'),
+  author: text('author'),
+  hasVideo: boolean('has_video').notNull().default(false),
   publishedAt: timestamp('published_at', { withTimezone: true }).notNull(),
   bookmarked: boolean('bookmarked').notNull().default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { normalizeItem, extractImage, parseFeedString, type RawItem } from '@/lib/rss'
+import { normalizeItem, extractImage, detectVideo, parseFeedString, type RawItem } from '@/lib/rss'
 
 const NOW = new Date('2026-07-29T12:00:00Z')
 
@@ -40,6 +40,7 @@ describe('normalizeItem', () => {
       link: 'https://ex.com/a',
       content: '<p>desc html</p>',
       contentEncoded: '<p>contenu complet</p>',
+      creator: '  Jane Doe  ',
       isoDate: '2026-07-29T10:00:00Z',
     }
     expect(normalizeItem(item, NOW)).toEqual({
@@ -49,6 +50,8 @@ describe('normalizeItem', () => {
       description: '<p>desc html</p>',
       content: '<p>contenu complet</p>',
       imageUrl: null,
+      author: 'Jane Doe',
+      hasVideo: false,
       publishedAt: new Date('2026-07-29T10:00:00Z'),
     })
   })
@@ -207,5 +210,23 @@ describe('parseFeedString + normalizeItem (intégration, flux réels)', () => {
       content: '<p>Full RSS content</p>',
       imageUrl: 'https://ex.com/thumb.jpg',
     })
+  })
+})
+
+describe('detectVideo', () => {
+  it('enclosure video/*', () => {
+    expect(detectVideo({ enclosure: { url: 'https://ex.com/v.mp4', type: 'video/mp4' } })).toBe(true)
+  })
+  it('media:content medium=video', () => {
+    expect(detectVideo({ mediaContent: [{ $: { url: 'https://ex.com/v', medium: 'video' } }] })).toBe(true)
+  })
+  it('iframe YouTube dans le contenu', () => {
+    expect(detectVideo({ contentEncoded: '<p>x</p><iframe src="https://www.youtube.com/embed/abc"></iframe>' })).toBe(true)
+  })
+  it('balise video dans le contenu', () => {
+    expect(detectVideo({ content: '<video controls src="/v.mp4"></video>' })).toBe(true)
+  })
+  it('false sans vidéo', () => {
+    expect(detectVideo({ content: '<p>texte</p><img src="https://ex.com/i.jpg">' })).toBe(false)
   })
 })
