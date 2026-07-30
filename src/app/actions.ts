@@ -1,11 +1,13 @@
 'use server'
 
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { db } from '@/db'
 import { articles, categories, feeds } from '@/db/schema'
+import { user } from '@/db/auth-schema'
 import { fetchFeed } from '@/lib/rss'
 import { isSafeFeedUrl } from '@/lib/url'
+import { requireUser } from '@/lib/session'
 
 export async function createCategory(formData: FormData) {
   const name = String(formData.get('name') ?? '').trim()
@@ -66,4 +68,15 @@ export async function toggleBookmark(id: number, bookmarked: boolean) {
   revalidatePath('/')
   revalidatePath('/bookmarks')
   revalidatePath(`/article/${id}`)
+}
+
+// Race-safe: only succeeds if no owner exists yet, and only for the caller's own id.
+export async function claimOwnerRole() {
+  const sessionUser = await requireUser()
+  await db.execute(sql`
+    UPDATE ${user}
+    SET role = 'owner', is_anonymous = false
+    WHERE id = ${sessionUser.id}
+      AND NOT EXISTS (SELECT 1 FROM ${user} WHERE role = 'owner')
+  `)
 }
