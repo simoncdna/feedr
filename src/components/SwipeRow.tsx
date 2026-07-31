@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useRef, useState, useTransition } from 'react'
+import { useSwipeable } from 'react-swipeable'
 
-const LOCK_PX = 6
-const VERTICAL_ABORT_PX = 14
+const DELTA = 8
 const THRESHOLD = 72
 const MAX_PULL = 120
 const CONFIRM_HOLD_PX = -56
@@ -20,110 +20,60 @@ export function SwipeRow({
 }) {
   const [dx, setDx] = useState(0)
   const [settling, setSettling] = useState(false)
-  const rootRef = useRef<HTMLDivElement>(null)
-  const dxRef = useRef(0)
   const holdTimer = useRef<number | null>(null)
-  const actionRef = useRef(action)
   const [pending, startTransition] = useTransition()
 
   useEffect(() => {
-    actionRef.current = action
-  }, [action])
-
-  useEffect(() => {
-    const el = rootRef.current
-    if (!el) return
-
-    let startX = 0
-    let startY = 0
-    let tracking = false
-    let horizontal = false
-
-    const setPull = (value: number) => {
-      dxRef.current = value
-      setDx(value)
+    return () => {
+      if (holdTimer.current !== null) window.clearTimeout(holdTimer.current)
     }
+  }, [])
 
-    const onTouchStart = (e: TouchEvent) => {
-      if (e.touches.length !== 1) return
+  // Config recommandée pour iOS : aucun preventDefault (listeners passifs), c'est
+  // le CSS `touch-action: pan-y` qui autorise le scroll vertical natif et laisse
+  // le mouvement horizontal à JS. Activer preventScrollOnSwipe bloquerait les
+  // deux axes ici, puisque onSwiping/onSwiped ne sont pas directionnels.
+  const handlers = useSwipeable({
+    onSwipeStart: () => {
       if (holdTimer.current !== null) {
         window.clearTimeout(holdTimer.current)
         holdTimer.current = null
       }
-      startX = e.touches[0].clientX
-      startY = e.touches[0].clientY
-      tracking = true
-      horizontal = false
       setSettling(false)
-    }
-
-    const onTouchMove = (e: TouchEvent) => {
-      if (!tracking) return
-      const moveX = e.touches[0].clientX - startX
-      const moveY = e.touches[0].clientY - startY
-      if (!horizontal) {
-        // Verrouillage horizontal dès que le mouvement latéral domine, en tolérant
-        // la dérive verticale naturelle du doigt.
-        if (Math.abs(moveX) > LOCK_PX && Math.abs(moveX) > Math.abs(moveY) * 0.8) {
-          horizontal = true
-        } else if (Math.abs(moveY) > VERTICAL_ABORT_PX) {
-          tracking = false // scroll vertical franc : on abandonne le geste
-          return
-        } else {
-          return
-        }
-      }
-      // Geste horizontal verrouillé : on empêche WebKit de scroller/annuler.
-      e.preventDefault()
-      setPull(Math.min(0, Math.max(moveX, -MAX_PULL)))
-    }
-
-    const onTouchEnd = () => {
-      if (!tracking) return
-      tracking = false
-      if (!horizontal) return
-      const shouldTrigger = dxRef.current <= -THRESHOLD
+    },
+    onSwiping: (e) => {
+      setDx(e.dir === 'Left' ? -Math.min(e.absX, MAX_PULL) : 0)
+    },
+    onSwiped: (e) => {
       setSettling(true)
-      if (shouldTrigger) {
-        startTransition(() => actionRef.current())
+      if (e.dir === 'Left' && e.absX >= THRESHOLD) {
+        startTransition(() => action())
         // Pause de confirmation : la rangée reste entrouverte sur l'icône,
         // puis se referme — le temps que l'état serveur revienne.
-        setPull(CONFIRM_HOLD_PX)
+        setDx(CONFIRM_HOLD_PX)
         holdTimer.current = window.setTimeout(() => {
-          setPull(0)
+          setDx(0)
           holdTimer.current = null
         }, CONFIRM_HOLD_MS)
       } else {
-        setPull(0)
+        setDx(0)
       }
-      horizontal = false
-    }
-
-    el.addEventListener('touchstart', onTouchStart, { passive: true })
-    el.addEventListener('touchmove', onTouchMove, { passive: false })
-    el.addEventListener('touchend', onTouchEnd, { passive: true })
-    el.addEventListener('touchcancel', onTouchEnd, { passive: true })
-    return () => {
-      el.removeEventListener('touchstart', onTouchStart)
-      el.removeEventListener('touchmove', onTouchMove)
-      el.removeEventListener('touchend', onTouchEnd)
-      el.removeEventListener('touchcancel', onTouchEnd)
-      if (holdTimer.current !== null) window.clearTimeout(holdTimer.current)
-    }
-  }, [])
+    },
+    delta: DELTA,
+    preventScrollOnSwipe: false,
+    trackTouch: true,
+    trackMouse: false,
+  })
 
   const armed = dx <= -THRESHOLD || (dx < 0 && settling)
 
   return (
     // iOS : sans ces règles, glisser depuis un <a> ou une <img> démarre le drag
-    // natif (aperçu de lien / glisser-déposer) et annule les touchmove.
+    // natif (aperçu de lien / glisser-déposer) et annule le geste.
     <div
-      ref={rootRef}
+      {...handlers}
       className="relative overflow-hidden [&_a]:[-webkit-user-drag:none] [&_img]:[-webkit-user-drag:none]"
-      style={{
-        touchAction: 'pan-y',
-        WebkitTouchCallout: 'none',
-      }}
+      style={{ touchAction: 'pan-y', WebkitTouchCallout: 'none' }}
     >
       <div
         aria-hidden="true"
