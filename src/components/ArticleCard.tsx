@@ -57,12 +57,13 @@ export function ArticleCard({
             <img
               src={article.imageUrl}
               alt=""
+              draggable={false}
               loading="lazy"
               referrerPolicy="no-referrer"
               className="mb-3 aspect-[2/1] w-full rounded object-cover"
             />
           )}
-          <Link href={href} aria-current={selected ? 'page' : undefined} className="block">
+          <Link href={href} draggable={false} aria-current={selected ? 'page' : undefined} className="block">
             <h2 className="line-clamp-2 text-2xl font-bold leading-tight tracking-tight">{article.title}</h2>
             {excerpt && <p className="mt-1.5 line-clamp-1 text-sm text-muted">{excerpt}</p>}
           </Link>
@@ -78,7 +79,7 @@ export function ArticleCard({
     <div className={`relative flex ${selected ? 'bg-surface' : ''}`}>
       {selected && <span aria-hidden="true" className="absolute inset-y-0 left-0 z-10 w-0.5 bg-accent" />}
       <div className="min-w-0 flex-1 px-4 py-4 lg:px-6">
-        <Link href={href} aria-current={selected ? 'page' : undefined} className="block">
+        <Link href={href} draggable={false} aria-current={selected ? 'page' : undefined} className="block">
           <h2 className="line-clamp-2 text-lg font-semibold leading-snug tracking-tight">{article.title}</h2>
           {excerpt && <p className="mt-1 line-clamp-1 text-sm text-muted">{excerpt}</p>}
         </Link>
@@ -91,6 +92,7 @@ export function ArticleCard({
         <img
           src={article.imageUrl}
           alt=""
+          draggable={false}
           loading="lazy"
           referrerPolicy="no-referrer"
           className="my-4 mr-4 w-24 shrink-0 rounded object-cover lg:mr-6 lg:w-28"

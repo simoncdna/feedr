@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState, useTransition } from 'react'
 
-const LOCK_PX = 8
+const LOCK_PX = 6
+const VERTICAL_ABORT_PX = 14
 const THRESHOLD = 72
 const MAX_PULL = 120
 const CONFIRM_HOLD_PX = -56
@@ -61,10 +62,12 @@ export function SwipeRow({
       const moveX = e.touches[0].clientX - startX
       const moveY = e.touches[0].clientY - startY
       if (!horizontal) {
-        if (Math.abs(moveX) > LOCK_PX && Math.abs(moveX) > Math.abs(moveY)) {
+        // Verrouillage horizontal dès que le mouvement latéral domine, en tolérant
+        // la dérive verticale naturelle du doigt.
+        if (Math.abs(moveX) > LOCK_PX && Math.abs(moveX) > Math.abs(moveY) * 0.8) {
           horizontal = true
-        } else if (Math.abs(moveY) > LOCK_PX) {
-          tracking = false // scroll vertical : on abandonne le geste
+        } else if (Math.abs(moveY) > VERTICAL_ABORT_PX) {
+          tracking = false // scroll vertical franc : on abandonne le geste
           return
         } else {
           return
@@ -112,7 +115,16 @@ export function SwipeRow({
   const armed = dx <= -THRESHOLD || (dx < 0 && settling)
 
   return (
-    <div ref={rootRef} className="relative overflow-hidden" style={{ touchAction: 'pan-y' }}>
+    // iOS : sans ces règles, glisser depuis un <a> ou une <img> démarre le drag
+    // natif (aperçu de lien / glisser-déposer) et annule les touchmove.
+    <div
+      ref={rootRef}
+      className="relative overflow-hidden [&_a]:[-webkit-user-drag:none] [&_img]:[-webkit-user-drag:none]"
+      style={{
+        touchAction: 'pan-y',
+        WebkitTouchCallout: 'none',
+      }}
+    >
       <div
         aria-hidden="true"
         className={`absolute inset-y-0 right-0 flex w-32 items-center justify-end pr-6 lg:hidden ${
