@@ -1,9 +1,10 @@
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { db } from '@/db'
-import { articles, feeds } from '@/db/schema'
+import { articles, categories, feeds } from '@/db/schema'
 import { ArticleDetail } from '@/components/ArticleDetail'
+import { requireUser } from '@/lib/session'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,6 +13,7 @@ export default async function ArticlePage({
 }: {
   params: Promise<{ id: string }>
 }) {
+  const user = await requireUser()
   const { id } = await params
   const numericId = Number(id)
   if (!Number.isInteger(numericId)) notFound()
@@ -29,7 +31,8 @@ export default async function ArticlePage({
     })
     .from(articles)
     .innerJoin(feeds, eq(articles.feedId, feeds.id))
-    .where(eq(articles.id, numericId))
+    .innerJoin(categories, eq(feeds.categoryId, categories.id))
+    .where(and(eq(articles.id, numericId), eq(categories.userId, user.id)))
     .limit(1)
 
   const article = rows[0]
