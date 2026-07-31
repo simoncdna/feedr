@@ -44,14 +44,39 @@
   --font-mono: var(--font-geist-mono);
 }
 
-/* Peint tout l'écran (safe-areas comprises) avec le fond de l'app : évite la
-   bande noire du home indicator / des zones sûres en PWA standalone. */
+/* Indirection des zones sûres : `env()` n'est pas surchargeable, alors qu'une
+   variable l'est — indispensable pour simuler le mode PWA sur le banc iOS. */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Peint tout l'écran (zones sûres comprises) avec le fond de l'app : évite la
+   bande noire du home indicator et garantit que la zone de la barre de statut
+   suit le thème courant. */
 html {
   background-color: var(--background);
 }
 
 body {
   line-height: 1.6;
+}
+
+/* PWA iOS : avec `viewport-fit: cover`, la vue web s'étend SOUS la barre de statut
+   et iOS ne peint pas cette zone — elle apparaît transparente sur le contenu qui
+   défile. On la peint donc nous-mêmes, en opaque, avec le fond de l'app : le
+   bandeau suit ainsi automatiquement le thème courant (clair comme sombre).
+   Les pages compensent la hauteur via `var(--safe-top)`. */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--safe-top);
+  background-color: var(--background);
+  z-index: 40;
+  pointer-events: none;
 }
 
 /* Grain « papier journal » : bruit SVG statique en overlay, au-dessus de tout,

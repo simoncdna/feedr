@@ -63,7 +63,7 @@ export default async function Home({
       list={<section
         className={`${showDetail ? 'hidden lg:block' : ''} lg:overflow-y-auto`}
       >
-        <header className="sticky top-0 z-30 bg-background/95 px-4 pt-3 backdrop-blur lg:static lg:bg-transparent lg:px-6 lg:pb-3 lg:pt-8 lg:backdrop-blur-none">
+        <header className="sticky top-0 z-30 bg-background/95 px-4 pt-[calc(var(--safe-top)+0.75rem)] backdrop-blur lg:static lg:bg-transparent lg:px-6 lg:pb-3 lg:pt-8 lg:backdrop-blur-none">
           <h1 className="text-3xl font-bold tracking-tight lg:hidden">Feedr</h1>
           <p className="hidden text-3xl font-bold tracking-tight lg:block">Feed</p>
           <div className="pt-3 lg:hidden">

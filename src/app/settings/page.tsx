@@ -56,7 +56,7 @@ export default async function SettingsPage() {
     : []
 
   return (
-    <div className="space-y-12 px-4 lg:max-w-2xl lg:px-8 lg:py-8">
+    <div className="space-y-12 px-4 pt-[var(--safe-top)] lg:max-w-2xl lg:px-8 lg:py-8">
       <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
 
       <section className="space-y-3 lg:hidden">

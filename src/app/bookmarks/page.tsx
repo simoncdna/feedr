@@ -45,7 +45,7 @@ export default async function BookmarksPage({
       list={<section
         className={`${showDetail ? 'hidden lg:block' : ''} lg:overflow-y-auto`}
       >
-        <header className="px-4 pb-3 lg:px-6 lg:pt-8">
+        <header className="px-4 pb-3 pt-[var(--safe-top)] lg:px-6 lg:pt-8">
           <h1 className="text-3xl font-bold tracking-tight lg:hidden">Bookmarks</h1>
           <p className="hidden text-3xl font-bold tracking-tight lg:block">Bookmarks</p>
         </header>
