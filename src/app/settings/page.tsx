@@ -11,6 +11,7 @@ import {
 import { AddFeedForm } from '@/components/AddFeedForm'
 import { AddPasskeyButton } from '@/components/AddPasskeyButton'
 import { ConfirmSubmitButton } from '@/components/ConfirmSubmitButton'
+import { Diagnostics } from '@/components/Diagnostics'
 import { EnableNotifications } from '@/components/EnableNotifications'
 import { InvitationsSection } from '@/components/InvitationsSection'
 import { ThemeToggle } from '@/components/ThemeToggle'
@@ -162,6 +163,11 @@ export default async function SettingsPage() {
         ) : (
           <AddFeedForm categories={cats.map(({ id, name }) => ({ id, name }))} />
         )}
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="mono-label border-b border-rule pb-2">Diagnostics</h2>
+        <Diagnostics />
       </section>
     </div>
   )
