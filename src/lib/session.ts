@@ -12,7 +12,9 @@ export type SessionUser = { id: string; name: string; role: string }
 // NODE_ENV vaut toujours 'production'). Doit être explicitement activé via
 // DEV_AUTH_BYPASS=1 dans .env.local. Renvoie l'owner (ou le 1er user) sans passkey.
 async function devBypassUser(): Promise<SessionUser | null> {
-  if (process.env.NODE_ENV !== 'development' || process.env.DEV_AUTH_BYPASS !== '1') {
+  // Deux verrous : la variable doit être explicitement posée, ET on ne doit pas
+  // tourner sur Vercel (VERCEL=1 y est toujours défini) — donc jamais en prod.
+  if (process.env.DEV_AUTH_BYPASS !== '1' || process.env.VERCEL) {
     return null
   }
   const rows = await db

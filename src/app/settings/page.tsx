@@ -166,7 +166,7 @@ export default async function SettingsPage() {
       </section>
 
       <section className="space-y-4">
-        <h2 className="mono-label border-b border-rule pb-2">Diagnostics</h2>
+        <h2 id="diagnostics" className="mono-label scroll-mt-4 border-b border-rule pb-2">Diagnostics</h2>
         <Diagnostics />
       </section>
     </div>
