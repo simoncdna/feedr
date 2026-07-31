@@ -15,6 +15,11 @@ export const auth = betterAuth({
       role: { type: 'string', defaultValue: 'member', input: false },
     },
   },
+  // Session mise en cache dans un cookie signé : évite une requête DB à chaque
+  // navigation (le gros du coût perçu sur mobile).
+  session: {
+    cookieCache: { enabled: true, maxAge: 5 * 60 },
+  },
   plugins: [anonymous(), passkey({ rpName: 'Feedr' }), nextCookies()],
 })
 

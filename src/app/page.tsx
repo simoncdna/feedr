@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { and, desc, eq } from 'drizzle-orm'
+import { and, desc, eq, sql } from 'drizzle-orm'
 import { db } from '@/db'
 import { articles, categories, feeds } from '@/db/schema'
 import { ArticleList } from '@/components/ArticleList'
@@ -29,7 +29,9 @@ export default async function Home({
     .select({
       id: articles.id,
       title: articles.title,
-      description: articles.description,
+      // Tronqué en SQL : l'extrait n'a besoin que du début, et certains flux
+      // stockent l'article entier dans description (payload énorme sinon).
+      description: sql<string | null>`left(${articles.description}, 300)`,
       imageUrl: articles.imageUrl,
       author: articles.author,
       hasVideo: articles.hasVideo,
@@ -45,7 +47,7 @@ export default async function Home({
       eq(categories.userId, user.id),
     ))
     .orderBy(desc(articles.publishedAt))
-    .limit(100)
+    .limit(40)
 
   const base = categoryId ? `/?category=${categoryId}` : '/'
   const hrefFor = (id: number) => (categoryId ? `${base}&article=${id}` : `/?article=${id}`)

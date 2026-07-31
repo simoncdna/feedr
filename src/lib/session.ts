@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import { asc } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
@@ -24,12 +25,14 @@ async function devBypassUser(): Promise<SessionUser | null> {
   return { id: u.id, name: u.name, role: u.role ?? 'member' }
 }
 
-export async function getUser(): Promise<SessionUser | null> {
+// cache() : une seule résolution de session par requête, même si plusieurs
+// composants serveur (layout + page) la demandent.
+export const getUser = cache(async (): Promise<SessionUser | null> => {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session) return devBypassUser()
   const { id, name, role } = session.user as SessionUser & Record<string, unknown>
   return { id, name, role: role ?? 'member' }
-}
+})
 
 export async function requireUser(): Promise<SessionUser> {
   const user = await getUser()
