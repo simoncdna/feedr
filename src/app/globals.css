@@ -47,8 +47,11 @@
 /* Indirection des zones sûres : `env()` n'est pas surchargeable, alors qu'une
    variable l'est — indispensable pour simuler le mode PWA sur le banc iOS. */
 :root {
-  --safe-top: env(safe-area-inset-top, 0px);
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  /* `--safe-*-override` n'existe que pour le banc de test iOS : en conditions
+     réelles la valeur retombe sur `env()`. On n'imbrique pas env() dans une
+     variable seule — WebKit l'a historiquement mal résolu. */
+  --safe-top: var(--safe-top-override, env(safe-area-inset-top, 0px));
+  --safe-bottom: var(--safe-bottom-override, env(safe-area-inset-bottom, 0px));
 }
 
 /* Peint tout l'écran (zones sûres comprises) avec le fond de l'app : évite la
@@ -73,7 +76,7 @@ body::after {
   top: 0;
   left: 0;
   right: 0;
-  height: var(--safe-top);
+  height: var(--safe-top-override, env(safe-area-inset-top, 0px));
   background-color: var(--background);
   z-index: 40;
   pointer-events: none;
