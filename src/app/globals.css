@@ -44,24 +44,14 @@
   --font-mono: var(--font-geist-mono);
 }
 
-body {
-  line-height: 1.6;
+/* Peint tout l'écran (safe-areas comprises) avec le fond de l'app : évite la
+   bande noire du home indicator / des zones sûres en PWA standalone. */
+html {
+  background-color: var(--background);
 }
 
-/* PWA iOS (status bar translucide) : la zone heure/batterie est couverte par une
-   barre fixe de la couleur du fond ; le contenu défile dessous. */
-body::after {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: env(safe-area-inset-top);
-  background: color-mix(in srgb, var(--background) 95%, transparent);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-  z-index: 40;
-  pointer-events: none;
+body {
+  line-height: 1.6;
 }
 
 /* Grain « papier journal » : bruit SVG statique en overlay, au-dessus de tout,

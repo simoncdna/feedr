@@ -9,7 +9,7 @@ export const categories = pgTable('categories', {
   id: serial('id').primaryKey(),
   name: text('name').notNull(),
   notify: boolean('notify').notNull().default(false),
-  userId: text('user_id').references(() => user.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
 })
 
 export const feeds = pgTable('feeds', {
@@ -45,7 +45,7 @@ export const pushSubscriptions = pgTable('push_subscriptions', {
   p256dh: text('p256dh').notNull(),
   auth: text('auth').notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-  userId: text('user_id').references(() => user.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
 })
 
 export const invitations = pgTable('invitations', {
