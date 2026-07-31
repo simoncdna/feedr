@@ -32,8 +32,11 @@ const tabs = [
   },
 ]
 
+const HIDDEN_ON = ['/sign-in', '/invite']
+
 export function TabBar() {
   const pathname = usePathname()
+  if (HIDDEN_ON.some((p) => pathname === p || pathname.startsWith(`${p}/`))) return null
   return (
     <nav
       aria-label="Main navigation"
