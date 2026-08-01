@@ -10,6 +10,22 @@
 
 ---
 
+## État d'exécution — 2026-08-01
+
+Phases 0 et 1 écrites (Tasks 1, 3 à 9). **65 tests passants**, `tsc --noEmit` vert.
+
+**Bloqué sur la Task 2** : la branche Neon `tanstack-dev` doit être créée par Simon via le SSO Vercel → Neon (l'org Neon est gérée par Vercel, `neonctl` personnel n'y accède pas). Sans `DATABASE_URL`, trois vérifications sont reportées et signalées `⏸` dans le plan : Task 6 step 2 (`/api/auth/ok`), Task 8 step 4 (passkey de bout en bout), Task 9 step 4 (consommation d'invitation). La Phase 2 attend ce point de contrôle.
+
+Écarts constatés à l'exécution, en plus des deux ci-dessous :
+
+- **`.inputValidator()` est déprécié** dans `@tanstack/start-client-core` installé — c'est `.validator()`. À appliquer partout où le plan écrit `inputValidator` (Tasks 9, 12, 15, 16).
+- **`devBypassAllowed` vit dans `src/lib/dev-bypass.ts`**, re-exporté par `session.ts`. `session.ts` importe `@/db`, qui instancie drizzle dès l'import : le test du garde-fou aurait exigé un `DATABASE_URL` pour vérifier une fonction pure.
+- **`server` (handlers d'API) vient d'une augmentation de module de `@tanstack/react-start`** : ajoutée à `types` du `tsconfig.json` pour ne pas dépendre d'un import de passage dans le programme TS.
+- **`tanstackStart()` charge `.env.local` dans `process.env`** (son `loadEnvPlugin`, préfixe vide) : aucun `dotenv` à ajouter, `db/index.ts` reste verbatim.
+- **Task 9, la route suit l'original et non le snippet du plan** : validation du jeton côté serveur, titre « Join Feedr », prop `kind` transmise.
+
+---
+
 ## Écarts assumés par rapport à la spec
 
 La spec `2026-07-31-tanstack-migration-design.md` a été écrite avant vérification des API réelles. Deux points sont corrigés ici. Ce sont les **seuls** écarts ; tout le reste du plan suit la spec à la lettre.
@@ -142,14 +158,14 @@ apps/tanstack/
 
 **Pourquoi le CLI et pas du boilerplate écrit à la main :** le shell de `router.tsx`, les entry points SSR et le câblage TanStack Query bougent entre versions. Générer puis adapter garantit qu'on part de la version courante réelle, pas d'une reconstitution.
 
-- [ ] **Step 1: Créer la branche de travail**
+- [x] **Step 1: Créer la branche de travail**
 
 ```bash
 cd /Users/simon/Workspace/Perso/feedr
 git checkout -b feat/tanstack
 ```
 
-- [ ] **Step 2: Scaffolder l'app**
+- [x] **Step 2: Scaffolder l'app**
 
 ```bash
 mkdir -p apps
@@ -167,7 +183,7 @@ Attendu : `package.json`, `vite.config.ts`, `tsconfig.json`, `src/router.tsx`, `
 
 Si le CLI dépose le projet ailleurs ou nomme les fichiers autrement, **s'adapter à ce qui est réellement généré** — c'est la source de vérité, pas ce plan.
 
-- [ ] **Step 3: Lire ce qui a été généré avant d'y toucher**
+- [x] **Step 3: Lire ce qui a été généré avant d'y toucher**
 
 ```bash
 cat apps/tanstack/package.json
@@ -178,7 +194,7 @@ cat apps/tanstack/src/routes/__root.tsx
 
 Noter les versions exactes de `@tanstack/react-start`, `@tanstack/react-router`, `@tanstack/react-query`. Noter **comment le QueryClient est relié au router** (helper d'intégration SSR) : ce câblage sera réutilisé tel quel en Task 11.
 
-- [ ] **Step 4: Isoler le projet du dépôt racine**
+- [x] **Step 4: Isoler le projet du dépôt racine**
 
 Ajouter à `.gitignore` (racine) :
 
@@ -190,7 +206,7 @@ apps/tanstack/.tanstack
 apps/tanstack/.env.local
 ```
 
-- [ ] **Step 5: Vérifier que ça démarre**
+- [x] **Step 5: Vérifier que ça démarre**
 
 ```bash
 cd apps/tanstack && npm install && npm run dev
@@ -198,7 +214,7 @@ cd apps/tanstack && npm install && npm run dev
 
 Attendu : serveur Vite sur un port libre (3000 est pris par l'app Next si elle tourne — utiliser `--port 3001`), page d'accueil générée qui s'affiche.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 cd /Users/simon/Workspace/Perso/feedr
@@ -296,7 +312,7 @@ La couche métier n'a **aucune** dépendance à Next. C'est le filet de régress
 - Create: `apps/tanstack/vitest.config.ts`
 - Modify: `apps/tanstack/package.json`
 
-- [ ] **Step 1: Copier les fichiers verbatim**
+- [x] **Step 1: Copier les fichiers verbatim**
 
 ```bash
 cd /Users/simon/Workspace/Perso/feedr
@@ -311,7 +327,7 @@ cp scripts/attach-orphans.mjs scripts/generate-icons.mjs apps/tanstack/scripts/
 
 `lib/auth.ts`, `lib/auth-client.ts` et `lib/session.ts` ne sont **pas** copiés ici : ils dépendent du framework et sont réécrits en Phase 1.
 
-- [ ] **Step 2: Créer `apps/tanstack/vitest.config.ts`**
+- [x] **Step 2: Créer `apps/tanstack/vitest.config.ts`**
 
 ```ts
 import { defineConfig } from 'vitest/config'
@@ -323,7 +339,7 @@ export default defineConfig({
 })
 ```
 
-- [ ] **Step 3: Installer les dépendances métier**
+- [x] **Step 3: Installer les dépendances métier**
 
 ```bash
 cd apps/tanstack
@@ -332,7 +348,7 @@ npm install drizzle-orm @neondatabase/serverless rss-parser sanitize-html web-pu
 npm install -D vitest @types/sanitize-html @types/web-push dotenv drizzle-kit sharp
 ```
 
-- [ ] **Step 4: Ajouter le script de test à `package.json`**
+- [x] **Step 4: Ajouter le script de test à `package.json`**
 
 Dans `apps/tanstack/package.json`, section `scripts`, ajouter :
 
@@ -340,7 +356,7 @@ Dans `apps/tanstack/package.json`, section `scripts`, ajouter :
 "test": "vitest run"
 ```
 
-- [ ] **Step 5: Lancer les tests — ils doivent passer du premier coup**
+- [x] **Step 5: Lancer les tests — ils doivent passer du premier coup**
 
 ```bash
 cd apps/tanstack && npm test
@@ -350,7 +366,7 @@ Attendu : **61 tests passants**, répartis ainsi — `rss` 30, `url` 8, `text` 7
 
 Si un test échoue, c'est un problème de résolution de module ou de dépendance manquante, **jamais** de logique : le code est identique à celui qui passe à la racine. Corriger la config, pas le test.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 cd /Users/simon/Workspace/Perso/feedr
@@ -376,7 +392,7 @@ git commit -m "feat(tanstack): couche métier + 61 tests repris verbatim"
 - Delete: routes et composants de démo
 - Create: `apps/tanstack/public/{icon-192.png,icon-512.png}`
 
-- [ ] **Step 1: Copier `globals.css` verbatim et supprimer la démo**
+- [x] **Step 1: Copier `globals.css` verbatim et supprimer la démo**
 
 ```bash
 cd /Users/simon/Workspace/Perso/feedr
@@ -395,14 +411,14 @@ Attention au `ThemeToggle.tsx` supprimé ici : c'est celui du CLI. Le vrai `Them
 
 Le fichier copié contient les tokens, le grain, les zones sûres et `mono-label` / `cta-link`. **Ne rien y changer** — c'est ce qui garantit la parité visuelle, et c'est aussi ce qui accueillera l'animation plus tard.
 
-- [ ] **Step 2: Installer les polices auto-hébergées**
+- [x] **Step 2: Installer les polices auto-hébergées**
 
 ```bash
 cd apps/tanstack
 npm install @fontsource/geist @fontsource/geist-mono @tailwindcss/vite @tailwindcss/typography
 ```
 
-- [ ] **Step 3: Régler le port et figer les versions**
+- [x] **Step 3: Régler le port et figer les versions**
 
 Les plugins sont déjà en place et dans le bon ordre — **ne pas y toucher**. Une seule addition dans `apps/tanstack/vite.config.ts` : la clé `server`, pour ne pas entrer en collision avec l'app Next qui occupe le 3000.
 
@@ -440,7 +456,7 @@ Attendu : `0 — plus aucune version flottante`, et un `npm install` qui ne modi
 
 Ajouter enfin `apps/tanstack/dist` au `.gitignore` racine : le build sort dans `dist/`, pas dans `.output` comme le supposait la liste initiale.
 
-- [ ] **Step 4: Déclarer les variables de police dans `globals.css`**
+- [x] **Step 4: Déclarer les variables de police dans `globals.css`**
 
 L'app Next injectait `--font-geist-sans` / `--font-geist-mono` via `next/font`. En auto-hébergé, il faut les poser à la main. Ajouter **en tête** de `apps/tanstack/src/styles.css`, avant `@import "tailwindcss"` :
 
@@ -458,7 +474,7 @@ Puis, dans le bloc `:root` existant, ajouter les deux variables que `@theme inli
   --font-geist-mono: 'Geist Mono', ui-monospace, monospace;
 ```
 
-- [ ] **Step 5: Écrire le shell racine**
+- [x] **Step 5: Écrire le shell racine**
 
 Remplacer `apps/tanstack/src/routes/__root.tsx` par la traduction de `src/app/layout.tsx`. Le `<script>` inline de thème est repris **caractère pour caractère** : il évite le flash de thème au chargement et sa moindre altération casse l'accord avec `ThemeToggle`.
 
@@ -517,7 +533,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 
 La Sidebar et la TabBar seront ajoutées ici en Task 19, une fois qu'elles auront des routes vers lesquelles pointer.
 
-- [ ] **Step 6: Vérifier visuellement**
+- [x] **Step 6: Vérifier visuellement**
 
 ```bash
 cd apps/tanstack && npm run dev
@@ -525,7 +541,7 @@ cd apps/tanstack && npm run dev
 
 Ouvrir `http://localhost:3001`. Attendu : fond conforme au thème système, **grain visible** (le `body::before` de `globals.css`), police Geist appliquée. Basculer le thème système : le fond doit suivre.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 cd /Users/simon/Workspace/Perso/feedr
@@ -545,7 +561,7 @@ Rien ne fonctionne sans elle : toutes les routes appellent `requireUser()`.
 - Create: `apps/tanstack/src/lib/auth.ts`
 - Create: `apps/tanstack/src/lib/auth-client.ts`
 
-- [ ] **Step 1: Écrire `apps/tanstack/src/lib/auth.ts`**
+- [x] **Step 1: Écrire `apps/tanstack/src/lib/auth.ts`**
 
 Identique à `src/lib/auth.ts` **sauf le dernier plugin**. `tanstackStartCookies()` doit rester en dernière position (il pose les cookies dans un hook `after`, il doit voir le résultat de tous les autres).
 
@@ -578,7 +594,7 @@ export const auth = betterAuth({
 export type AuthSession = typeof auth.$Infer.Session
 ```
 
-- [ ] **Step 2: Copier le client d'auth**
+- [x] **Step 2: Copier le client d'auth**
 
 ```bash
 cd /Users/simon/Workspace/Perso/feedr
@@ -588,7 +604,7 @@ cat apps/tanstack/src/lib/auth-client.ts
 
 Vérifier qu'il n'importe rien de `next/*`. Si un `baseURL` y est codé en dur, l'ajuster ; sinon le laisser tel quel.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/tanstack/src/lib
@@ -602,7 +618,7 @@ git commit -m "feat(tanstack): better-auth avec tanstackStartCookies"
 **Files:**
 - Create: `apps/tanstack/src/routes/api/auth.$.ts`
 
-- [ ] **Step 1: Écrire le handler**
+- [x] **Step 1: Écrire le handler**
 
 ```ts
 import { createFileRoute } from '@tanstack/react-router'
@@ -618,7 +634,7 @@ export const Route = createFileRoute('/api/auth/$')({
 })
 ```
 
-- [ ] **Step 2: Vérifier que better-auth répond**
+- [ ] **Step 2: Vérifier que better-auth répond**  ⏸ *reportée : exige la branche Neon `tanstack-dev` (Task 2).*
 
 ```bash
 cd apps/tanstack && npm run dev
@@ -632,7 +648,7 @@ curl -s -o /dev/null -w '%{http_code}\n' http://localhost:3001/api/auth/ok
 
 Attendu : `200`. Un `404` signifie que la route n'est pas prise en compte — vérifier que `routeTree.gen.ts` a bien été régénéré (il l'est automatiquement par le plugin Vite en mode dev).
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/tanstack/src/routes/api/auth.\$.ts
@@ -649,7 +665,7 @@ git commit -m "feat(tanstack): route serveur better-auth /api/auth/\$"
 
 C'est le seul endroit où de la **logique nouvelle** apparaît (le `cache()` de React disparaît). Le garde-fou du bypass dev est critique côté sécurité — il est testé.
 
-- [ ] **Step 1: Écrire le test qui échoue**
+- [x] **Step 1: Écrire le test qui échoue**
 
 `apps/tanstack/tests/session.test.ts` :
 
@@ -677,7 +693,7 @@ describe('devBypassAllowed', () => {
 })
 ```
 
-- [ ] **Step 2: Lancer le test pour le voir échouer**
+- [x] **Step 2: Lancer le test pour le voir échouer**
 
 ```bash
 cd apps/tanstack && npx vitest run tests/session.test.ts
@@ -685,7 +701,7 @@ cd apps/tanstack && npx vitest run tests/session.test.ts
 
 Attendu : ÉCHEC — `devBypassAllowed` n'existe pas encore.
 
-- [ ] **Step 3: Écrire `apps/tanstack/src/lib/session.ts`**
+- [x] **Step 3: Écrire `apps/tanstack/src/lib/session.ts`**
 
 ```ts
 import { asc } from 'drizzle-orm'
@@ -734,7 +750,7 @@ export async function requireUser(): Promise<SessionUser> {
 }
 ```
 
-- [ ] **Step 4: Lancer le test pour le voir passer**
+- [x] **Step 4: Lancer le test pour le voir passer**
 
 ```bash
 cd apps/tanstack && npx vitest run tests/session.test.ts
@@ -742,7 +758,7 @@ cd apps/tanstack && npx vitest run tests/session.test.ts
 
 Attendu : 4 tests passants.
 
-- [ ] **Step 5: Vérifier que la suite complète reste verte**
+- [x] **Step 5: Vérifier que la suite complète reste verte**
 
 ```bash
 cd apps/tanstack && npm test
@@ -750,7 +766,7 @@ cd apps/tanstack && npm test
 
 Attendu : **65 tests passants** (61 repris + 4 nouveaux).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/tanstack/src/lib/session.ts apps/tanstack/tests/session.test.ts
@@ -766,7 +782,7 @@ git commit -m "feat(tanstack): session en server fn, bypass dev verrouillé et t
 - Create: `apps/tanstack/src/components/SignInClient.tsx`
 - Create: `apps/tanstack/src/server/mutations.ts`
 
-- [ ] **Step 1: Copier `SignInClient` et retirer la directive**
+- [x] **Step 1: Copier `SignInClient` et retirer la directive**
 
 ```bash
 cd /Users/simon/Workspace/Perso/feedr
@@ -782,7 +798,7 @@ grep -n "next/" apps/tanstack/src/components/SignInClient.tsx || echo "OK — au
 
 Si `SignInClient` appelle des Server Actions (`claimOwnerRole`, `completeSignup`), remplacer ces imports par ceux de `@/server/mutations` créés au Step 2.
 
-- [ ] **Step 2: Créer `apps/tanstack/src/server/mutations.ts` avec les deux fonctions d'amorçage**
+- [x] **Step 2: Créer `apps/tanstack/src/server/mutations.ts` avec les deux fonctions d'amorçage**
 
 ```ts
 import { sql } from 'drizzle-orm'
@@ -814,7 +830,7 @@ export const completeSignup = createServerFn({ method: 'POST' }).handler(async (
 })
 ```
 
-- [ ] **Step 3: Écrire la route**
+- [x] **Step 3: Écrire la route**
 
 ```tsx
 import { createFileRoute, redirect } from '@tanstack/react-router'
@@ -854,7 +870,7 @@ function SignInPage() {
 }
 ```
 
-- [ ] **Step 4: Vérifier la connexion de bout en bout**
+- [ ] **Step 4: Vérifier la connexion de bout en bout**  ⏸ *reportée : exige la branche Neon `tanstack-dev` (Task 2).*
 
 Le passkey exige HTTPS ou `localhost` — `localhost:3001` convient.
 
@@ -879,7 +895,7 @@ Attendu : une ligne, `role` valant `owner` (premier compte = amorçage owner).
 
 Si `tsx` n'est pas disponible, passer par la console Neon — branche `tanstack-dev`, table `user`. **Ne jamais interroger la branche de production pour cette vérification.**
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/tanstack/src
@@ -895,7 +911,7 @@ git commit -m "feat(tanstack): route sign-in et amorçage owner"
 - Create: `apps/tanstack/src/components/InviteClient.tsx`
 - Modify: `apps/tanstack/src/server/mutations.ts`
 
-- [ ] **Step 1: Copier `InviteClient`**
+- [x] **Step 1: Copier `InviteClient`**
 
 ```bash
 cp src/components/InviteClient.tsx apps/tanstack/src/components/
@@ -903,7 +919,7 @@ cp src/components/InviteClient.tsx apps/tanstack/src/components/
 
 Supprimer `'use client'`. Rediriger ses imports d'actions vers `@/server/mutations`.
 
-- [ ] **Step 2: Ajouter `consumeInvitation` à `apps/tanstack/src/server/mutations.ts`**
+- [x] **Step 2: Ajouter `consumeInvitation` à `apps/tanstack/src/server/mutations.ts`**
 
 Le commentaire sur la course est reporté tel quel : c'est lui qui explique pourquoi le `SELECT` initial ne suffit pas.
 
@@ -936,7 +952,7 @@ export const consumeInvitation = createServerFn({ method: 'POST' })
   })
 ```
 
-- [ ] **Step 3: Écrire la route**
+- [x] **Step 3: Écrire la route**
 
 ```tsx
 import { createFileRoute } from '@tanstack/react-router'
@@ -962,11 +978,11 @@ function InvitePage() {
 
 Comparer avec `src/app/invite/[token]/page.tsx` (33 lignes) et reprendre exactement les props passées à `InviteClient`.
 
-- [ ] **Step 4: Vérifier**
+- [ ] **Step 4: Vérifier**  ⏸ *reportée : exige la branche Neon `tanstack-dev` (Task 2).*
 
 Créer une invitation en base sur `tanstack-dev`, ouvrir `/invite/<token>`, vérifier que la consommation marque `used_at`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/tanstack/src
