@@ -3,6 +3,7 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import { ArticleList } from '@/components/ArticleList'
 import { ArticleDetail } from '@/components/ArticleDetail'
 import { CategoryChips } from '@/components/CategoryChips'
+import { EmptyPane } from '@/components/EmptyPane'
 import { ResizablePanes } from '@/components/ResizablePanes'
 import { articleQuery, categoriesQuery, feedQuery } from '@/queries'
 import { feedSearchSchema } from './-search'
@@ -76,12 +77,4 @@ function LoadedArticle({ id }: { id: number }) {
   const { data: article } = useSuspenseQuery(articleQuery(id))
   if (!article) return <EmptyPane label="Article not found" />
   return <ArticleDetail article={article} />
-}
-
-function EmptyPane({ label }: { label: string }) {
-  return (
-    <div className="flex h-full min-h-[50dvh] items-center justify-center">
-      <p className="mono-label">{label}</p>
-    </div>
-  )
 }

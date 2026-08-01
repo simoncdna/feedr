@@ -12,7 +12,16 @@
 
 ## État d'exécution — 2026-08-01
 
-**Phases 0 et 1 terminées et vérifiées.** 65 tests passants, `tsc --noEmit` vert.
+**Phases 0, 1 et 2 terminées.** 70 tests passants, `tsc --noEmit` vert.
+
+Écarts de la Phase 2, en plus de ceux listés plus bas :
+
+- **`toggleBookmark` et un hook d'invalidation sont avancés de la Task 15** : sans eux, `SwipeRow` recevait une action factice. La Task 15 remplace l'invalidation par une mise à jour optimiste — il ne reste que ça à faire de sa part sur le bookmark.
+- **La prop `categoryId` d'`ArticleList` n'est pas ajoutée** : personne ne la lit encore. À ajouter en Task 15 avec son consommateur.
+- **`EmptyPane` est un composant partagé** (`src/components/EmptyPane.tsx`) au lieu d'être dupliqué dans les deux routes ; côté Next il vivait déjà en un seul exemplaire dans `ArticlePane.tsx`.
+- **La route `bookmarks` suit l'original, pas la snippet du plan** : en-tête non collant, paire `h1 lg:hidden` / `p hidden lg:block`, `emptyLabel` « No bookmarked articles. ».
+- **Correctif de parité sur les chips** : `includeSearch` est inclusif par défaut dans TanStack Router, donc un `Link` avec `search={{}}` est actif sur toutes les URLs — le routeur posait `aria-current="page"` sur les trois chips à la fois (régression d'accessibilité). Résolu par `search={{ category: undefined }}` + `activeOptions={{ explicitUndefined: true }}`. Même schéma pour les liens « ← Back » / « ← Feed ».
+- **Les 404 de `/manifest.webmanifest` et `/favicon.ico`** déclenchent un `notFoundError` sur `__root__` sans `notFoundComponent` configuré : ~180 avertissements par chargement. Le manifeste arrive en Task 18 ; prévoir un `notFoundComponent` en Task 19.
 
 **Task 2 résolue autrement que prévu — repli assumé.** L'accès SSO à l'org Neon gérée par Vercel n'a pas été utilisé : Simon a autorisé la création d'une base neuve. Un projet Neon `feedr-tanstack-dev` a été créé dans son org personnelle (`neonctl` y a la main), schéma poussé par `drizzle-kit push`, 10 tables. La prod n'a **pas** été touchée.
 
@@ -1019,7 +1028,7 @@ git commit -m "feat(tanstack): route d'acceptation d'invitation"
 
 Les requêtes SQL sont **reprises à l'identique** de `src/app/page.tsx`, `bookmarks/page.tsx`, `ArticlePane.tsx` et `Sidebar.tsx`. Ne pas les « améliorer » : la troncature en SQL et la limite à 40 sont des optimisations mesurées.
 
-- [ ] **Step 1: Écrire `apps/tanstack/src/server/queries.ts`**
+- [x] **Step 1: Écrire `apps/tanstack/src/server/queries.ts`**
 
 ```ts
 import { and, asc, desc, eq, sql } from 'drizzle-orm'
@@ -1130,7 +1139,7 @@ export const getArticle = createServerFn({ method: 'GET' })
 
 **Comparer ligne à ligne** avec `src/app/bookmarks/page.tsx` (71 lignes) pour confirmer que la requête `listBookmarks` — notamment son tri et son absence de `limit` — est bien identique.
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/tanstack/src/server/queries.ts
@@ -1145,7 +1154,7 @@ git commit -m "feat(tanstack): server functions de lecture"
 - Create: `apps/tanstack/src/queries.ts`
 - Modify: `apps/tanstack/src/router.tsx` (si l'add-on ne l'a pas déjà câblé)
 
-- [ ] **Step 1: Vérifier le câblage généré — il est déjà en place**
+- [x] **Step 1: Vérifier le câblage généré — il est déjà en place**
 
 Constaté en Task 1 : l'add-on `tanstack-query` a tout câblé. **Ne rien réécrire.** Le montage tient en trois pièces :
 
@@ -1161,7 +1170,7 @@ grep -n "setupRouterSsrQueryIntegration\|getContext" apps/tanstack/src/router.ts
 
 Au passage, `router.tsx` généré traîne du code mort : les imports `ReactNode` et `QueryClient` sont inutilisés, et `TanstackQueryProvider` est importé sans être utilisé (sa définition est un composant vide). Les supprimer — c'est du nettoyage légitime sur un fichier qu'on touche.
 
-- [ ] **Step 2: Écrire `apps/tanstack/src/queries.ts`**
+- [x] **Step 2: Écrire `apps/tanstack/src/queries.ts`**
 
 Les clés sont centralisées ici : c'est ce qui remplace les 13 `revalidatePath()` de l'app Next, et ce qui rend l'invalidation ciblée possible.
 
@@ -1194,7 +1203,7 @@ export const articleQuery = (id: number) =>
   })
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/tanstack/src
@@ -1210,7 +1219,7 @@ git commit -m "feat(tanstack): queryOptions partagés loader/composant"
 - Create: `apps/tanstack/src/components/{ArticleCard,ArticleList,SwipeRow,CategoryChips,ResizablePanes,ArticleDetail}.tsx`
 - Create: `apps/tanstack/tests/search-params.test.ts`
 
-- [ ] **Step 1: Écrire le test du schéma de search params**
+- [x] **Step 1: Écrire le test du schéma de search params**
 
 C'est de la logique nouvelle (la spec la justifie : « fin des `NaN` et des paramètres invalides qui nous ont coûté des bugs »), donc elle est testée.
 
@@ -1245,7 +1254,7 @@ describe('feedSearchSchema', () => {
 })
 ```
 
-- [ ] **Step 2: Lancer le test pour le voir échouer**
+- [x] **Step 2: Lancer le test pour le voir échouer**
 
 ```bash
 cd apps/tanstack && npx vitest run tests/search-params.test.ts
@@ -1253,7 +1262,7 @@ cd apps/tanstack && npx vitest run tests/search-params.test.ts
 
 Attendu : ÉCHEC — le module `@/routes/-search` n'existe pas.
 
-- [ ] **Step 3: Écrire `apps/tanstack/src/routes/-search.ts`**
+- [x] **Step 3: Écrire `apps/tanstack/src/routes/-search.ts`**
 
 Le préfixe `-` exclut le fichier de la génération de routes.
 
@@ -1278,7 +1287,7 @@ export type FeedSearch = z.infer<typeof feedSearchSchema>
 
 Si `.parse({ category: 'abc' })` renvoie `{ category: undefined }` plutôt que `{}`, ajuster le test **ou** le schéma pour qu'ils s'accordent — l'important est qu'aucun `NaN` ne sorte jamais.
 
-- [ ] **Step 4: Lancer le test pour le voir passer**
+- [x] **Step 4: Lancer le test pour le voir passer**
 
 ```bash
 cd apps/tanstack && npx vitest run tests/search-params.test.ts
@@ -1286,7 +1295,7 @@ cd apps/tanstack && npx vitest run tests/search-params.test.ts
 
 Attendu : 5 tests passants.
 
-- [ ] **Step 5: Porter les composants du fil**
+- [x] **Step 5: Porter les composants du fil**
 
 ```bash
 cd /Users/simon/Workspace/Perso/feedr
@@ -1373,7 +1382,7 @@ Répercuter à l'appel dans `routes/index.tsx` (Step 6) : `categoryId={category 
 
 **`SwipeRow.tsx` est copié sans la moindre modification** en dehors de `'use client'`. Les filets `touchend`/`touchcancel` et le commentaire qui les explique sont le fruit d'un débogage iOS long — les toucher, c'est rouvrir le bug.
 
-- [ ] **Step 6: Écrire la route**
+- [x] **Step 6: Écrire la route**
 
 ```tsx
 import { createFileRoute, Link } from '@tanstack/react-router'
@@ -1466,7 +1475,7 @@ function EmptyPane({ label }: { label: string }) {
 }
 ```
 
-- [ ] **Step 7: Vérifier la parité visuelle et la navigation**
+- [ ] **Step 7: Vérifier la parité visuelle et la navigation**  ⚠ *partielle : vérifié en SSR et au navigateur (filtres de catégorie dans les deux sens, article en avant, retour au fil à 0 requête réseau, un seul chip actif). La comparaison côte à côte avec l'app Next sur le port 3000 reste à faire — à couvrir par la Task 20.*
 
 ```bash
 cd apps/tanstack && npm run dev
@@ -1479,7 +1488,7 @@ Comparer côte à côte avec l'app Next (`npm run dev` à la racine, port 3000) 
 - clic sur un article : le détail s'affiche (colonne de droite en desktop, plein écran en mobile) ;
 - **retour sur le fil : instantané**, sans rechargement réseau (c'est le gain attendu de la migration — le vérifier dans l'onglet Réseau).
 
-- [ ] **Step 8: Lancer la suite complète**
+- [x] **Step 8: Lancer la suite complète**
 
 ```bash
 cd apps/tanstack && npm test
@@ -1487,7 +1496,7 @@ cd apps/tanstack && npm test
 
 Attendu : **70 tests passants** (65 + 5).
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add apps/tanstack
@@ -1503,7 +1512,7 @@ C'est la cible des notifications push : l'URL `/article/<id>` doit rester identi
 **Files:**
 - Create: `apps/tanstack/src/routes/article.$id.tsx`
 
-- [ ] **Step 1: Vérifier l'URL produite par les notifications**
+- [x] **Step 1: Vérifier l'URL produite par les notifications**
 
 ```bash
 grep -n "article" apps/tanstack/src/lib/push.ts apps/tanstack/src/lib/notify.ts
@@ -1511,7 +1520,7 @@ grep -n "article" apps/tanstack/src/lib/push.ts apps/tanstack/src/lib/notify.ts
 
 Confirmer le format exact avant d'écrire la route. Il ne doit pas changer.
 
-- [ ] **Step 2: Écrire la route**
+- [x] **Step 2: Écrire la route**
 
 ```tsx
 import { createFileRoute, Link, notFound } from '@tanstack/react-router'
@@ -1552,11 +1561,11 @@ function ArticlePage() {
 }
 ```
 
-- [ ] **Step 3: Vérifier**
+- [x] **Step 3: Vérifier**
 
 Ouvrir `http://localhost:3001/article/<un id réel de tanstack-dev>`. Attendu : article affiché, lien retour fonctionnel. Puis `http://localhost:3001/article/abc` → page « not found », **pas** un crash ni un `NaN`.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/tanstack/src/routes/article.\$id.tsx
@@ -1570,7 +1579,7 @@ git commit -m "feat(tanstack): route article plein écran (cible des push)"
 **Files:**
 - Create: `apps/tanstack/src/routes/bookmarks.tsx`
 
-- [ ] **Step 1: Lire l'original avant de porter**
+- [x] **Step 1: Lire l'original avant de porter**
 
 ```bash
 cat src/app/bookmarks/page.tsx
@@ -1578,7 +1587,7 @@ cat src/app/bookmarks/page.tsx
 
 Reproduire sa structure exactement : mêmes classes, même `emptyLabel`, même comportement de sélection.
 
-- [ ] **Step 2: Écrire la route**
+- [x] **Step 2: Écrire la route**
 
 ```tsx
 import { createFileRoute, Link } from '@tanstack/react-router'
@@ -1663,7 +1672,7 @@ function LoadedBookmark({ id }: { id: number }) {
 
 Ajuster les libellés (`emptyLabel`, titre) à ceux réellement présents dans l'original lu au Step 1.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/tanstack/src/routes/bookmarks.tsx
