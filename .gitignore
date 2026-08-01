@@ -40,3 +40,10 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .playwright-mcp/
+
+# tanstack app (projet indépendant dans apps/tanstack)
+apps/tanstack/node_modules
+apps/tanstack/.output
+apps/tanstack/.nitro
+apps/tanstack/.tanstack
+apps/tanstack/.env.local
