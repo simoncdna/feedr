@@ -9,9 +9,12 @@
     "dev": "vite dev --port 3000",
     "generate-routes": "tsr generate",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run"
   },
   "dependencies": {
+    "@better-auth/passkey": "^1.6.25",
+    "@neondatabase/serverless": "^1.1.0",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/react-devtools": "latest",
     "@tanstack/react-query": "latest",
@@ -20,9 +23,16 @@
     "@tanstack/react-router-devtools": "latest",
     "@tanstack/react-router-ssr-query": "latest",
     "@tanstack/react-start": "latest",
+    "better-auth": "^1.6.25",
+    "drizzle-orm": "^0.45.2",
+    "lucide-react": "^1.28.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "tailwindcss": "^4.1.18"
+    "rss-parser": "^3.13.0",
+    "sanitize-html": "^2.17.6",
+    "tailwindcss": "^4.1.18",
+    "web-push": "^3.6.7",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.16",
@@ -31,9 +41,15 @@
     "@types/node": "^22.10.2",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
+    "@types/sanitize-html": "^2.16.1",
+    "@types/web-push": "^3.6.4",
     "@vitejs/plugin-react": "^6.0.1",
+    "dotenv": "^17.4.2",
+    "drizzle-kit": "^0.31.10",
+    "sharp": "^0.35.3",
     "typescript": "^6.0.2",
-    "vite": "^8.0.0"
+    "vite": "^8.0.0",
+    "vitest": "^4.1.10"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
