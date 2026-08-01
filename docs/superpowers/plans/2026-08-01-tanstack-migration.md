@@ -12,7 +12,36 @@
 
 ## État d'exécution — 2026-08-01
 
-**Phases 0 à 4 terminées** (Tasks 1 à 19). **72 tests passants**, `tsc --noEmit` vert, build de production vert. Il ne reste que la Phase 5 : parité (Task 20) et bascule (Task 21), qui exige l'accord de Simon.
+**Phases 0 à 4 terminées** (Tasks 1 à 19). **72 tests passants**, `tsc --noEmit` vert, build de production vert. **Task 20 faite aux trois quarts.** La Task 21 (bascule) attend l'accord de Simon.
+
+### Mesure avant / après (Task 20, step 5)
+
+Protocole : les deux apps en **build de production**, sur **la même base de dev** (mêmes données, la prod n'est pas touchée), WebKit à 402×714, médiane de 3 passages.
+
+| | Next | TanStack Start | |
+|---|---|---|---|
+| Premier chargement du fil | 831 ms | **295 ms** | ×2,8 |
+| Ouverture d'un article | 823 ms | **386 ms** | ×2,1 |
+| **Retour au fil depuis un article** | **855 ms** | **97 ms** | **×8,8** |
+| Requêtes réseau pendant le retour | 1 | **0** | — |
+
+Le retour au fil est le cas que la migration ciblait : il ne touche plus le réseau du tout. La référence du plan (« fil ≈ 0,50 s ») avait été prise dans d'autres conditions ; ici les deux colonnes sont mesurées côte à côte, donc comparables entre elles.
+
+### Banc iOS (Task 20, step 4)
+
+Simulateur iPhone 17 Pro / Safari 26.2, **build de production** (jamais le mode dev). Geste tactile réel via le WebDriver d'Apple : `touchstart 1, touchmove 12→30, touchend 1`, le bookmark bascule à chaque passage et **l'état est persisté en base** (article ciblé retrouvé `bookmarked = true`).
+
+Sur le scroll vertical, la vérification est indirecte et il faut le dire : `touch-action: pan-y` et `-webkit-user-drag: none` sont confirmés en style calculé sur les 40 rangées, et `SwipeRow` est byte-identique à la version validée sur l'iPhone de Simon le 2026-07-31 (aucun `preventDefault`, `preventScrollOnSwipe: false`). Le geste vertical lui-même n'a pas été rejoué : le pairing WebDriver du simulateur devient instable après quelques sessions.
+
+### Ce qui reste à faire avant la Task 21
+
+| Point | Pourquoi ce n'est pas fait |
+|---|---|
+| Preview Vercel jetable (step 3) | Attention : un preview du projet existant hériterait des variables d'environnement du projet, donc de la **base de prod**. Il faut soit forcer `DATABASE_URL` sur la base de dev à la commande, soit un projet jetable séparé. Décision de Simon. |
+| Notification push reçue, clic ouvrant `/article/<id>` | Exige HTTPS + PWA installée. `/api/push/subscribe` (absent du plan, porté en Task 16) n'a jamais été exercé de bout en bout — c'est le premier point à tester sur le preview. |
+| PWA installable, zones sûres et barre de statut en standalone | Non testable sans installation native sur l'écran d'accueil — demande l'œil de Simon. |
+| Ajout de passkey depuis les réglages | Exige HTTPS. |
+| Thème clair / sombre en conditions réelles | Le bootstrap et `ThemeToggle` sont portés et rendus, mais l'effet sur la barre de statut d'une PWA installée demande l'appareil. |
 
 ### Écarts de la Phase 4
 
@@ -2290,7 +2319,7 @@ git commit -m "feat(tanstack): Sidebar, TabBar et châssis de navigation"
 
 **Interdit :** valider en mode dev. Les chunks HMR échouent sous Safari — c'est précisément le blocage d'hydratation que la migration est censée corriger, et on ne peut le mesurer que sur un build de production.
 
-- [ ] **Step 1: Vérifier que le build de production passe**
+- [x] **Step 1: Vérifier que le build de production passe**
 
 ```bash
 cd apps/tanstack && npm run build && npm run start
@@ -2298,7 +2327,7 @@ cd apps/tanstack && npm run build && npm run start
 
 Attendu : build sans erreur, serveur démarré.
 
-- [ ] **Step 2: Lancer la suite complète**
+- [x] **Step 2: Lancer la suite complète**
 
 ```bash
 cd apps/tanstack && npm test
@@ -2316,26 +2345,26 @@ Ce projet fournit l'URL HTTPS nécessaire pour tester passkey et push, impossibl
 
 Sur le preview HTTPS, sur iPhone réel ou simulateur, **en mode PWA installé** :
 
-- [ ] Fil : catégories, article en avant, ordre chronologique
-- [ ] Fil : **swipe pour bookmarker** — geste complet, scroll vertical préservé, état persisté en base
-- [ ] Détail d'article : contenu, images, lien source
-- [ ] Bookmarks : liste, sélection, retrait
-- [ ] Réglages : compte, invitations (owner), notifications, catégories, flux, diagnostics
-- [ ] Sign-in passkey de bout en bout
-- [ ] Acceptation d'invitation
-- [ ] `/api/poll?secret=…` répond, `/api/poll` renvoie 401
+- [x] Fil : catégories, article en avant, ordre chronologique
+- [x] Fil : **swipe pour bookmarker** — geste tactile réel sur simulateur iPhone, état persisté en base. Scroll vertical : `touch-action: pan-y` et `-webkit-user-drag: none` vérifiés en calculé, geste vertical non rejoué (harnais WebDriver instable)
+- [x] Détail d'article : contenu, images, lien source
+- [x] Bookmarks : liste, sélection, retrait
+- [x] Réglages : compte, invitations (owner), catégories, flux, diagnostics — **sauf** l'activation réelle des notifications (HTTPS requis)
+- [x] Sign-in passkey de bout en bout (authentificateur WebAuthn virtuel)
+- [x] Acceptation d'invitation
+- [x] `/api/poll?secret=…` répond, `/api/poll` renvoie 401
 - [ ] Notification push reçue, le clic ouvre le bon `/article/<id>`
 - [ ] PWA installable
 - [ ] Thème clair / sombre, bandeau de barre de statut opaque, zones sûres correctes
 - [ ] Aucun blocage d'hydratation sous Safari
 
-- [ ] **Step 5: Mesurer avant / après**
+- [x] **Step 5: Mesurer avant / après**
 
 Référence Next mesurée : fil ≈ 0,50 s. Objectif : navigation quasi instantanée après le premier chargement.
 
 Mesurer sur le preview, onglet Réseau : premier chargement du fil, puis **retour sur le fil depuis un article** (le cas que la migration cible). Consigner les deux chiffres.
 
-- [ ] **Step 6: Rapporter les résultats à Simon**
+- [x] **Step 6: Rapporter les résultats à Simon**
 
 Rendre compte fidèlement : ce qui passe, ce qui ne passe pas, les deux mesures. **Ne pas passer à la Task 21 tant que la checklist n'est pas intégralement verte et que Simon n'a pas donné son accord.**
 
