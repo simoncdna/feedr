@@ -12,7 +12,13 @@
 
 ## État d'exécution — 2026-08-01
 
-**Phases 0 à 4 terminées** (Tasks 1 à 19). **72 tests passants**, `tsc --noEmit` vert, build de production vert. **Task 20 faite aux trois quarts.** La Task 21 (bascule) attend l'accord de Simon.
+**MIGRATION TERMINÉE — bascule faite le 2026-08-02.** `feedr-eta.vercel.app` sert TanStack Start ; Next.js est supprimé du dépôt.
+
+La Task 21 s'est déroulée autrement que prévu, sur demande de Simon : plutôt que de changer le Root Directory du projet Vercel (que le CLI ne sait pas faire), **l'app TanStack a été déplacée à la racine du dépôt et l'app Next supprimée**. Le Root Directory reste `.` et seul le framework preset a changé (`nextjs` → `tanstack-start`). Le domaine ne bouge pas, donc le passkey de Simon reste valide.
+
+Deux obstacles rencontrés à la bascule, tous deux absents du plan :
+1. **Le plugin Nitro manquait** — sans lui le build n'est pas déployable (404 sur tout). Trouvé grâce à un preview jetable, jamais visible en local.
+2. **Le premier `vercel deploy --prod` a échoué** sur la limite de 100 Mo par fichier : faute de `.vercelignore`, le CLI téléversait `node_modules` et un log de debug de 50 Mo.
 
 ### Mesure avant / après (Task 20, step 5)
 
