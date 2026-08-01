@@ -47,6 +47,7 @@ function FeedPage() {
             articles={ordered}
             linkPropsFor={(id) => ({ to: '/', search: { category, article: id } })}
             selectedId={article ?? null}
+            categoryId={category ?? null}
             featuredFirst
             emptyLabel="No articles — add feeds in settings"
           />
@@ -61,20 +62,20 @@ function FeedPage() {
               </Link>
             </div>
           )}
-          <ArticleDetailPane id={article} />
+          <ArticleDetailPane id={article} categoryId={category ?? null} />
         </section>
       }
     />
   )
 }
 
-function ArticleDetailPane({ id }: { id: number | undefined }) {
+function ArticleDetailPane({ id, categoryId }: { id: number | undefined; categoryId: number | null }) {
   if (!id) return <EmptyPane label="Select an article" />
-  return <LoadedArticle id={id} />
+  return <LoadedArticle id={id} categoryId={categoryId} />
 }
 
-function LoadedArticle({ id }: { id: number }) {
+function LoadedArticle({ id, categoryId }: { id: number; categoryId: number | null }) {
   const { data: article } = useSuspenseQuery(articleQuery(id))
   if (!article) return <EmptyPane label="Article not found" />
-  return <ArticleDetail article={article} />
+  return <ArticleDetail article={article} categoryId={categoryId} />
 }

@@ -4,8 +4,16 @@ import { useToggleBookmark } from '@/mutations'
 // Source unique du type : partagé avec la server fn getArticle.
 import type { ArticleDetailData } from '@/server/queries'
 
-export function ArticleDetail({ article }: { article: ArticleDetailData }) {
-  const toggle = useToggleBookmark()
+export function ArticleDetail({
+  article,
+  categoryId = null,
+}: {
+  article: ArticleDetailData
+  // La colonne de détail vit à côté d'un fil filtré : passer sa catégorie permet
+  // à la mise à jour optimiste de toucher la bonne clé de cache.
+  categoryId?: number | null
+}) {
+  const toggle = useToggleBookmark(categoryId)
   const raw = article.content ?? article.description
   const safe = raw
     ? sanitizeHtml(raw, {

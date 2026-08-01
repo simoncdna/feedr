@@ -1,5 +1,4 @@
 import { asc } from 'drizzle-orm'
-import { createServerFn } from '@tanstack/react-start'
 import { getRequestHeaders } from '@tanstack/react-start/server'
 import { redirect } from '@tanstack/react-router'
 import { db } from '@/db'
@@ -23,16 +22,19 @@ async function devBypassUser(): Promise<SessionUser | null> {
   return { id: u.id, name: u.name, role: u.role ?? 'member' }
 }
 
-export const getUser = createServerFn({ method: 'GET' }).handler(
-  async (): Promise<SessionUser | null> => {
-    const session = await auth.api.getSession({ headers: getRequestHeaders() })
-    if (!session) return devBypassUser()
-    const { id, name, role } = session.user as SessionUser & Record<string, unknown>
-    return { id, name, role: role ?? 'member' }
-  },
-)
+// Fonction serveur simple, et non createServerFn : personne ne l'appelle depuis
+// le client (seules les server fns de @/server/* la consomment), donc le saut RPC
+// n'apporterait rien. Il coûtait même : en build de production, l'id de la server
+// fn n'était pas inscrit au manifeste du bundle serveur et toute page rendue
+// répondait 500 (« Server function info not found »). Invisible en dev.
+export async function getUser(): Promise<SessionUser | null> {
+  const session = await auth.api.getSession({ headers: getRequestHeaders() })
+  if (!session) return devBypassUser()
+  const { id, name, role } = session.user as SessionUser & Record<string, unknown>
+  return { id, name, role: role ?? 'member' }
+}
 
-// À appeler depuis un loader ou une autre server fn. Le redirect est jeté.
+// À appeler depuis une server fn. Le redirect est jeté.
 export async function requireUser(): Promise<SessionUser> {
   const user = await getUser()
   if (!user) throw redirect({ to: '/sign-in' })
