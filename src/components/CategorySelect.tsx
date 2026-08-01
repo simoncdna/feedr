@@ -1,17 +1,19 @@
-'use client'
-
 import { useEffect, useRef, useState } from 'react'
 import { Check, ChevronDown } from 'lucide-react'
 
+// Contrôlé plutôt qu'alimenté par un input caché : il n'y a plus de <form
+// action={serverAction}> pour ramasser la valeur, c'est le parent qui la tient.
 export function CategorySelect({
-  name,
   categories,
+  value,
+  onChange,
 }: {
-  name: string
   categories: { id: number; name: string }[]
+  value: number | null
+  onChange: (id: number) => void
 }) {
   const [open, setOpen] = useState(false)
-  const [selectedId, setSelectedId] = useState(categories[0]?.id ?? null)
+  const selectedId = value
   const [activeIndex, setActiveIndex] = useState(0)
   const rootRef = useRef<HTMLDivElement>(null)
 
@@ -28,7 +30,7 @@ export function CategorySelect({
   function choose(index: number) {
     const cat = categories[index]
     if (!cat) return
-    setSelectedId(cat.id)
+    onChange(cat.id)
     setActiveIndex(index)
     setOpen(false)
   }
@@ -51,7 +53,6 @@ export function CategorySelect({
 
   return (
     <div ref={rootRef} className="relative" onKeyDown={onKeyDown}>
-      {selectedId !== null && <input type="hidden" name={name} value={selectedId} />}
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}

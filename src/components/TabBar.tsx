@@ -1,7 +1,4 @@
-'use client'
-
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { Link, useRouterState } from '@tanstack/react-router'
 
 const tabs = [
   {
@@ -30,12 +27,12 @@ const tabs = [
       </svg>
     ),
   },
-]
+] as const
 
 const HIDDEN_ON = ['/sign-in', '/invite']
 
 export function TabBar() {
-  const pathname = usePathname()
+  const pathname = useRouterState({ select: (s) => s.location.pathname })
   if (HIDDEN_ON.some((p) => pathname === p || pathname.startsWith(`${p}/`))) return null
   return (
     <nav
@@ -51,7 +48,12 @@ export function TabBar() {
           return (
             <Link
               key={tab.href}
-              href={tab.href}
+              to={tab.href}
+              // `exact` est indispensable : sans lui le routeur considère `to="/"`
+              // actif sur TOUTES les routes (correspondance par préfixe) et pose
+              // aria-current="page" sur l'onglet Feed partout. C'est nous qui
+              // calculons l'état actif, comme dans l'app Next.
+              activeOptions={{ exact: true }}
               aria-current={active ? 'page' : undefined}
               className={`flex flex-1 flex-col items-center gap-1 py-2 transition-colors ${
                 active ? 'text-accent' : 'text-muted hover:text-foreground'

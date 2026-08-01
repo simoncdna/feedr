@@ -1,7 +1,7 @@
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { anonymous } from 'better-auth/plugins/anonymous'
-import { nextCookies } from 'better-auth/next-js'
+import { tanstackStartCookies } from 'better-auth/tanstack-start'
 import { passkey } from '@better-auth/passkey'
 import { db } from '@/db'
 import * as schema from '@/db/schema'
@@ -20,7 +20,9 @@ export const auth = betterAuth({
   session: {
     cookieCache: { enabled: true, maxAge: 5 * 60 },
   },
-  plugins: [anonymous(), passkey({ rpName: 'Feedr' }), nextCookies()],
+  // tanstackStartCookies doit rester en dernier : il pose les cookies dans un
+  // hook after et doit voir le résultat de tous les autres plugins.
+  plugins: [anonymous(), passkey({ rpName: 'Feedr' }), tanstackStartCookies()],
 })
 
 export type AuthSession = typeof auth.$Infer.Session

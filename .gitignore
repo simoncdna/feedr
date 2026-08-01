@@ -1,50 +1,33 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# dépendances
+node_modules
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
+# build
+dist
+dist-ssr
+.output
+.nitro
+.tanstack
+.vinxi
+.wrangler
+*.tsbuildinfo
 
-# testing
+# tests / outils
 /coverage
+.playwright-mcp/
+__unconfig*
+todos.json
 
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
-# env files (can opt-in for committing if needed)
+# environnement — jamais commité
+.env
 .env*
 
 # vercel
 .vercel
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
-.playwright-mcp/
-
-# tanstack app (projet indépendant dans apps/tanstack)
-apps/tanstack/node_modules
-apps/tanstack/dist
-apps/tanstack/.output
-apps/tanstack/.nitro
-apps/tanstack/.tanstack
-apps/tanstack/.env.local
+# divers
+.DS_Store
+*.pem
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
