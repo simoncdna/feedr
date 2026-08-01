@@ -3,12 +3,6 @@ import {
   Scripts,
   createRootRouteWithContext,
 } from '@tanstack/react-router'
-import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
-import { TanStackDevtools } from '@tanstack/react-devtools'
-import Footer from '../components/Footer'
-import Header from '../components/Header'
-
-import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 
 import appCss from '../styles.css?url'
 
@@ -18,27 +12,40 @@ interface MyRouterContext {
   queryClient: QueryClient
 }
 
-const THEME_INIT_SCRIPT = `(function(){try{var stored=window.localStorage.getItem('theme');var mode=(stored==='light'||stored==='dark'||stored==='auto')?stored:'auto';var prefersDark=window.matchMedia('(prefers-color-scheme: dark)').matches;var resolved=mode==='auto'?(prefersDark?'dark':'light'):mode;var root=document.documentElement;root.classList.remove('light','dark');root.classList.add(resolved);if(mode==='auto'){root.removeAttribute('data-theme')}else{root.setAttribute('data-theme',mode)}root.style.colorScheme=resolved;}catch(e){}})();`
+// Repris caractère pour caractère de l'app Next : évite le flash de thème au
+// chargement et s'accorde avec ThemeToggle. Ne pas retoucher.
+const THEME_BOOTSTRAP = `try{var t=localStorage.theme;if(t==='dark'||t==='light'){document.documentElement.dataset.theme=t;var c=t==='dark'?'#0c0c0e':'#ffffff';var o=document.querySelector('meta[name="theme-color"][data-theme-override]');if(!o){o=document.createElement('meta');o.setAttribute('name','theme-color');o.setAttribute('data-theme-override','');document.head.insertBefore(o,document.head.querySelector('meta[name="theme-color"]'))}o.setAttribute('content',c)}}catch(e){}`
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
   head: () => ({
     meta: [
-      {
-        charSet: 'utf-8',
-      },
+      { charSet: 'utf-8' },
+      // viewport-fit=cover : indispensable, tout le traitement des zones sûres
+      // de styles.css en dépend.
       {
         name: 'viewport',
-        content: 'width=device-width, initial-scale=1',
+        content: 'width=device-width, initial-scale=1, viewport-fit=cover',
+      },
+      { title: 'Feedr' },
+      { name: 'description', content: 'Personal RSS reader' },
+      { name: 'apple-mobile-web-app-capable', content: 'yes' },
+      { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
+      { name: 'apple-mobile-web-app-title', content: 'Feedr' },
+      {
+        name: 'theme-color',
+        content: '#ffffff',
+        media: '(prefers-color-scheme: light)',
       },
       {
-        title: 'TanStack Start Starter',
+        name: 'theme-color',
+        content: '#0c0c0e',
+        media: '(prefers-color-scheme: dark)',
       },
     ],
     links: [
-      {
-        rel: 'stylesheet',
-        href: appCss,
-      },
+      { rel: 'stylesheet', href: appCss },
+      { rel: 'manifest', href: '/manifest.webmanifest' },
+      { rel: 'apple-touch-icon', href: '/icon-192.png' },
     ],
   }),
   shellComponent: RootDocument,
@@ -48,25 +55,11 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <HeadContent />
       </head>
-      <body className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-[rgba(79,184,178,0.24)]">
-        <Header />
+      <body className="bg-background text-foreground antialiased">
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }} />
         {children}
-        <Footer />
-        <TanStackDevtools
-          config={{
-            position: 'bottom-right',
-          }}
-          plugins={[
-            {
-              name: 'Tanstack Router',
-              render: <TanStackRouterDevtoolsPanel />,
-            },
-            TanStackQueryDevtools,
-          ]}
-        />
         <Scripts />
       </body>
     </html>

@@ -43,6 +43,7 @@ next-env.d.ts
 
 # tanstack app (projet indépendant dans apps/tanstack)
 apps/tanstack/node_modules
+apps/tanstack/dist
 apps/tanstack/.output
 apps/tanstack/.nitro
 apps/tanstack/.tanstack
