@@ -12,9 +12,28 @@
 
 ## État d'exécution — 2026-08-01
 
-Phases 0 et 1 écrites (Tasks 1, 3 à 9). **65 tests passants**, `tsc --noEmit` vert.
+**Phases 0 et 1 terminées et vérifiées.** 65 tests passants, `tsc --noEmit` vert.
 
-**Bloqué sur la Task 2** : la branche Neon `tanstack-dev` doit être créée par Simon via le SSO Vercel → Neon (l'org Neon est gérée par Vercel, `neonctl` personnel n'y accède pas). Sans `DATABASE_URL`, trois vérifications sont reportées et signalées `⏸` dans le plan : Task 6 step 2 (`/api/auth/ok`), Task 8 step 4 (passkey de bout en bout), Task 9 step 4 (consommation d'invitation). La Phase 2 attend ce point de contrôle.
+**Task 2 résolue autrement que prévu — repli assumé.** L'accès SSO à l'org Neon gérée par Vercel n'a pas été utilisé : Simon a autorisé la création d'une base neuve. Un projet Neon `feedr-tanstack-dev` a été créé dans son org personnelle (`neonctl` y a la main), schéma poussé par `drizzle-kit push`, 10 tables. La prod n'a **pas** été touchée.
+
+`apps/tanstack/drizzle.config.ts` refuse de démarrer si `DATABASE_URL` désigne la même base que le `.env.local` de la racine — vérifié sur trois cas : URL de prod → exit 1, URL illisible → exit 1, base de dev → exit 0.
+
+**Conséquence pour la Task 20 :** la base de dev est vide de données réelles. La checklist de parité devra être déroulée sur des flux ajoutés à la main puis `/api/poll`, et le rapport doit le dire explicitement plutôt que de laisser croire à une comparaison sur les données de prod.
+
+Vérifications de la Phase 1 faites sur navigateur réel (Playwright + authentificateur WebAuthn virtuel via CDP) :
+
+| Vérification | Résultat |
+|---|---|
+| `GET /api/auth/ok` | 200 |
+| `/sign-in` sur base vide | SSR rend l'amorçage, loader `{signedIn: false, isBootstrap: true}` |
+| Création du compte owner + passkey | `role=owner`, `is_anonymous=false`, 1 passkey, redirection vers `/` |
+| Reconnexion avec le passkey existant | cookies `session_token` + `session_data` posés, redirection vers `/` |
+| `/sign-in` avec session active | redirigé par le loader |
+| `/invite/<jeton>` expiré / inconnu | refusé côté serveur, InviteClient jamais monté |
+| `/invite/<jeton>` valide | membre créé, `used_at` posé, 2ᵉ passkey, redirection vers `/` |
+| Rejeu du même jeton | refusé (usage unique) |
+
+**Piège de l'environnement de dev :** au premier chargement, Vite optimise les dépendances de better-auth *pendant* le rendu et invalide le module client en vol (`Failed to fetch dynamically imported module … client.tsx`) — le clic reste bloqué sur « CREATING… » alors que le serveur a tout fait correctement. Toujours chauffer le serveur avant de juger un parcours en mode dev. C'est le même piège que celui qui interdit le banc iOS en mode dev.
 
 Écarts constatés à l'exécution, en plus des deux ci-dessous :
 
@@ -239,7 +258,7 @@ git commit -m "chore(tanstack): scaffold TanStack Start dans apps/tanstack"
 >
 > Piège avéré : créer la branche dans le projet visible produit une base **sans une seule donnée Feedr**. L'app démarre, et toute la checklist de parité de la Task 20 ne veut plus rien dire.
 
-- [ ] **Step 1: Créer la branche Neon dans le bon projet**
+- [x] **Step 1: Créer la branche Neon dans le bon projet**
 
 Vérifier d'abord quel projet la prod utilise réellement — ne jamais le supposer :
 
@@ -262,7 +281,7 @@ neonctl branches create --api-key <clé> --project-id dawn-grass-39315054 \
 
 **Repli si l'accès à l'org gérée est impossible :** créer une base neuve et vide, puis la peupler en ajoutant deux ou trois flux via les réglages et en appelant `/api/poll`. On perd la représentativité des données réelles pour la Task 20 — le noter explicitement dans le rapport de parité plutôt que de le passer sous silence.
 
-- [ ] **Step 2: Écrire `apps/tanstack/.env.local`**
+- [x] **Step 2: Écrire `apps/tanstack/.env.local`**
 
 Reprendre les valeurs de `.env.local` racine **sauf `DATABASE_URL`**, qui pointe sur `tanstack-dev` :
 
@@ -277,7 +296,7 @@ CRON_SECRET=<même valeur que la racine>
 DEV_AUTH_BYPASS=1
 ```
 
-- [ ] **Step 3: Vérifier qu'on ne tape PAS sur la prod**
+- [x] **Step 3: Vérifier qu'on ne tape PAS sur la prod**
 
 ```bash
 cd apps/tanstack
@@ -287,7 +306,7 @@ grep -o 'ep-[a-z0-9-]*' ../../.env.local
 
 Attendu : **deux identifiants d'endpoint différents**. S'ils sont identiques, arrêter tout et refaire la branche.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 Rien à commiter (`.env.local` est ignoré). Vérifier que c'est bien le cas :
 
@@ -634,7 +653,7 @@ export const Route = createFileRoute('/api/auth/$')({
 })
 ```
 
-- [ ] **Step 2: Vérifier que better-auth répond**  ⏸ *reportée : exige la branche Neon `tanstack-dev` (Task 2).*
+- [x] **Step 2: Vérifier que better-auth répond**
 
 ```bash
 cd apps/tanstack && npm run dev
@@ -870,7 +889,7 @@ function SignInPage() {
 }
 ```
 
-- [ ] **Step 4: Vérifier la connexion de bout en bout**  ⏸ *reportée : exige la branche Neon `tanstack-dev` (Task 2).*
+- [x] **Step 4: Vérifier la connexion de bout en bout**
 
 Le passkey exige HTTPS ou `localhost` — `localhost:3001` convient.
 
@@ -978,7 +997,7 @@ function InvitePage() {
 
 Comparer avec `src/app/invite/[token]/page.tsx` (33 lignes) et reprendre exactement les props passées à `InviteClient`.
 
-- [ ] **Step 4: Vérifier**  ⏸ *reportée : exige la branche Neon `tanstack-dev` (Task 2).*
+- [x] **Step 4: Vérifier**
 
 Créer une invitation en base sur `tanstack-dev`, ouvrir `/invite/<token>`, vérifier que la consommation marque `used_at`.
 
