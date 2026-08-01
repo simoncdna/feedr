@@ -31,16 +31,10 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       { name: 'apple-mobile-web-app-capable', content: 'yes' },
       { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
       { name: 'apple-mobile-web-app-title', content: 'Feedr' },
-      {
-        name: 'theme-color',
-        content: '#ffffff',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        name: 'theme-color',
-        content: '#0c0c0e',
-        media: '(prefers-color-scheme: dark)',
-      },
+      // Les deux `theme-color` ne passent PAS par `head.meta` : le router
+      // déduplique sur `name` seul (headContentUtils.js — `media` n'entre pas
+      // dans la clé), donc la seconde serait silencieusement écartée. Elles sont
+      // écrites en dur dans <head> plus bas.
     ],
     links: [
       { rel: 'stylesheet', href: appCss },
@@ -55,6 +49,13 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        {/* Avant <HeadContent /> : le bootstrap de thème insère sa balise
+            d'override devant la PREMIÈRE `meta[name="theme-color"]`, et un
+            navigateur retient la première dont le `media` s'applique — une
+            balise sans `media` s'applique toujours. L'ordre fait donc gagner
+            l'override manuel, exactement comme dans l'app Next. */}
+        <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="#0c0c0e" media="(prefers-color-scheme: dark)" />
         <HeadContent />
       </head>
       <body className="bg-background text-foreground antialiased">
