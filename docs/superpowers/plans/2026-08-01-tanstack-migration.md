@@ -12,7 +12,31 @@
 
 ## État d'exécution — 2026-08-01
 
-**Phases 0, 1 et 2 terminées.** 70 tests passants, `tsc --noEmit` vert.
+**Phases 0 à 3 terminées.** 70 tests passants, `tsc --noEmit` vert, build de production vert.
+
+### Manque du plan à traiter : l'endpoint `/api/push/subscribe`
+
+`src/app/api/push/subscribe/route.ts` existe dans l'app Next mais **n'apparaît nulle part dans ce plan** — ni dans la table de correspondance des API, ni dans la structure de fichiers cible. `EnableNotifications` poste dessus ; sans lui, l'activation des notifications échoue en silence et aucune push ne part. Porté en Task 16 sous `src/routes/api/push.subscribe.ts`, verbatim (bornes de longueur et contrôle d'URL compris). **À vérifier de bout en bout en Task 20**, avec le service worker de la Task 18.
+
+### Piège de production, trouvé au premier build
+
+`getUser` en `createServerFn` **casse le build de production** : son id n'est pas inscrit au manifeste de server fns du bundle serveur, et toute page rendue répond 500 (« Server function info not found for … »). Invisible en mode dev, où tout passait. Repassée en fonction serveur simple — personne ne l'appelle depuis le client. À garder en tête pour toute server fn appelée uniquement depuis d'autres server fns.
+
+### Vérifications de la Phase 3
+
+Faites sous **WebKit** (moteur de Safari) contre le **build de production**, via `playwright-core` et le cache de navigateurs local.
+
+| Vérification | Résultat |
+|---|---|
+| Bookmark optimiste | UI à jour en **78 ms**, requête encore en vol (retard serveur imposé de 3006 ms), fil **et** détail patchés |
+| Retour arrière sur échec | 500 servi après 2,5 s : optimisme observé puis état d'avant intégralement rétabli |
+| Réglages, 7 sections | toutes rendues (compte, invitations owner, notifications, catégories, flux, diagnostics, apparence) |
+| Catégories | création, bascule de notification, suppression — confirmées en base |
+| Flux | ajout d'un flux réel, suppression — confirmés en base |
+| Messages d'erreur | « Could not read this RSS feed » et « This feed already exists », au mot près |
+| `POST /api/push/subscribe` sans session | 401 |
+
+Reste hors de portée sans HTTPS ni service worker installé, donc renvoyé au banc iOS de la Task 20 : ajout de passkey depuis les réglages, activation réelle des notifications, et le **geste de swipe** lui-même (les deux MCP navigateur de la session sont tombés ; la simulation tactile n'a pas été refaite).
 
 Écarts de la Phase 2, en plus de ceux listés plus bas :
 
@@ -1691,7 +1715,7 @@ git commit -m "feat(tanstack): route bookmarks"
 
 Chaque mutation reprend **le contrôle de propriété** de l'original (le `innerJoin` sur `categories.userId`). C'est le cloisonnement multi-utilisateurs : le supprimer rouvrirait une faille.
 
-- [ ] **Step 1: Compléter `apps/tanstack/src/server/mutations.ts`**
+- [x] **Step 1: Compléter `apps/tanstack/src/server/mutations.ts`**
 
 ```ts
 import { and, eq } from 'drizzle-orm'
@@ -1812,7 +1836,7 @@ export const signOut = createServerFn({ method: 'POST' }).handler(async () => {
 })
 ```
 
-- [ ] **Step 2: Écrire les hooks d'invalidation `apps/tanstack/src/mutations.ts`**
+- [x] **Step 2: Écrire les hooks d'invalidation `apps/tanstack/src/mutations.ts`**
 
 C'est le remplacement direct des `revalidatePath()`. Le bookmark est **optimiste** : c'est un gain explicite de la spec.
 
@@ -1846,7 +1870,7 @@ export function useToggleBookmark(categoryId: number | null) {
 }
 ```
 
-- [ ] **Step 3: Brancher `SwipeRow` sur la mutation optimiste**
+- [x] **Step 3: Brancher `SwipeRow` sur la mutation optimiste**
 
 Dans `apps/tanstack/src/components/ArticleList.tsx`, remplacer la prop `action` passée à `SwipeRow` :
 
@@ -1861,11 +1885,11 @@ const { mutate } = useToggleBookmark(categoryId)
 
 `SwipeRow` attend `action: () => Promise<void>` et l'appelle dans un `startTransition` — la signature reste compatible. **Ne pas modifier `SwipeRow` lui-même.**
 
-- [ ] **Step 4: Vérifier que le bookmark répond instantanément**
+- [x] **Step 4: Vérifier que le bookmark répond instantanément**
 
 Sur `http://localhost:3001`, glisser une rangée vers la gauche. Attendu : l'icône passe en accent **immédiatement**, sans attendre le retour serveur, et l'état persiste après rechargement.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/tanstack/src
@@ -1883,7 +1907,7 @@ La page la plus dense (174 lignes) et 6 composants clients.
 - Create: `apps/tanstack/src/components/{AddFeedForm,AddPasskeyButton,CategorySelect,ConfirmSubmitButton,CopyButton,Diagnostics,EnableNotifications,InvitationsSection}.tsx`
 - Modify: `apps/tanstack/src/server/queries.ts`
 
-- [ ] **Step 0: Lire l'original en entier avant de porter**
+- [x] **Step 0: Lire l'original en entier avant de porter**
 
 ```bash
 cat src/app/settings/page.tsx
@@ -1891,7 +1915,7 @@ cat src/app/settings/page.tsx
 
 174 lignes, 7 sections. C'est la source à recopier au Step 3 — ne pas la retranscrire de mémoire.
 
-- [ ] **Step 1: Copier les 8 composants**
+- [x] **Step 1: Copier les 8 composants**
 
 ```bash
 cd /Users/simon/Workspace/Perso/feedr
@@ -1908,7 +1932,7 @@ Dans chacun : supprimer `'use client'`, rediriger les imports `@/app/actions` ve
 
 `Diagnostics.tsx` sonde les zones sûres et le swipe — le copier tel quel, il ne dépend que du DOM.
 
-- [ ] **Step 2: Ajouter les lectures de la page réglages à `queries.ts`**
+- [x] **Step 2: Ajouter les lectures de la page réglages à `queries.ts`**
 
 ```ts
 import { desc, gt, isNull } from 'drizzle-orm'
@@ -1964,7 +1988,7 @@ export const settingsQuery = () =>
   queryOptions({ queryKey: ['settings'], queryFn: () => settingsData() })
 ```
 
-- [ ] **Step 3: Écrire la route**
+- [x] **Step 3: Écrire la route**
 
 Transposer `src/app/settings/page.tsx` section par section. Le squelette, les sections restant **dans le même ordre** (Appearance, Account, Invitations, Notifications, Categories, Feeds, Diagnostics) :
 
@@ -2017,7 +2041,7 @@ function SettingsPage() {
 
 Le commentaire ci-dessus marque le seul endroit du plan où le code n'est pas écrit en entier : les 7 sections font 110 lignes de JSX **strictement identiques** à l'original, à la seule différence de `<form action={fn}>` → `<form onSubmit={...}>`. Les recopier depuis `src/app/settings/page.tsx` (lu au Step 0 ci-dessous) plutôt que les retranscrire.
 
-- [ ] **Step 4: Vérifier chaque section**
+- [ ] **Step 4: Vérifier chaque section**  ⚠ *partielle : sections, CRUD catégories et flux vérifiés sous WebKit contre le build de production. Passkey et notifications exigent HTTPS et un service worker installé — renvoyés au banc iOS de la Task 20. Pas de comparaison côte à côte avec l'app Next.*
 
 ```bash
 cd apps/tanstack && npm run dev
@@ -2025,7 +2049,7 @@ cd apps/tanstack && npm run dev
 
 Sur `/settings`, valider une par une : bascule de thème, ajout de passkey, déconnexion, invitations (owner uniquement), activation des notifications, création/suppression de catégorie, ajout/suppression de flux, panneau Diagnostics. Comparer avec l'app Next côte à côte.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/tanstack/src
