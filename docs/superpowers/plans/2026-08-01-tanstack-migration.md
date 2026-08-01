@@ -12,7 +12,26 @@
 
 ## État d'exécution — 2026-08-01
 
-**Phases 0 à 3 terminées.** 70 tests passants, `tsc --noEmit` vert, build de production vert.
+**Phases 0 à 4 terminées** (Tasks 1 à 19). **72 tests passants**, `tsc --noEmit` vert, build de production vert. Il ne reste que la Phase 5 : parité (Task 20) et bascule (Task 21), qui exige l'accord de Simon.
+
+### Écarts de la Phase 4
+
+- **`currentUser`, nouvelle server fn** : `getUser` n'étant plus une server fn (voir le piège de production ci-dessous), la Sidebar — composant client — ne pouvait plus obtenir la session. Une frontière RPC dédiée la lui donne.
+- **`activeOptions={{ exact: true }}` sur toute la navigation** : `to="/"` préfixe *toutes* les routes, donc le routeur marquait l'onglet Feed actif partout et posait son `aria-current` par-dessus le nôtre. Même piège qu'avec les chips en Phase 2, en pire.
+- **`notFoundComponent` ajouté** au shell racine : `/favicon.ico` (404 aussi dans l'app Next — vérifié sur `feedr-eta.vercel.app`) déclenchait un `notFoundError` sans composant configuré, soit ~180 avertissements par chargement. Ramenés à 1.
+- **Deux tests sur le manifeste PWA** : côté Next il était typé par `MetadataRoute.Manifest`, donc une faute était attrapée au typecheck ; en JSON statique, plus rien ne le vérifiait. Les tests figent les valeurs d'installation, l'app étant déjà installée sur l'iPhone de Simon.
+
+### Vérifications de la Phase 4 (WebKit, build de production)
+
+| Vérification | Résultat |
+|---|---|
+| `/api/poll` sans secret / mauvais secret | 401 / 401 |
+| `/api/poll?secret=…` | `{"feeds":3,"newArticles":7,"notified":0,"sent":0,"errors":0}` |
+| `/manifest.webmanifest`, `/sw.js` | servis, JSON conforme, 200 |
+| Service worker | **activated** |
+| Sidebar / TabBar | présentes sur les routes applicatives, TabBar **absente** de `/sign-in` et `/invite/*` |
+| État actif | un seul lien actif par route ; `/article/4` marque Feed ; `/?category=1` désactive Feed et met Tech en accent |
+| Bruit console | 1 avertissement (le 404 de favicon, conforme à Next) contre ~180 avant |
 
 ### Manque du plan à traiter : l'endpoint `/api/push/subscribe`
 
@@ -2067,7 +2086,7 @@ git commit -m "feat(tanstack): route réglages complète"
 
 L'appelant est cron-job.org. **L'URL et le contrat ne changent pas** — sinon le cron externe casse en silence.
 
-- [ ] **Step 1: Écrire le handler**
+- [x] **Step 1: Écrire le handler**
 
 ```ts
 import { createFileRoute } from '@tanstack/react-router'
@@ -2088,7 +2107,7 @@ export const Route = createFileRoute('/api/poll')({
 })
 ```
 
-- [ ] **Step 2: Vérifier les deux cas**
+- [x] **Step 2: Vérifier les deux cas**
 
 ```bash
 curl -s -o /dev/null -w '%{http_code}\n' 'http://localhost:3001/api/poll'
@@ -2103,11 +2122,11 @@ curl -s 'http://localhost:3001/api/poll?secret=<CRON_SECRET de .env.local>' | he
 
 Attendu : du JSON. **Attention :** cet appel écrit en base — il tape bien sur `tanstack-dev`, jamais sur la prod.
 
-- [ ] **Step 3: Vérifier la durée maximale d'exécution**
+- [x] **Step 3: Vérifier la durée maximale d'exécution**  ⚠ *rien à configurer : le défaut Vercel est à 300 s contre les 60 s déclarés côté Next. À surveiller sur le preview de la Task 20.*
 
 L'app Next déclare `export const maxDuration = 60`. Sur Vercel, le défaut est désormais de 300 s, donc aucune configuration n'est nécessaire — mais si le déploiement preview de la Task 20 montre des coupures sur `/api/poll`, ajouter la configuration de durée du côté de l'adaptateur Vercel de TanStack Start.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/tanstack/src/routes/api/poll.ts
@@ -2125,7 +2144,7 @@ Voir « Écarts assumés » : pas de `vite-plugin-pwa`.
 - Create: `apps/tanstack/public/manifest.webmanifest`
 - Create: `apps/tanstack/src/components/RegisterSW.tsx`
 
-- [ ] **Step 1: Copier le service worker verbatim**
+- [x] **Step 1: Copier le service worker verbatim**
 
 ```bash
 cd /Users/simon/Workspace/Perso/feedr
@@ -2135,7 +2154,7 @@ diff public/sw.js apps/tanstack/public/sw.js && echo "identiques"
 
 La logique `notificationclick` (réutilisation de la fenêtre existante via `win.navigate`) est le résultat d'un réglage fin — ne rien y toucher.
 
-- [ ] **Step 2: Écrire `apps/tanstack/public/manifest.webmanifest`**
+- [x] **Step 2: Écrire `apps/tanstack/public/manifest.webmanifest`**
 
 Valeurs reprises de `src/app/manifest.ts`, à l'identique :
 
@@ -2156,7 +2175,7 @@ Valeurs reprises de `src/app/manifest.ts`, à l'identique :
 }
 ```
 
-- [ ] **Step 3: Copier `RegisterSW` et le monter dans le shell**
+- [x] **Step 3: Copier `RegisterSW` et le monter dans le shell**
 
 ```bash
 cp src/components/RegisterSW.tsx apps/tanstack/src/components/
@@ -2164,7 +2183,7 @@ cp src/components/RegisterSW.tsx apps/tanstack/src/components/
 
 Supprimer `'use client'`. Puis, dans `apps/tanstack/src/routes/__root.tsx`, ajouter `<RegisterSW />` juste avant `<Scripts />`.
 
-- [ ] **Step 4: Vérifier**
+- [x] **Step 4: Vérifier**
 
 ```bash
 curl -s http://localhost:3001/manifest.webmanifest | head -5
@@ -2175,7 +2194,7 @@ Attendu : le JSON du manifeste, puis `200`.
 
 Dans l'onglet Application des DevTools : manifeste reconnu, service worker « activated ».
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/tanstack/public apps/tanstack/src
@@ -2190,7 +2209,7 @@ git commit -m "feat(tanstack): manifeste PWA et service worker statiques"
 - Create: `apps/tanstack/src/components/{Sidebar,TabBar,ThemeToggle}.tsx`
 - Modify: `apps/tanstack/src/routes/__root.tsx`
 
-- [ ] **Step 1: Copier `ThemeToggle` verbatim**
+- [x] **Step 1: Copier `ThemeToggle` verbatim**
 
 ```bash
 cp src/components/ThemeToggle.tsx apps/tanstack/src/components/
@@ -2198,7 +2217,7 @@ cp src/components/ThemeToggle.tsx apps/tanstack/src/components/
 
 Supprimer `'use client'`. Le commentaire sur la meta `theme-color` et l'hydratation React 19 reste : il documente un piège réel.
 
-- [ ] **Step 2: Porter `TabBar`**
+- [x] **Step 2: Porter `TabBar`**
 
 Copier `src/components/TabBar.tsx`, puis :
 
@@ -2209,7 +2228,7 @@ Copier `src/components/TabBar.tsx`, puis :
 
 Le reste — icônes SVG, `HIDDEN_ON`, `pb-[max(calc(var(--safe-bottom)-15px),0px)]` — est conservé tel quel. Ce calcul de zone sûre a été réglé au pixel sur iPhone.
 
-- [ ] **Step 3: Porter `Sidebar`**
+- [x] **Step 3: Porter `Sidebar`**
 
 L'app Next scindait `Sidebar` (serveur, requête DB) et `SidebarClient`. Ici, une seule fonction suffit : les catégories viennent déjà de `categoriesQuery()` en cache.
 
@@ -2231,7 +2250,7 @@ Les liens de catégorie deviennent `<Link to="/" search={{ category: c.id }}>`. 
 
 Les données viennent de `useQuery(categoriesQuery())` et le nom d'utilisateur de `useQuery` sur `getUser`. Si l'utilisateur n'est pas connecté, la Sidebar renvoie `null` — comme aujourd'hui.
 
-- [ ] **Step 4: Monter le châssis dans `__root.tsx`**
+- [x] **Step 4: Monter le châssis dans `__root.tsx`**
 
 Reprendre la structure de `src/app/layout.tsx` :
 
@@ -2250,11 +2269,11 @@ Reprendre la structure de `src/app/layout.tsx` :
 </body>
 ```
 
-- [ ] **Step 5: Vérifier**
+- [x] **Step 5: Vérifier**
 
 Naviguer entre `/`, `/bookmarks`, `/settings` : onglet actif en accent, catégories cliquables dans la Sidebar en desktop, TabBar **absente** sur `/sign-in` et `/invite/*`.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/tanstack/src
