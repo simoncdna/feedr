@@ -1,5 +1,11 @@
 import { queryOptions } from '@tanstack/react-query'
-import { getArticle, listBookmarks, listCategories, listFeedArticles } from '@/server/queries'
+import {
+  getArticle,
+  listBookmarks,
+  listCategories,
+  listFeedArticles,
+  settingsData,
+} from '@/server/queries'
 
 // Les clés vivent ici : c'est ce qui remplace les 13 revalidatePath() de l'app
 // Next, et ce qui rend l'invalidation ciblée possible après une mutation.
@@ -25,4 +31,10 @@ export const articleQuery = (id: number) =>
   queryOptions({
     queryKey: ['article', id],
     queryFn: () => getArticle({ data: id }),
+  })
+
+export const settingsQuery = () =>
+  queryOptions({
+    queryKey: ['settings'],
+    queryFn: () => settingsData(),
   })

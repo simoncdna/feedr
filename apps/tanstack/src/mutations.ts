@@ -1,5 +1,11 @@
 import { useMutation, useQueryClient, type QueryKey } from '@tanstack/react-query'
-import { articleQuery, bookmarksQuery, categoriesQuery, feedQuery } from '@/queries'
+import {
+  articleQuery,
+  bookmarksQuery,
+  categoriesQuery,
+  feedQuery,
+  settingsQuery,
+} from '@/queries'
 import {
   addFeed,
   createCategory,
@@ -68,13 +74,15 @@ export function useToggleBookmark(categoryId: number | null = null) {
   })
 }
 
-// Une catégorie ajoutée, renommée ou supprimée change la liste des chips et le
-// contenu du fil : les deux clés partent.
-function useCategoryMutation<TVars>(mutationFn: (v: TVars) => Promise<unknown>) {
+// Toucher aux catégories ou aux flux périme trois vues : la page réglages, les
+// chips de catégorie et le contenu du fil. C'est le pendant des trois
+// revalidatePath('/settings' / '/' / layout) de l'original.
+function useSettingsMutation<TVars, TData>(mutationFn: (v: TVars) => Promise<TData>) {
   const queryClient = useQueryClient()
-  return useMutation({
+  return useMutation<TData, Error, TVars>({
     mutationFn,
     onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: settingsQuery().queryKey })
       queryClient.invalidateQueries({ queryKey: categoriesQuery().queryKey })
       queryClient.invalidateQueries({ queryKey: ['feed'] })
     },
@@ -82,25 +90,25 @@ function useCategoryMutation<TVars>(mutationFn: (v: TVars) => Promise<unknown>) 
 }
 
 export function useCreateCategory() {
-  return useCategoryMutation((name: string) => createCategory({ data: name }))
+  return useSettingsMutation((name: string) => createCategory({ data: name }))
 }
 
 export function useToggleCategoryNotify() {
-  return useCategoryMutation((v: { id: number; notify: boolean }) =>
+  return useSettingsMutation((v: { id: number; notify: boolean }) =>
     toggleCategoryNotify({ data: v }),
   )
 }
 
 export function useDeleteCategory() {
-  return useCategoryMutation((id: number) => deleteCategory({ data: id }))
+  return useSettingsMutation((id: number) => deleteCategory({ data: id }))
 }
 
 export function useAddFeed() {
-  return useCategoryMutation((v: { url: string; categoryId: number }) => addFeed({ data: v }))
+  return useSettingsMutation((v: { url: string; categoryId: number }) => addFeed({ data: v }))
 }
 
 export function useDeleteFeed() {
-  return useCategoryMutation((id: number) => deleteFeed({ data: id }))
+  return useSettingsMutation((id: number) => deleteFeed({ data: id }))
 }
 
 export function useCreateInvitation() {

@@ -11,10 +11,12 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as BookmarksRouteImport } from './routes/bookmarks'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as ArticleIdRouteImport } from './routes/article.$id'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth.$'
+import { Route as ApiPushSubscribeRouteImport } from './routes/api/push.subscribe'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -24,6 +26,11 @@ const IndexRoute = IndexRouteImport.update({
 const BookmarksRoute = BookmarksRouteImport.update({
   id: '/bookmarks',
   path: '/bookmarks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignInRoute = SignInRouteImport.update({
@@ -46,66 +53,85 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPushSubscribeRoute = ApiPushSubscribeRouteImport.update({
+  id: '/api/push/subscribe',
+  path: '/api/push/subscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/bookmarks': typeof BookmarksRoute
+  '/settings': typeof SettingsRoute
   '/sign-in': typeof SignInRoute
   '/article/$id': typeof ArticleIdRoute
   '/invite/$token': typeof InviteTokenRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/push/subscribe': typeof ApiPushSubscribeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/bookmarks': typeof BookmarksRoute
+  '/settings': typeof SettingsRoute
   '/sign-in': typeof SignInRoute
   '/article/$id': typeof ArticleIdRoute
   '/invite/$token': typeof InviteTokenRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/push/subscribe': typeof ApiPushSubscribeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/bookmarks': typeof BookmarksRoute
+  '/settings': typeof SettingsRoute
   '/sign-in': typeof SignInRoute
   '/article/$id': typeof ArticleIdRoute
   '/invite/$token': typeof InviteTokenRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/push/subscribe': typeof ApiPushSubscribeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/bookmarks'
+    | '/settings'
     | '/sign-in'
     | '/article/$id'
     | '/invite/$token'
     | '/api/auth/$'
+    | '/api/push/subscribe'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/bookmarks'
+    | '/settings'
     | '/sign-in'
     | '/article/$id'
     | '/invite/$token'
     | '/api/auth/$'
+    | '/api/push/subscribe'
   id:
     | '__root__'
     | '/'
     | '/bookmarks'
+    | '/settings'
     | '/sign-in'
     | '/article/$id'
     | '/invite/$token'
     | '/api/auth/$'
+    | '/api/push/subscribe'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BookmarksRoute: typeof BookmarksRoute
+  SettingsRoute: typeof SettingsRoute
   SignInRoute: typeof SignInRoute
   ArticleIdRoute: typeof ArticleIdRoute
   InviteTokenRoute: typeof InviteTokenRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiPushSubscribeRoute: typeof ApiPushSubscribeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -122,6 +148,13 @@ declare module '@tanstack/react-router' {
       path: '/bookmarks'
       fullPath: '/bookmarks'
       preLoaderRoute: typeof BookmarksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sign-in': {
@@ -152,16 +185,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/push/subscribe': {
+      id: '/api/push/subscribe'
+      path: '/api/push/subscribe'
+      fullPath: '/api/push/subscribe'
+      preLoaderRoute: typeof ApiPushSubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BookmarksRoute: BookmarksRoute,
+  SettingsRoute: SettingsRoute,
   SignInRoute: SignInRoute,
   ArticleIdRoute: ArticleIdRoute,
   InviteTokenRoute: InviteTokenRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiPushSubscribeRoute: ApiPushSubscribeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

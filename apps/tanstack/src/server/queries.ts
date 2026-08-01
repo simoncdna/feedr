@@ -1,7 +1,9 @@
-import { and, asc, desc, eq, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, gt, isNull, sql } from 'drizzle-orm'
 import { createServerFn } from '@tanstack/react-start'
 import { db } from '@/db'
-import { articles, categories, feeds } from '@/db/schema'
+import { articles, categories, feeds, invitations } from '@/db/schema'
+import { user as authUser } from '@/db/auth-schema'
+import { invitationStatus } from '@/lib/invitations'
 import { requireUser } from '@/lib/session'
 
 export type ArticleCardData = {
@@ -102,3 +104,52 @@ export const getArticle = createServerFn({ method: 'GET' })
       .limit(1)
     return rows[0] ?? null
   })
+
+// Toutes les lectures de la page réglages en un seul aller-retour : côté Next
+// c'étaient quatre requêtes dans le même composant serveur.
+export const settingsData = createServerFn({ method: 'GET' }).handler(async () => {
+  const user = await requireUser()
+  const cats = await db
+    .select()
+    .from(categories)
+    .where(eq(categories.userId, user.id))
+    .orderBy(asc(categories.name))
+  const feedRows = await db
+    .select({
+      id: feeds.id,
+      url: feeds.url,
+      title: feeds.title,
+      lastError: feeds.lastError,
+      categoryName: categories.name,
+    })
+    .from(feeds)
+    .innerJoin(categories, eq(feeds.categoryId, categories.id))
+    .where(eq(categories.userId, user.id))
+    .orderBy(asc(categories.name), asc(feeds.title))
+
+  const openInvites = user.role === 'owner'
+    ? (await db
+      .select()
+      .from(invitations)
+      .where(and(
+        eq(invitations.createdBy, user.id),
+        isNull(invitations.usedAt),
+        gt(invitations.expiresAt, new Date()),
+      ))
+      .orderBy(desc(invitations.createdAt))).map((inv) => ({ ...inv, status: invitationStatus(inv) }))
+    : []
+  const allUsers = user.role === 'owner'
+    ? await db.select({ id: authUser.id, name: authUser.name }).from(authUser)
+    : []
+
+  return {
+    user,
+    cats,
+    feedRows,
+    openInvites,
+    allUsers,
+    // Côté Next la page serveur passait process.env.VAPID_PUBLIC_KEY en prop.
+    // Ici la clé (publique par nature) traverse par la server fn.
+    vapidPublicKey: process.env.VAPID_PUBLIC_KEY ?? '',
+  }
+})
