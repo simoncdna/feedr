@@ -1,0 +1,14 @@
+# Vercel installe et construit lui-même : rien de tout ça ne doit être téléversé.
+node_modules
+.output
+.nitro
+.tanstack
+dist
+dist-ssr
+
+# artefacts locaux
+.git
+.playwright-mcp
+*.log
+*.tsbuildinfo
+docs
