@@ -9,7 +9,10 @@
       "@/*": ["./src/*"]
     },
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "types": ["vite/client"],
+    // @tanstack/react-start augmente les options de route de @tanstack/react-router
+    // avec la propriété `server` (handlers d'API). Sans cette entrée, l'augmentation
+    // n'est chargée que si un fichier du programme importe le paquet — trop fragile.
+    "types": ["vite/client", "@tanstack/react-start"],
 
     /* Bundler mode */
     "moduleResolution": "bundler",
