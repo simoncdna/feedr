@@ -1,5 +1,3 @@
-'use client'
-
 import { useState } from 'react'
 
 function urlBase64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {

@@ -1,16 +1,12 @@
-import Link from 'next/link'
+import { Link } from '@tanstack/react-router'
 import { publishedLabel, stripHtml } from '@/lib/text'
+// Source unique du type : le dupliquer ici le ferait diverger de la requête.
+import type { ArticleCardData } from '@/server/queries'
 
-export type ArticleCardData = {
-  id: number
-  title: string
-  description: string | null
-  imageUrl: string | null
-  author: string | null
-  hasVideo: boolean
-  publishedAt: Date
-  bookmarked: boolean
-  feedTitle: string
+export type ArticleLinkProps = {
+  to: string
+  search?: Record<string, unknown>
+  params?: Record<string, unknown>
 }
 
 function Meta({ article }: { article: ArticleCardData }) {
@@ -36,12 +32,12 @@ function Meta({ article }: { article: ArticleCardData }) {
 
 export function ArticleCard({
   article,
-  href,
+  linkProps,
   selected = false,
   featured = false,
 }: {
   article: ArticleCardData
-  href: string
+  linkProps: ArticleLinkProps
   selected?: boolean
   featured?: boolean
 }) {
@@ -53,7 +49,6 @@ export function ArticleCard({
         {selected && <span aria-hidden="true" className="absolute inset-y-0 left-0 z-10 w-0.5 bg-accent" />}
         <div className="px-4 py-4 lg:px-6">
           {article.imageUrl && (
-            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={article.imageUrl}
               alt=""
@@ -63,7 +58,7 @@ export function ArticleCard({
               className="mb-3 aspect-[2/1] w-full rounded object-cover"
             />
           )}
-          <Link href={href} draggable={false} aria-current={selected ? 'page' : undefined} className="block">
+          <Link {...linkProps} draggable={false} aria-current={selected ? 'page' : undefined} className="block">
             <h2 className="line-clamp-2 text-2xl font-bold leading-tight tracking-tight">{article.title}</h2>
             {excerpt && <p className="mt-1.5 line-clamp-1 text-sm text-muted">{excerpt}</p>}
           </Link>
@@ -79,7 +74,7 @@ export function ArticleCard({
     <div className={`relative flex ${selected ? 'bg-surface' : ''}`}>
       {selected && <span aria-hidden="true" className="absolute inset-y-0 left-0 z-10 w-0.5 bg-accent" />}
       <div className="min-w-0 flex-1 px-4 py-4 lg:px-6">
-        <Link href={href} draggable={false} aria-current={selected ? 'page' : undefined} className="block">
+        <Link {...linkProps} draggable={false} aria-current={selected ? 'page' : undefined} className="block">
           <h2 className="line-clamp-2 text-lg font-semibold leading-snug tracking-tight">{article.title}</h2>
           {excerpt && <p className="mt-1 line-clamp-1 text-sm text-muted">{excerpt}</p>}
         </Link>
@@ -88,7 +83,6 @@ export function ArticleCard({
         </div>
       </div>
       {article.imageUrl && (
-        // eslint-disable-next-line @next/next/no-img-element
         <img
           src={article.imageUrl}
           alt=""

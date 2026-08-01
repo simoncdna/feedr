@@ -1,8 +1,6 @@
-'use client'
-
 import { useState } from 'react'
 import { authClient } from '@/lib/auth-client'
-import { completeSignup, consumeInvitation } from '@/app/actions'
+import { completeSignup, consumeInvitation } from '@/server/mutations'
 
 export function InviteClient({ token, kind }: { token: string; kind: string }) {
   const [name, setName] = useState('')
@@ -14,7 +12,7 @@ export function InviteClient({ token, kind }: { token: string; kind: string }) {
     try {
       const anon = await authClient.signIn.anonymous()
       if (anon?.error) throw anon.error
-      const consumed = await consumeInvitation(token)
+      const consumed = await consumeInvitation({ data: token })
       if (!consumed.ok) {
         await authClient.signOut()
         throw new Error('invalid invitation')

@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { Link } from '@tanstack/react-router'
 
 export function CategoryChips({
   categories,
@@ -15,15 +15,25 @@ export function CategoryChips({
     }`
   return (
     <div className="flex gap-5 overflow-x-auto border-b border-rule [-webkit-overflow-scrolling:touch]">
-      <Link href="/" className={tab(activeId === null)} aria-current={activeId === null ? 'page' : undefined}>
+      {/* `search={{}}` serait un sous-ensemble de n'importe quelle URL : le routeur
+          considérerait « All » actif en permanence (includeSearch est inclusif par
+          défaut) et poserait aria-current sur tous les chips à la fois. Déclarer
+          category explicitement undefined + explicitUndefined le rend actif
+          uniquement quand aucune catégorie n'est sélectionnée. */}
+      <Link
+        to="/"
+        search={{ category: undefined }}
+        activeOptions={{ explicitUndefined: true }}
+        className={tab(activeId === null)}
+      >
         All
       </Link>
       {categories.map((c) => (
         <Link
           key={c.id}
-          href={`/?category=${c.id}`}
+          to="/"
+          search={{ category: c.id }}
           className={tab(activeId === c.id)}
-          aria-current={activeId === c.id ? 'page' : undefined}
         >
           {c.name}
         </Link>

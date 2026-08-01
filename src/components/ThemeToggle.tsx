@@ -1,5 +1,3 @@
-'use client'
-
 import { useSyncExternalStore } from 'react'
 import { Moon, Sun } from 'lucide-react'
 
@@ -27,8 +25,8 @@ function getServerSnapshot(): Theme | null {
   return null
 }
 
-// A manual override must win over the media-query-based `theme-color` metas Next
-// renders from `viewport.themeColor`. Mutating those metas in place conflicts with
+// A manual override must win over the media-query-based `theme-color` metas the
+// root shell renders (__root.tsx). Mutating those metas in place conflicts with
 // React 19's hoistable-tag hydration (it doesn't recognize its own node anymore and
 // re-inserts a fresh one, leaving stale duplicates). Instead we keep a single
 // dedicated, React-unaware meta tag and place it first: browsers use the first

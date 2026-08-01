@@ -1,8 +1,6 @@
-'use client'
-
 import { useState } from 'react'
-import { createInvitation } from '@/app/actions'
 import { CopyButton } from '@/components/CopyButton'
+import { useCreateInvitation } from '@/mutations'
 import { publishedLabel } from '@/lib/text'
 
 export type InvitationRow = {
@@ -25,12 +23,13 @@ export function InvitationsSection({
   const [newUrl, setNewUrl] = useState<string | null>(null)
   const [status, setStatus] = useState<'idle' | 'working' | 'error'>('idle')
   const [selectedUserId, setSelectedUserId] = useState(users[0]?.id ?? '')
+  const create = useCreateInvitation()
 
   async function newInvite(kind: 'signup' | 'recovery', targetUserId?: string) {
     setStatus('working')
     setNewUrl(null)
     try {
-      const { url } = await createInvitation(kind, targetUserId)
+      const { url } = await create.mutateAsync({ kind, targetUserId })
       setNewUrl(`${window.location.origin}${url}`)
       setStatus('idle')
     } catch {

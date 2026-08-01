@@ -1,8 +1,6 @@
-'use client'
-
 import { useState } from 'react'
 import { authClient } from '@/lib/auth-client'
-import { claimOwnerRole } from '@/app/actions'
+import { claimOwnerRole } from '@/server/mutations'
 
 export function SignInClient({ bootstrap }: { bootstrap: boolean }) {
   const [name, setName] = useState('')

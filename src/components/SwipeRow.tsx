@@ -1,5 +1,3 @@
-'use client'
-
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
 import { useSwipeable } from 'react-swipeable'
 
