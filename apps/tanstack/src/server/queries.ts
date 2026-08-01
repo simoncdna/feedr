@@ -4,7 +4,7 @@ import { db } from '@/db'
 import { articles, categories, feeds, invitations } from '@/db/schema'
 import { user as authUser } from '@/db/auth-schema'
 import { invitationStatus } from '@/lib/invitations'
-import { requireUser } from '@/lib/session'
+import { getUser, requireUser } from '@/lib/session'
 
 export type ArticleCardData = {
   id: number
@@ -153,3 +153,8 @@ export const settingsData = createServerFn({ method: 'GET' }).handler(async () =
     vapidPublicKey: process.env.VAPID_PUBLIC_KEY ?? '',
   }
 })
+
+// Frontière RPC pour la session : getUser est une fonction serveur simple, donc
+// inappelable depuis le client. La Sidebar, elle, est un composant client et a
+// besoin du nom et du rôle.
+export const currentUser = createServerFn({ method: 'GET' }).handler(() => getUser())

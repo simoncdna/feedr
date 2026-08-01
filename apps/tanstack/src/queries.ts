@@ -4,6 +4,7 @@ import {
   listBookmarks,
   listCategories,
   listFeedArticles,
+  currentUser,
   settingsData,
 } from '@/server/queries'
 
@@ -37,4 +38,10 @@ export const settingsQuery = () =>
   queryOptions({
     queryKey: ['settings'],
     queryFn: () => settingsData(),
+  })
+
+export const sessionQuery = () =>
+  queryOptions({
+    queryKey: ['session'],
+    queryFn: () => currentUser(),
   })

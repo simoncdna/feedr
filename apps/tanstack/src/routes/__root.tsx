@@ -1,10 +1,14 @@
 import {
   HeadContent,
+  Link,
   Scripts,
   createRootRouteWithContext,
 } from '@tanstack/react-router'
 
 import appCss from '../styles.css?url'
+import { RegisterSW } from '@/components/RegisterSW'
+import { Sidebar } from '@/components/Sidebar'
+import { TabBar } from '@/components/TabBar'
 
 import type { QueryClient } from '@tanstack/react-query'
 
@@ -42,8 +46,27 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       { rel: 'apple-touch-icon', href: '/icon-192.png' },
     ],
   }),
+  // Sans ce composant, chaque requête vers une URL inconnue — /favicon.ico en
+  // tête, que l'app Next ne servait pas davantage — déclenche un notFoundError
+  // sur __root__ et un avertissement du routeur, soit ~180 par chargement.
+  notFoundComponent: NotFound,
   shellComponent: RootDocument,
 })
+
+function NotFound() {
+  return (
+    <div className="mx-auto max-w-sm px-4 pt-16">
+      <p className="mono-label">Feedr</p>
+      <h1 className="mt-2 text-3xl font-bold tracking-tight">Not found</h1>
+      <p className="mt-8">
+        <Link to="/" search={{ category: undefined }} className="cta-link text-sm font-medium">
+          Back to the feed
+          <span className="cta-arrow" aria-hidden="true">→</span>
+        </Link>
+      </p>
+    </div>
+  )
+}
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
@@ -58,9 +81,17 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <meta name="theme-color" content="#0c0c0e" media="(prefers-color-scheme: dark)" />
         <HeadContent />
       </head>
+      {/* Châssis repris de src/app/layout.tsx : mêmes classes, même ordre. */}
       <body className="bg-background text-foreground antialiased">
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }} />
-        {children}
+        <div className="lg:flex">
+          <Sidebar />
+          <main className="mx-auto w-full max-w-lg pb-28 pt-4 lg:m-0 lg:min-w-0 lg:max-w-none lg:flex-1 lg:p-0">
+            {children}
+          </main>
+        </div>
+        <TabBar />
+        <RegisterSW />
         <Scripts />
       </body>
     </html>

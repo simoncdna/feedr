@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as BookmarksRouteImport } from './routes/bookmarks'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SignInRouteImport } from './routes/sign-in'
+import { Route as ApiPollRouteImport } from './routes/api/poll'
 import { Route as ArticleIdRouteImport } from './routes/article.$id'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth.$'
@@ -36,6 +37,11 @@ const SettingsRoute = SettingsRouteImport.update({
 const SignInRoute = SignInRouteImport.update({
   id: '/sign-in',
   path: '/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPollRoute = ApiPollRouteImport.update({
+  id: '/api/poll',
+  path: '/api/poll',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ArticleIdRoute = ArticleIdRouteImport.update({
@@ -64,6 +70,7 @@ export interface FileRoutesByFullPath {
   '/bookmarks': typeof BookmarksRoute
   '/settings': typeof SettingsRoute
   '/sign-in': typeof SignInRoute
+  '/api/poll': typeof ApiPollRoute
   '/article/$id': typeof ArticleIdRoute
   '/invite/$token': typeof InviteTokenRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -74,6 +81,7 @@ export interface FileRoutesByTo {
   '/bookmarks': typeof BookmarksRoute
   '/settings': typeof SettingsRoute
   '/sign-in': typeof SignInRoute
+  '/api/poll': typeof ApiPollRoute
   '/article/$id': typeof ArticleIdRoute
   '/invite/$token': typeof InviteTokenRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -85,6 +93,7 @@ export interface FileRoutesById {
   '/bookmarks': typeof BookmarksRoute
   '/settings': typeof SettingsRoute
   '/sign-in': typeof SignInRoute
+  '/api/poll': typeof ApiPollRoute
   '/article/$id': typeof ArticleIdRoute
   '/invite/$token': typeof InviteTokenRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -97,6 +106,7 @@ export interface FileRouteTypes {
     | '/bookmarks'
     | '/settings'
     | '/sign-in'
+    | '/api/poll'
     | '/article/$id'
     | '/invite/$token'
     | '/api/auth/$'
@@ -107,6 +117,7 @@ export interface FileRouteTypes {
     | '/bookmarks'
     | '/settings'
     | '/sign-in'
+    | '/api/poll'
     | '/article/$id'
     | '/invite/$token'
     | '/api/auth/$'
@@ -117,6 +128,7 @@ export interface FileRouteTypes {
     | '/bookmarks'
     | '/settings'
     | '/sign-in'
+    | '/api/poll'
     | '/article/$id'
     | '/invite/$token'
     | '/api/auth/$'
@@ -128,6 +140,7 @@ export interface RootRouteChildren {
   BookmarksRoute: typeof BookmarksRoute
   SettingsRoute: typeof SettingsRoute
   SignInRoute: typeof SignInRoute
+  ApiPollRoute: typeof ApiPollRoute
   ArticleIdRoute: typeof ArticleIdRoute
   InviteTokenRoute: typeof InviteTokenRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
@@ -162,6 +175,13 @@ declare module '@tanstack/react-router' {
       path: '/sign-in'
       fullPath: '/sign-in'
       preLoaderRoute: typeof SignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/poll': {
+      id: '/api/poll'
+      path: '/api/poll'
+      fullPath: '/api/poll'
+      preLoaderRoute: typeof ApiPollRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/article/$id': {
@@ -200,6 +220,7 @@ const rootRouteChildren: RootRouteChildren = {
   BookmarksRoute: BookmarksRoute,
   SettingsRoute: SettingsRoute,
   SignInRoute: SignInRoute,
+  ApiPollRoute: ApiPollRoute,
   ArticleIdRoute: ArticleIdRoute,
   InviteTokenRoute: InviteTokenRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
