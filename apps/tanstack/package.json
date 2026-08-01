@@ -10,7 +10,8 @@
     "generate-routes": "tsr generate",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "start": "node .output/server/index.mjs"
   },
   "dependencies": {
     "@better-auth/passkey": "^1.6.25",
@@ -28,6 +29,7 @@
     "better-auth": "^1.6.25",
     "drizzle-orm": "^0.45.2",
     "lucide-react": "^1.28.0",
+    "nitro": "^3.0.260610-beta",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-swipeable": "^7.0.2",
