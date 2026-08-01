@@ -2,9 +2,26 @@ import { and, eq, isNull, sql } from 'drizzle-orm'
 import { createServerFn } from '@tanstack/react-start'
 import { db } from '@/db'
 import { user } from '@/db/auth-schema'
-import { invitations } from '@/db/schema'
+import { articles, categories, feeds, invitations } from '@/db/schema'
 import { invitationStatus } from '@/lib/invitations'
 import { getUser, requireUser } from '@/lib/session'
+
+// Le SELECT de propriété n'est pas décoratif : sans lui, n'importe quel membre
+// pourrait basculer le bookmark d'un article d'un autre utilisateur.
+export const toggleBookmark = createServerFn({ method: 'POST' })
+  .validator((d: { id: number; bookmarked: boolean }) => d)
+  .handler(async ({ data: { id, bookmarked } }) => {
+    const sessionUser = await requireUser()
+    const owned = await db
+      .select({ id: articles.id })
+      .from(articles)
+      .innerJoin(feeds, eq(articles.feedId, feeds.id))
+      .innerJoin(categories, eq(feeds.categoryId, categories.id))
+      .where(and(eq(articles.id, id), eq(categories.userId, sessionUser.id)))
+      .limit(1)
+    if (owned.length === 0) return
+    await db.update(articles).set({ bookmarked }).where(eq(articles.id, id))
+  })
 
 // Race-safe : ne réussit que si aucun owner n'existe encore, et seulement pour
 // l'id de l'appelant.
