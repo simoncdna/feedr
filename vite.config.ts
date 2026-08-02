@@ -3,6 +3,7 @@ import { devtools } from '@tanstack/devtools-vite'
 
 import { tanstackStart } from '@tanstack/react-start/plugin/vite'
 import { nitro } from 'nitro/vite'
+import { qrcode } from 'vite-plugin-qrcode'
 
 import viteReact from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
@@ -14,7 +15,10 @@ import tailwindcss from '@tailwindcss/vite'
 const config = defineConfig({
   server: { port: 3001 },
   resolve: { tsconfigPaths: true },
-  plugins: [devtools(), tailwindcss(), tanstackStart(), nitro(), viteReact()],
+  // qrcode() affiche un QR de l'URL réseau au démarrage — utile pour ouvrir l'app
+  // sur un vrai iPhone. Nécessite `--host` (voir le script `dev:phone`), sinon le
+  // serveur n'écoute que sur localhost et il n'y a pas d'URL réseau à encoder.
+  plugins: [devtools(), tailwindcss(), tanstackStart(), nitro(), viteReact(), qrcode()],
 })
 
 export default config

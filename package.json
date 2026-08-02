@@ -11,7 +11,9 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "start": "PORT=3001 node .output/server/index.mjs"
+    "start": "PORT=3001 node --env-file-if-exists=.env.local .output/server/index.mjs",
+    "dev:phone": "vite dev --host",
+    "start:phone": "node scripts/qr.mjs && npm start"
   },
   "dependencies": {
     "@better-auth/passkey": "^1.6.25",
@@ -54,6 +56,7 @@
     "sharp": "^0.35.3",
     "typescript": "^6.0.2",
     "vite": "^8.0.0",
+    "vite-plugin-qrcode": "^0.4.1",
     "vitest": "^4.1.10"
   },
   "pnpm": {
