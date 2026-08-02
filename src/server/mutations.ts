@@ -8,6 +8,7 @@ import { articles, categories, feeds, invitations } from '@/db/schema'
 import { auth } from '@/lib/auth'
 import { fetchFeed } from '@/lib/rss'
 import { extractFeedLinks, platformFeeds, type FeedCandidate } from '@/lib/feed-discovery'
+import { fetchPage } from '@/lib/fetch-page'
 import { isSafeFeedUrl } from '@/lib/url'
 import { generateInvitationToken, invitationExpiry, invitationStatus } from '@/lib/invitations'
 import { getUser, requireUser } from '@/lib/session'
@@ -43,71 +44,6 @@ export const deleteCategory = createServerFn({ method: 'POST' })
       .where(and(eq(categories.id, id), eq(categories.userId, sessionUser.id)))
   })
 
-const PAGE_TIMEOUT_MS = 10_000
-const MAX_PAGE_CHARS = 512 * 1024
-const MAX_REDIRECTS = 5
-
-/** Lit le corps en s'arrêtant au plafond : l'autodiscovery est dans le <head>. */
-async function readCapped(res: Response): Promise<string | null> {
-  const reader = res.body?.getReader()
-  if (!reader) return null
-  const decoder = new TextDecoder()
-  let html = ''
-  try {
-    while (html.length < MAX_PAGE_CHARS) {
-      const { done, value } = await reader.read()
-      if (done) break
-      html += decoder.decode(value, { stream: true })
-    }
-  } catch {
-    return null
-  } finally {
-    void reader.cancel()
-  }
-  return html
-}
-
-/**
- * Télécharge une page HTML pour y chercher l'autodiscovery.
- *
- * `redirect: 'manual'` et revalidation à chaque saut : laisser fetch suivre les
- * redirections puis contrôler l'URL finale ne protégerait de rien, la requête
- * vers l'adresse interne serait déjà partie.
- */
-async function fetchPage(startUrl: string): Promise<{ html: string; url: string } | null> {
-  let url = startUrl
-  for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
-    if (!isSafeFeedUrl(url)) return null
-    let res: Response
-    try {
-      res = await fetch(url, {
-        redirect: 'manual',
-        headers: { accept: 'text/html,application/xhtml+xml' },
-        signal: AbortSignal.timeout(PAGE_TIMEOUT_MS),
-      })
-    } catch {
-      return null
-    }
-    if (res.status >= 300 && res.status < 400) {
-      const location = res.headers.get('location')
-      if (!location) return null
-      try {
-        url = new URL(location, url).toString()
-      } catch {
-        return null
-      }
-      continue
-    }
-    if (!res.ok) return null
-    if (!/text\/html|application\/xhtml\+xml/i.test(res.headers.get('content-type') ?? '')) {
-      return null
-    }
-    const html = await readCapped(res)
-    return html === null ? null : { html, url }
-  }
-  return null
-}
-
 /**
  * Couches 2 puis 3. Les règles d'URL passent en premier parce qu'elles ne
  * coûtent aucune requête, et que les sites qu'elles couvrent ne déclarent rien.
@@ -119,7 +55,18 @@ async function resolveFeedCandidates(url: string): Promise<FeedCandidate[]> {
   return page ? extractFeedLinks(page.html, page.url) : []
 }
 
-/** Couche 1 : l'URL est-elle déjà un flux ? Renvoie son titre, ou null. */
+// Couche 1 : l'URL est-elle déjà un flux ? Renvoie son titre, ou null.
+//
+// `null` ne veut dire « pas un flux » que grâce à `formatFeed` dans
+// src/lib/rss.ts, qui replie sur l'URL quand le titre est vide : un parse
+// réussi ne rend donc jamais `''`. C'est cet invariant, défini ailleurs, qui
+// rend sûr le test `title === null` plus bas.
+//
+// Attention : `rss-parser` suit lui-même ses redirections, sans repasser par
+// `isSafeFeedUrl`. C'est préexistant à cette tâche, pas une régression de
+// `fetchPage` — et ce n'est pas corrigé ici — mais avec la garde soigneusement
+// justifiée de `fetchPage` juste à côté, un lecteur croirait sinon que tout le
+// chemin est protégé.
 async function readFeedTitle(url: string): Promise<string | null> {
   try {
     return (await fetchFeed(url)).title
@@ -128,6 +75,12 @@ async function readFeedTitle(url: string): Promise<string | null> {
   }
 }
 
+/**
+ * `candidates` doit être vérifié avant `error` : `{ error: null, candidates }`
+ * ne signifie ni échec ni succès mais une désambiguïsation à proposer à
+ * l'utilisateur. Le pattern naïf `if (result.error) … else succès` la lirait
+ * à tort comme un succès.
+ */
 export type AddFeedResult = { error: string | null; candidates?: FeedCandidate[] }
 
 export const addFeed = createServerFn({ method: 'POST' })
