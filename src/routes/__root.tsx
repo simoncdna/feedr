@@ -24,24 +24,25 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
   head: () => ({
     meta: [
       { charSet: 'utf-8' },
-      // viewport-fit=cover : indispensable, tout le traitement des zones sûres
-      // de styles.css en dépend.
+      // PAS de `viewport-fit=cover`, volontairement. Avec `cover`, iOS place la
+      // webview SOUS la barre de statut et nous laisse repeindre cette zone —
+      // source de tout le problème de Dynamic Island. Sans lui, iOS garde la vue
+      // sous la barre et peint la zone lui-même, teintée par `theme-color`.
+      // C'est l'approche de l'app Picta (aucune occurrence de viewport-fit ni de
+      // safe-area-inset dans son monorepo), qui fonctionne en PWA installée.
+      //
+      // `maximum-scale=1` empêche WebKit de zoomer au focus sur les champs dont
+      // la police est sous 16px — les nôtres sont en text-sm (14px).
       {
         name: 'viewport',
-        content: 'width=device-width, initial-scale=1, viewport-fit=cover',
+        content: 'width=device-width, initial-scale=1, maximum-scale=1',
       },
       { title: 'Feedr' },
       { name: 'description', content: 'Personal RSS reader' },
-      // `apple-mobile-web-app-capable` est déprécié (avertissement console en
-      // clair) mais reste nécessaire pour les iOS installés avant la bascule :
-      // on déclare les deux, la forme standard d'abord.
-      { name: 'mobile-web-app-capable', content: 'yes' },
-      { name: 'apple-mobile-web-app-capable', content: 'yes' },
-      // `default` : barre de statut opaque peinte par iOS, texte adapté au fond.
-      // C'est ce que réglait le bandeau de styles.css côté PWA — ne pas passer à
-      // `black-translucent` sans revoir ce bandeau.
-      { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
-      { name: 'apple-mobile-web-app-title', content: 'Feedr' },
+      // AUCUNE balise `apple-mobile-web-app-*` : le mode standalone vient du
+      // manifeste (`"display": "standalone"`), qui suffit sur iOS moderne. Les
+      // déclarer en plus fait cohabiter deux sources de vérité, et c'est ce qui
+      // rendait le style de barre de statut imprévisible.
       // Les deux `theme-color` ne passent PAS par `head.meta` : le router
       // déduplique sur `name` seul (headContentUtils.js — `media` n'entre pas
       // dans la clé), donc la seconde serait silencieusement écartée. Elles sont
@@ -91,11 +92,6 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       {/* Châssis repris de src/app/layout.tsx : mêmes classes, même ordre. */}
       <body className="bg-background text-foreground antialiased">
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }} />
-        {/* Doit rester en TÊTE DU FLUX de body — le <script> qui précède n'est pas
-            rendu, donc la position statique du capot reste bien en premier. C'est
-            cette position qui lui permet de couvrir la barre de statut. Voir le
-            commentaire détaillé dans styles.css. */}
-        <div aria-hidden="true" className="capot-barre-statut" />
         <div className="lg:flex">
           <Sidebar />
           {/* Seul le contenu est animé pendant une transition de page. Sans ce

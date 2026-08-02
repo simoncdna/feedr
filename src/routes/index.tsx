@@ -43,7 +43,7 @@ function FeedPage() {
               superposées laissent voir la photo de l'article derrière l'heure et
               la Dynamic Island. En desktop l'en-tête redevient transparent, il n'y
               a pas de barre de statut à couvrir. */}
-          <header className="sticky top-0 z-30 bg-background px-4 pt-[calc(var(--safe-top)+0.75rem)] lg:static lg:bg-transparent lg:px-6 lg:pb-3 lg:pt-8">
+          <header className="sticky top-0 z-30 bg-background px-4 pt-3 lg:static lg:bg-transparent lg:px-6 lg:pb-3 lg:pt-8">
             <h1 className="text-3xl font-bold tracking-tight lg:hidden">Feedr</h1>
             <p className="hidden text-3xl font-bold tracking-tight lg:block">Feed</p>
             <div className="pt-3 lg:hidden">

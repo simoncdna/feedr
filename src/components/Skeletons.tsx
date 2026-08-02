@@ -52,7 +52,7 @@ export function ArticleSkeleton() {
 
 export function SettingsSkeleton() {
   return (
-    <div aria-busy="true" aria-label="Loading settings" className="space-y-12 px-4 pt-[var(--safe-top)] lg:max-w-2xl lg:px-8 lg:py-8">
+    <div aria-busy="true" aria-label="Loading settings" className="space-y-12 px-4 lg:max-w-2xl lg:px-8 lg:py-8">
       <div className="skeleton h-9 w-40" />
       {[0, 1, 2].map((s) => (
         <div key={s} className="space-y-4">

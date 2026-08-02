@@ -41,11 +41,10 @@ function readEnv(): Env {
   const safeBottom = cs.paddingBottom
   probe.remove()
 
-  // `env()` brut ne dit rien de ce que les pages utilisent : elles lisent
-  // `var(--safe-top)`, qui passe par `--safe-top-override`. On affiche les deux,
-  // sinon on valide une chaîne qu'on n'a pas mesurée.
-  const safeTopVariable =
-    getComputedStyle(document.documentElement).getPropertyValue('--safe-top').trim() || 'vide'
+  // L'app ne déclare plus `viewport-fit=cover` : ces insets DOIVENT valoir 0,
+  // signe qu'iOS garde la vue sous ses barres et les peint lui-même. Une valeur
+  // non nulle voudrait dire que quelqu'un a réintroduit `cover`.
+  const safeTopVariable = 'n/a — plus de variable, cover retiré'
 
   const standaloneMedia = window.matchMedia('(display-mode: standalone)').matches
   const iosStandalone = (window.navigator as Navigator & { standalone?: boolean }).standalone === true
@@ -159,7 +158,7 @@ export function Diagnostics() {
     ? [
         ['standalone', env.standalone],
         ['safe-area top (env)', env.safeTop],
-        ['--safe-top (var)', env.safeTopVariable],
+        ['insets attendus', '0px si cover retiré'],
         ['safe-area bottom', env.safeBottom],
         ['status bar meta', env.statusBarMeta],
         ['theme-color', env.themeColor],
