@@ -47,12 +47,18 @@ export const deleteCategory = createServerFn({ method: 'POST' })
 /**
  * Couches 2 puis 3. Les règles d'URL passent en premier parce qu'elles ne
  * coûtent aucune requête, et que les sites qu'elles couvrent ne déclarent rien.
+ *
+ * `looked` distingue « on a lu une page et n'y a rien trouvé » de « on n'a
+ * jamais pu la lire » (page injoignable, non-HTML, lecture interrompue…) —
+ * sans ce bit, `addFeed` dirait « No RSS feed found at this address » même
+ * quand l'origine était simplement en panne, ce qui est une affirmation fausse.
  */
-async function resolveFeedCandidates(url: string): Promise<FeedCandidate[]> {
+async function resolveFeedCandidates(url: string): Promise<{ candidates: FeedCandidate[]; looked: boolean }> {
   const rules = platformFeeds(url)
-  if (rules.length > 0) return rules
+  if (rules.length > 0) return { candidates: rules, looked: false }
   const page = await fetchPage(url)
-  return page ? extractFeedLinks(page.html, page.url) : []
+  if (!page) return { candidates: [], looked: false }
+  return { candidates: extractFeedLinks(page.html, page.url), looked: true }
 }
 
 // Couche 1 : l'URL est-elle déjà un flux ? Renvoie son titre, ou null.
@@ -100,8 +106,10 @@ export const addFeed = createServerFn({ method: 'POST' })
     let feedUrl = url
     let title = await readFeedTitle(url)
     if (title === null) {
-      const candidates = await resolveFeedCandidates(url)
-      if (candidates.length === 0) return { error: 'No RSS feed found at this address' }
+      const { candidates, looked } = await resolveFeedCandidates(url)
+      if (candidates.length === 0) {
+        return { error: looked ? 'No RSS feed found at this address' : 'Could not read this RSS feed' }
+      }
       // Plusieurs flux : c'est à l'utilisateur de trancher. On ne les valide pas,
       // ce serait une requête par candidat juste pour peupler une liste.
       if (candidates.length > 1) return { error: null, candidates }

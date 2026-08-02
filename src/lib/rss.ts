@@ -90,6 +90,8 @@ export function normalizeItem(item: RawItem, now: Date): NormalizedItem | null {
   }
 }
 
+// Aligné sur PAGE_TIMEOUT_MS dans src/lib/fetch-page.ts, 10 s lui aussi : si on
+// retouche l'un, il faut retoucher l'autre.
 const parser = new Parser({
   timeout: 10_000,
   customFields: {

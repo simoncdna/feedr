@@ -10,7 +10,7 @@ const PAGE_TIMEOUT_MS = 10_000
 // Un garde-fou contre une réponse sans fin, pas une estimation de la taille du
 // <head> : YouTube (ex. /@MKBHD) déclare son flux vers 730 Ko dans la page,
 // derrière une masse de JSON/JS inline. 512 Ko coupait avant d'y arriver.
-const MAX_PAGE_CHARS = 2 * 1024 * 1024
+export const MAX_PAGE_CHARS = 2 * 1024 * 1024
 const MAX_REDIRECTS = 5
 
 function discard(res: Response): void {
@@ -70,11 +70,28 @@ export async function readCapped(
 }
 
 /**
+ * Décision prise à chaque saut de redirection : résout `Location` (absolu ou
+ * relatif) contre l'URL courante, puis revalide avec `isSafeFeedUrl`. C'est ici
+ * — et seulement ici — que vit la protection SSRF de la chaîne de
+ * redirections : suivre `location.href` sans repasser par ce filtre laisserait
+ * un serveur malveillant rediriger vers une adresse interne.
+ */
+export function resolveRedirect(location: string, currentUrl: string): string | null {
+  let next: string
+  try {
+    next = new URL(location, currentUrl).toString()
+  } catch {
+    return null
+  }
+  return isSafeFeedUrl(next) ? next : null
+}
+
+/**
  * Télécharge une page HTML pour y chercher l'autodiscovery.
  *
- * `redirect: 'manual'` et revalidation à chaque saut : laisser fetch suivre les
- * redirections puis contrôler l'URL finale ne protégerait de rien, la requête
- * vers l'adresse interne serait déjà partie.
+ * `redirect: 'manual'` et revalidation à chaque saut (`resolveRedirect`) :
+ * laisser fetch suivre les redirections puis contrôler l'URL finale ne
+ * protégerait de rien, la requête vers l'adresse interne serait déjà partie.
  */
 export async function fetchPage(startUrl: string): Promise<{ html: string; url: string } | null> {
   let url = startUrl
@@ -99,11 +116,9 @@ export async function fetchPage(startUrl: string): Promise<{ html: string; url: 
       const location = res.headers.get('location')
       discard(res)
       if (!location) return null
-      try {
-        url = new URL(location, url).toString()
-      } catch {
-        return null
-      }
+      const next = resolveRedirect(location, url)
+      if (!next) return null
+      url = next
       continue
     }
     if (!res.ok) {

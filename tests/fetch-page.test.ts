@@ -1,10 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { readCapped } from '@/lib/fetch-page'
-
-// Duplique le plafond privé de fetch-page.ts (2 * 1024 * 1024) : ce fichier ne
-// l'importe pas, mais un test doit connaître l'ordre de grandeur attendu pour
-// vérifier qu'on s'arrête bien avant la fin d'un flux sans fin.
-const MAX_PAGE_CHARS = 2 * 1024 * 1024
+import { describe, expect, it, vi } from 'vitest'
+import { fetchPage, MAX_PAGE_CHARS, readCapped, resolveRedirect } from '@/lib/fetch-page'
 
 function chunk(str: string, size: number): Uint8Array[] {
   const bytes = new TextEncoder().encode(str)
@@ -101,5 +96,52 @@ describe('readCapped', () => {
     const result = await readCapped(stream, 'text/html; charset=iso-8859-1', 'https://example.test/')
     expect(result).toContain('Actualités')
     expect(result).not.toContain('�')
+  })
+})
+
+// `fetchPage` est toute la frontière SSRF d'une fonctionnalité dont le métier
+// est de récupérer des URLs fournies par l'utilisateur. Sans ces tests, un
+// "simplification" vers `redirect: 'follow'` + contrôle de l'URL finale — la
+// faute exacte que le commentaire du code met en garde contre — passerait
+// silencieusement : rien d'autre dans la suite ne l'aurait détectée.
+describe('fetchPage — garde SSRF', () => {
+  it('refuse une adresse de métadonnées cloud sans effectuer de requête réseau', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch')
+    try {
+      const result = await fetchPage('http://169.254.169.254/latest/meta-data')
+      expect(result).toBeNull()
+      expect(fetchSpy).not.toHaveBeenCalled()
+    } finally {
+      fetchSpy.mockRestore()
+    }
+  })
+
+  it('refuse localhost sans effectuer de requête réseau', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch')
+    try {
+      const result = await fetchPage('http://localhost/feed')
+      expect(result).toBeNull()
+      expect(fetchSpy).not.toHaveBeenCalled()
+    } finally {
+      fetchSpy.mockRestore()
+    }
+  })
+})
+
+describe('resolveRedirect', () => {
+  it('accepte une redirection absolue vers un hôte public', () => {
+    expect(resolveRedirect('https://exemple.fr/x', 'https://exemple.fr/')).toBe('https://exemple.fr/x')
+  })
+
+  it('résout un Location relatif contre l’URL courante', () => {
+    expect(resolveRedirect('/x', 'https://exemple.fr/a/b')).toBe('https://exemple.fr/x')
+  })
+
+  it('refuse une redirection vers une adresse de métadonnées cloud', () => {
+    expect(resolveRedirect('http://169.254.169.254/latest/meta-data', 'https://exemple.fr/')).toBeNull()
+  })
+
+  it('refuse une redirection vers une plage privée', () => {
+    expect(resolveRedirect('http://10.0.0.5/', 'https://exemple.fr/')).toBeNull()
   })
 })

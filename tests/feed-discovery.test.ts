@@ -12,8 +12,9 @@ describe('platformFeeds', () => {
     expect(platformFeeds('https://www.youtube.com/playlist')).toEqual([])
   })
 
-  // Les chaînes YouTube déclarent leur flux dans le <head> : les traiter ici
-  // ferait doublon avec la couche 3 (mesuré le 2026-08-02, cf. la spec).
+  // Les chaînes YouTube déclarent leur flux via <link rel="alternate">, que la
+  // couche 3 lit où qu'il soit dans le document (dans le <body> pour YouTube,
+  // mesuré le 2026-08-02) : les traiter ici ferait doublon.
   it('ne touche pas aux chaînes YouTube, couvertes par l’autodiscovery', () => {
     expect(platformFeeds('https://www.youtube.com/@MKBHD')).toEqual([])
     expect(platformFeeds('https://www.youtube.com/channel/UCBJycsmduvYEL83R_U4JriQ')).toEqual([])
@@ -46,6 +47,15 @@ describe('platformFeeds', () => {
   it('ne dérive rien d’une sous-page GitHub ni d’un profil', () => {
     expect(platformFeeds('https://github.com/facebook/react/issues')).toEqual([])
     expect(platformFeeds('https://github.com/facebook')).toEqual([])
+  })
+
+  // u.pathname est déjà percent-encodé par le parseur WHATWG : ré-encoder les
+  // segments les encoderait une seconde fois (%20 → %2520).
+  it('ne ré-encode pas un segment de chemin déjà percent-encodé', () => {
+    expect(platformFeeds('https://github.com/facebook/re%20act')).toEqual([
+      { url: 'https://github.com/facebook/re%20act/releases.atom', label: 'Releases' },
+      { url: 'https://github.com/facebook/re%20act/commits.atom', label: 'Commits' },
+    ])
   })
 
   it('ne dérive rien d’un site quelconque ni d’une chaîne invalide', () => {
@@ -105,6 +115,31 @@ describe('extractFeedLinks', () => {
       <link rel="alternate" type="application/rss+xml" href="/feed" title="Articles">
     `
     expect(extractFeedLinks(html, base).map((c) => c.label)).toEqual(['Articles', 'Comments Feed'])
+  })
+
+  // "comments" doit former un segment de chemin entier ("/comments/") : une
+  // sous-chaîne ne suffit pas, sinon un flux légitime se ferait démoter derrière
+  // un flux sans rapport.
+  it('ne démote pas un flux dont le chemin contient "comments" sans former un segment', () => {
+    const html = `
+      <link rel="alternate" type="application/rss+xml" href="/no-comments-here.xml" title="Articles">
+      <link rel="alternate" type="application/rss+xml" href="/feed" title="Autre">
+    `
+    expect(extractFeedLinks(html, base).map((c) => c.label)).toEqual(['Articles', 'Autre'])
+  })
+
+  // WordPress émet exactement ce genre de title dans feed_links() : un label
+  // brut afficherait "&raquo;" au lieu de « » ».
+  it('décode les entités HTML du title, y compris celles de WordPress', () => {
+    const html = `<link rel="alternate" type="application/rss+xml" href="/feed" title="Mon Site &raquo; Comments Feed">`
+    expect(extractFeedLinks(html, base).map((c) => c.label)).toEqual(['Mon Site » Comments Feed'])
+  })
+
+  it('décode &lt; &gt; &quot; &apos; &nbsp; et le numérique dans le title', () => {
+    const html = `<link rel="alternate" type="application/rss+xml" href="/feed" title="A&lt;B &amp; C&nbsp;&quot;D&quot;&apos; &#38; &#x26;">`
+    // &nbsp; décode en une véritable espace insécable (U+00A0), pas une espace ordinaire.
+    const expected = `A<B & C` + '\u00A0' + `"D"' & &`
+    expect(extractFeedLinks(html, base).map((c) => c.label)).toEqual([expected])
   })
 
   it('déduplique par URL', () => {
