@@ -91,8 +91,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       {/* Châssis repris de src/app/layout.tsx : mêmes classes, même ordre. */}
       <body className="bg-background text-foreground antialiased">
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }} />
-        {/* Doit rester le PREMIER enfant de body : c'est sa position naturelle au
-            sommet du flux qui lui permet de couvrir la barre de statut. Voir le
+        {/* Doit rester en TÊTE DU FLUX de body — le <script> qui précède n'est pas
+            rendu, donc la position statique du capot reste bien en premier. C'est
+            cette position qui lui permet de couvrir la barre de statut. Voir le
             commentaire détaillé dans styles.css. */}
         <div aria-hidden="true" className="capot-barre-statut" />
         <div className="lg:flex">

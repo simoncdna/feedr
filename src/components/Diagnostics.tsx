@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 type Env = {
   standalone: string
   safeTop: string
+  safeTopVariable: string
   safeBottom: string
   statusBarMeta: string
   themeColor: string
@@ -40,19 +41,35 @@ function readEnv(): Env {
   const safeBottom = cs.paddingBottom
   probe.remove()
 
+  // `env()` brut ne dit rien de ce que les pages utilisent : elles lisent
+  // `var(--safe-top)`, qui passe par `--safe-top-override`. On affiche les deux,
+  // sinon on valide une chaîne qu'on n'a pas mesurée.
+  const safeTopVariable =
+    getComputedStyle(document.documentElement).getPropertyValue('--safe-top').trim() || 'vide'
+
   const standaloneMedia = window.matchMedia('(display-mode: standalone)').matches
   const iosStandalone = (window.navigator as Navigator & { standalone?: boolean }).standalone === true
 
   return {
     standalone: `media:${standaloneMedia ? 'yes' : 'no'} ios:${iosStandalone ? 'yes' : 'no'}`,
     safeTop,
+    safeTopVariable,
     safeBottom,
     statusBarMeta:
       document
         .querySelector('meta[name="apple-mobile-web-app-status-bar-style"]')
         ?.getAttribute('content') ?? 'absent',
+    // On liste TOUTES les balises avec leur media, et on marque celle qui
+    // s'applique réellement (*). Lire la première seule affichait #ffffff en
+    // permanence, thème sombre inclus.
     themeColor:
-      document.querySelector('meta[name="theme-color"]')?.getAttribute('content') ?? 'absent',
+      Array.from(document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]'))
+        .map((m) => {
+          const media = m.getAttribute('media')
+          const active = !media || window.matchMedia(media).matches
+          return `${m.content}${media ? `@${media.includes('dark') ? 'dark' : 'light'}` : '@all'}${active ? '*' : ''}`
+        })
+        .join(' ') || 'absent',
     viewport: `${window.innerWidth}x${window.innerHeight} dpr${window.devicePixelRatio}`,
     ua: navigator.userAgent.slice(0, 60),
   }
@@ -141,7 +158,8 @@ export function Diagnostics() {
   const rows: [string, string][] = env
     ? [
         ['standalone', env.standalone],
-        ['safe-area top', env.safeTop],
+        ['safe-area top (env)', env.safeTop],
+        ['--safe-top (var)', env.safeTopVariable],
         ['safe-area bottom', env.safeBottom],
         ['status bar meta', env.statusBarMeta],
         ['theme-color', env.themeColor],

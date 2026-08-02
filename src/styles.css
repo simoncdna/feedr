@@ -55,8 +55,11 @@
    variable l'est — indispensable pour simuler le mode PWA sur le banc iOS. */
 :root {
   /* `--safe-*-override` n'existe que pour le banc de test iOS : en conditions
-     réelles la valeur retombe sur `env()`. On n'imbrique pas env() dans une
-     variable seule — WebKit l'a historiquement mal résolu. */
+     réelles la valeur retombe sur `env()`.
+     ATTENTION au périmètre de ce banc : il simule la VARIABLE, pas la géométrie
+     du viewport. Forcer `--safe-top-override` en navigateur peint une bande à
+     l'intérieur de la page, pas dans la zone de la barre de statut — ça ne
+     démontre donc RIEN du comportement en PWA installée. */
   --safe-top: var(--safe-top-override, env(safe-area-inset-top, 0px));
   --safe-bottom: var(--safe-bottom-override, env(safe-area-inset-bottom, 0px));
 }
@@ -85,7 +88,9 @@ body::after {
   right: 0;
   height: var(--safe-top-override, env(safe-area-inset-top, 0px));
   background-color: var(--background);
-  z-index: 40;
+  /* Au-dessus du grain (60), comme le capot : la bisection a montré que le grain
+     défait toute couverture placée sous lui. */
+  z-index: 70;
   pointer-events: none;
 }
 
@@ -105,8 +110,18 @@ body::after {
       haut, l'élément suivant démarre à 0 — aucun impact sur la mise en page.
 
    100px couvrent toutes les hauteurs de barre iPhone ; le surplus est hors écran.
-   En PWA installée, `env()` renvoie une hauteur réelle et c'est `body::after` qui
-   prend le relais — les deux mécanismes cohabitent sans se gêner. */
+
+   CE CAPOT EST INERTE EN PWA INSTALLÉE : quand la barre est translucide, la zone
+   de mise en page inclut la bande, donc la plage [-100px, 0] est entièrement
+   au-dessus du viewport et ne peint rien. Symétriquement, `body::after` est
+   inerte en navigateur puisqu'il est `fixed`. Il n'y a donc jamais deux
+   couvertures : une par mode, et zéro si celle du mode actif tombe à 0px de
+   haut. Ne pas croire à une redondance de sécurité — il n'y en a pas.
+
+   Son bord bas tombe exactement à y=0, là où le grain démarre : les premiers
+   pixels de la page reçoivent le grain sans couverture. Augmenter la hauteur
+   fait grandir le capot vers le HAUT et ne peut donc rien y changer (mesuré :
+   pixel identique à 100, 160 et 240px). */
 body > .capot-barre-statut {
   position: sticky;
   top: -100px;
