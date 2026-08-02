@@ -37,6 +37,12 @@ export function TabBar() {
 	return (
 		<nav
 			aria-label="Main navigation"
+			// Groupe de transition à part entière, comme `contenu` sur le <main>.
+			// Sans nom, la TabBar tombe dans le groupe `root`, qui est peint SOUS
+			// `contenu` : la page sortante lui passait dessus, texte fantôme compris.
+			// Nommée, elle est capturée après `contenu` (ordre du DOM) donc peinte
+			// par-dessus, et styles.css la fige. Voir « Transitions de page ».
+			style={{ viewTransitionName: 'barre-onglets' }}
 			className="fixed inset-x-0 bottom-0 z-30 border-t border-rule bg-background lg:hidden"
 		>
 			<div className="mx-auto flex max-w-lg">

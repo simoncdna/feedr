@@ -146,11 +146,39 @@ body::before {
      (voir src/router.tsx). Sans support de `:active-view-transition-type`,
      le fondu croisé par défaut du navigateur s'applique : dégradation propre. */
 
-	/* La racine porte le châssis (bandeau de barre de statut, TabBar, Sidebar) :
-     on la laisse strictement immobile. L'animer faisait glisser le bandeau
-     derrière la Dynamic Island et dupliquait la TabBar en plein vol. */
-	::view-transition-old(root),
+	/* La racine porte le châssis (bandeau de barre de statut, Sidebar) : on la
+     laisse strictement immobile. L'animer faisait glisser le bandeau derrière
+     la Dynamic Island et dupliquait la TabBar en plein vol.
+
+     Mais couper l'animation ne suffit PAS à figer un groupe. La feuille de
+     style UA compose les deux instantanés d'une paire en `mix-blend-mode:
+     plus-lighter` — c'est ce qui rend le fondu croisé correct quand leurs
+     opacités s'animent en sens inverse. Privés d'animation, les deux restent
+     opaques et leurs couleurs S'ADDITIONNENT pendant toute la transition : le
+     gris du châssis vire au blanc, le fond sombre s'éclaircit. On masque donc
+     l'ancien instantané et on laisse le nouveau, seul et immobile. */
+	::view-transition-old(root) {
+		animation: none;
+		opacity: 0;
+	}
+
 	::view-transition-new(root) {
+		animation: none;
+	}
+
+	/* Même traitement pour la TabBar, qui a son propre groupe (voir TabBar.tsx) :
+     immobile, et sans double exposition. C'est ce qui la faisait « sortir du
+     DOM puis revenir » en passant d'un onglet à l'autre. */
+	::view-transition-group(barre-onglets) {
+		animation: none;
+	}
+
+	::view-transition-old(barre-onglets) {
+		animation: none;
+		opacity: 0;
+	}
+
+	::view-transition-new(barre-onglets) {
 		animation: none;
 	}
 
@@ -318,6 +346,15 @@ body::before {
 	::view-transition-old(*),
 	::view-transition-new(*) {
 		animation: none !important;
+	}
+
+	/* Ici tout est figé, donc TOUS les groupes sont dans le cas décrit plus haut :
+     deux instantanés opaques qui s'additionnent en `plus-lighter`. La
+     transition se termine à l'image suivante, mais autant ne pas laisser
+     traîner la double exposition — l'ancien s'efface, le nouveau prend la
+     place net. */
+	::view-transition-old(*) {
+		opacity: 0 !important;
 	}
 
 	.skeleton {
