@@ -5,7 +5,6 @@ import { X } from 'lucide-react'
 import { AddFeedForm } from '@/components/AddFeedForm'
 import { AddPasskeyButton } from '@/components/AddPasskeyButton'
 import { ConfirmSubmitButton } from '@/components/ConfirmSubmitButton'
-import { Diagnostics } from '@/components/Diagnostics'
 import { EnableNotifications } from '@/components/EnableNotifications'
 import { InvitationsSection } from '@/components/InvitationsSection'
 import { ThemeToggle } from '@/components/ThemeToggle'
@@ -47,31 +46,6 @@ function SettingsPage() {
           <span className="text-sm">Light / dark theme</span>
           <ThemeToggle />
         </div>
-      </section>
-
-      <section className="space-y-4">
-        <h2 className="mono-label border-b border-rule pb-2">Account</h2>
-        <p className="text-sm">{user.name}</p>
-        <AddPasskeyButton />
-        <button
-          type="button"
-          onClick={() => leave.mutate()}
-          className="mono-label rounded border border-rule bg-surface px-3 py-1.5 transition-colors hover:text-foreground motion-reduce:transition-none"
-        >
-          Sign out
-        </button>
-      </section>
-
-      {user.role === 'owner' && (
-        <section className="space-y-4">
-          <h2 className="mono-label border-b border-rule pb-2">Invitations</h2>
-          <InvitationsSection invitations={openInvites} users={allUsers} />
-        </section>
-      )}
-
-      <section className="space-y-4">
-        <h2 className="mono-label border-b border-rule pb-2">Notifications</h2>
-        <EnableNotifications vapidPublicKey={vapidPublicKey} />
       </section>
 
       <section className="space-y-4">
@@ -159,9 +133,29 @@ function SettingsPage() {
       </section>
 
       <section className="space-y-4">
-        <h2 id="diagnostics" className="mono-label scroll-mt-4 border-b border-rule pb-2">Diagnostics</h2>
-        <Diagnostics />
+        <h2 className="mono-label border-b border-rule pb-2">Notifications</h2>
+        <EnableNotifications vapidPublicKey={vapidPublicKey} />
       </section>
+
+      <section className="space-y-4">
+        <h2 className="mono-label border-b border-rule pb-2">Account</h2>
+        <p className="text-sm">{user.name}</p>
+        <AddPasskeyButton />
+        <button
+          type="button"
+          onClick={() => leave.mutate()}
+          className="mono-label rounded border border-rule bg-surface px-3 py-1.5 transition-colors hover:text-foreground motion-reduce:transition-none"
+        >
+          Sign out
+        </button>
+      </section>
+
+      {user.role === 'owner' && (
+        <section className="space-y-4">
+          <h2 className="mono-label border-b border-rule pb-2">Invitations</h2>
+          <InvitationsSection invitations={openInvites} users={allUsers} />
+        </section>
+      )}
     </div>
   )
 }
