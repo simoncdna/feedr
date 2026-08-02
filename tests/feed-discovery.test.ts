@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { platformFeeds } from '@/lib/feed-discovery'
+import { extractFeedLinks, platformFeeds } from '@/lib/feed-discovery'
 
 describe('platformFeeds', () => {
   it('dérive le flux d’une playlist YouTube', () => {
@@ -44,5 +44,82 @@ describe('platformFeeds', () => {
   it('ne dérive rien d’un site quelconque ni d’une chaîne invalide', () => {
     expect(platformFeeds('https://overreacted.io/')).toEqual([])
     expect(platformFeeds('pas-une-url')).toEqual([])
+  })
+})
+
+describe('extractFeedLinks', () => {
+  const base = 'https://exemple.fr/blog/'
+
+  it('absolutise un href relatif et garde un href absolu', () => {
+    const html = `
+      <link rel="alternate" type="application/rss+xml" href="/rss.xml">
+      <link rel="alternate" type="application/atom+xml" href="https://ailleurs.fr/atom.xml">
+    `
+    expect(extractFeedLinks(html, base)).toEqual([
+      { url: 'https://exemple.fr/rss.xml', label: '/rss.xml' },
+      { url: 'https://ailleurs.fr/atom.xml', label: '/atom.xml' },
+    ])
+  })
+
+  it('absolutise un href protocol-relative', () => {
+    const html = `<link rel="alternate" type="application/rss+xml" href="//cdn.fr/f.xml">`
+    expect(extractFeedLinks(html, base)).toEqual([{ url: 'https://cdn.fr/f.xml', label: '/f.xml' }])
+  })
+
+  // Mastodon écrit href avant rel, YouTube écrit rel avant href : une regex qui
+  // suppose un ordre rate un cas sur deux (mesuré le 2026-08-02, cf. la spec).
+  it('accepte les attributs dans n’importe quel ordre et en quotes simples', () => {
+    const html = `<link href='/a.xml' rel='alternate' type='application/rss+xml' title='Blog'>`
+    expect(extractFeedLinks(html, base)).toEqual([
+      { url: 'https://exemple.fr/a.xml', label: 'Blog' },
+    ])
+  })
+
+  it('prend le title comme libellé, sinon le chemin', () => {
+    const html = `
+      <link rel="alternate" type="application/rss+xml" href="/a.xml" title="Articles">
+      <link rel="alternate" type="application/rss+xml" href="/b.xml">
+    `
+    expect(extractFeedLinks(html, base).map((c) => c.label)).toEqual(['Articles', '/b.xml'])
+  })
+
+  it('décode les esperluettes encodées dans le href', () => {
+    const html = `<link rel="alternate" type="application/rss+xml" href="/f?a=1&amp;b=2">`
+    expect(extractFeedLinks(html, base)[0].url).toBe('https://exemple.fr/f?a=1&b=2')
+  })
+
+  it('relègue les flux de commentaires en fin de liste', () => {
+    const html = `
+      <link rel="alternate" type="application/rss+xml" href="/comments/feed" title="Comments Feed">
+      <link rel="alternate" type="application/rss+xml" href="/feed" title="Articles">
+    `
+    expect(extractFeedLinks(html, base).map((c) => c.label)).toEqual(['Articles', 'Comments Feed'])
+  })
+
+  it('déduplique par URL', () => {
+    const html = `
+      <link rel="alternate" type="application/rss+xml" href="/f.xml">
+      <link rel="alternate" type="application/rss+xml" href="https://exemple.fr/f.xml">
+    `
+    expect(extractFeedLinks(html, base)).toHaveLength(1)
+  })
+
+  it('ignore les balises qui ne sont pas des flux', () => {
+    const html = `
+      <link rel="alternate icon" type="image/png" href="/favicon.png">
+      <link rel="alternate" media="handheld" href="https://m.exemple.fr/">
+      <link rel="stylesheet" type="text/css" href="/style.css">
+      <link rel="alternate" type="application/activity+json" href="/users/x">
+    `
+    expect(extractFeedLinks(html, base)).toEqual([])
+  })
+
+  it('rejette les candidats qui ne passent pas le garde-fou SSRF', () => {
+    const html = `<link rel="alternate" type="application/rss+xml" href="http://localhost/feed">`
+    expect(extractFeedLinks(html, base)).toEqual([])
+  })
+
+  it('ne trouve rien dans une page sans balise', () => {
+    expect(extractFeedLinks('<html><body>rien</body></html>', base)).toEqual([])
   })
 })
