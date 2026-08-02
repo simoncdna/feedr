@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from 'react'
 type Env = {
   standalone: string
   safeTop: string
-  safeTopVariable: string
   safeBottom: string
   statusBarMeta: string
   themeColor: string
@@ -41,10 +40,6 @@ function readEnv(): Env {
   const safeBottom = cs.paddingBottom
   probe.remove()
 
-  // L'app ne déclare plus `viewport-fit=cover` : ces insets DOIVENT valoir 0,
-  // signe qu'iOS garde la vue sous ses barres et les peint lui-même. Une valeur
-  // non nulle voudrait dire que quelqu'un a réintroduit `cover`.
-  const safeTopVariable = 'n/a — plus de variable, cover retiré'
 
   const standaloneMedia = window.matchMedia('(display-mode: standalone)').matches
   const iosStandalone = (window.navigator as Navigator & { standalone?: boolean }).standalone === true
@@ -52,7 +47,6 @@ function readEnv(): Env {
   return {
     standalone: `media:${standaloneMedia ? 'yes' : 'no'} ios:${iosStandalone ? 'yes' : 'no'}`,
     safeTop,
-    safeTopVariable,
     safeBottom,
     statusBarMeta:
       document
@@ -157,8 +151,9 @@ export function Diagnostics() {
   const rows: [string, string][] = env
     ? [
         ['standalone', env.standalone],
-        ['safe-area top (env)', env.safeTop],
-        ['insets attendus', '0px si cover retiré'],
+        // Doit valoir 0px : l'app ne déclare plus viewport-fit=cover, donc iOS
+        // garde la vue sous ses barres. Une valeur non nulle = `cover` réintroduit.
+        ['safe-area top (0 attendu)', env.safeTop],
         ['safe-area bottom', env.safeBottom],
         ['status bar meta', env.statusBarMeta],
         ['theme-color', env.themeColor],
