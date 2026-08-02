@@ -6,7 +6,7 @@ le flux existe et est déclaré par le site.
 
 ## Le mécanisme, et ce qu'il couvre vraiment
 
-Un site qui a un flux le déclare dans son `<head>`, par une convention de 2002 :
+Un site qui a un flux le déclare par une balise `<link>`, convention de 2002 :
 
 ```html
 <link rel="alternate" type="application/rss+xml" href="https://overreacted.io/rss.xml"/>
@@ -15,6 +15,10 @@ Un site qui a un flux le déclare dans son `<head>`, par une convention de 2002 
 C'est l'*autodiscovery*, et c'est ce que lisent Feedly, Inoreader, NetNewsWire ou
 Miniflux. Il n'y a pas de convertisseur par plateforme derrière ces produits : il y
 a cette balise, plus quelques rustines là où elle manque.
+
+La convention la place dans le `<head>` ; la réalité est plus lâche, et on ne peut pas
+s'appuyer là-dessus — YouTube met la sienne dans le `<body>` (voir « Sécurité »). On lit
+donc la balise où qu'elle soit dans le document.
 
 Mesures faites le 2026-08-02 avant d'écrire cette spec :
 
@@ -174,6 +178,21 @@ qui ne doit **pas** matcher la règle subreddit ; `github.com/o/r` → deux cand
 `href` avant `rel` ; `rss+xml` et `atom+xml` ; plusieurs flux ; flux de commentaires
 relégué ; doublons ; `http://localhost/feed` filtré ; page sans `<link>` → `[]`.
 
-Un cas de bout en bout dans `tests/rss.test.ts` n'est pas prévu : les deux fonctions
-pures couvrent la logique, et le reste est du câblage réseau que les tests unitaires
-ne valideraient qu'en le mockant.
+`tests/fetch-page.test.ts`, sur `readCapped` et sur la décision de saut, avec des
+`ReadableStream` synthétiques — toujours aucun réseau, aucun mock de `fetch`.
+
+Deux de ces cas pinnent des défauts qui ont réellement eu lieu pendant
+l'implémentation, et c'est ce qui leur donne leur valeur : une balise déclarée
+~700 Ko dans la page (le cas YouTube) doit survivre à la lecture, et un flux qui
+tombe en erreur en cours de lecture doit rendre `null` **sans** produire de rejection
+non gérée — celle-ci faisait sortir le process, donc répondait 500 au lieu du message
+d'erreur prévu.
+
+La boucle de redirection est la frontière SSRF entière de la feature : la
+revalidation à chaque saut est donc isolée dans une fonction pure et testée
+directement, sinon une « simplification » en `redirect: 'follow'` passerait sans
+qu'aucun test ne tombe.
+
+Pas de test de bout en bout : ce qui reste est du câblage que les tests unitaires ne
+valideraient qu'en mockant `fetch`. La vérification correspondante est manuelle, contre
+les vrais sites, et c'est elle qui a trouvé le plafond de lecture trop bas.
