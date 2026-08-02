@@ -95,10 +95,16 @@ export function extractFeedLinks(html: string, baseUrl: string): FeedCandidate[]
 - prendre le `title` de la balise comme libellé, sinon le `pathname` ;
 - **reléguer les flux de commentaires en fin de liste** (chemin contenant `/comments/`, ou `title` contenant « comments »), pour que le flux utile soit présenté en premier. On ne les supprime pas : un WordPress qui déclare articles + commentaires produit bien deux candidats et passe donc par l'écran de choix — trier ne fait qu'ordonner.
 
-La partie réseau — télécharger la page — reste une fonction locale de
-`src/server/mutations.ts`, à côté de son unique appelant. Pas de `createServerFn`
-intermédiaire : une server fn appelée uniquement par une autre server fn n'est pas
-inscrite au manifeste du bundle et renvoie 500 en production (voir AGENTS.md).
+La partie réseau — télécharger la page — vit dans `src/lib/fetch-page.ts`, à côté de
+`src/lib/rss.ts` qui fait déjà du réseau : `src/lib/` est bien l'endroit du métier sans
+dépendance au framework, réseau compris. `mutations.ts` ne garde que la composition
+(`resolveFeedCandidates`, `readFeedTitle`), une dizaine de lignes attachées au flux
+d'ajout.
+
+Dans les deux cas, pas de `createServerFn` intermédiaire : une server fn appelée
+uniquement par une autre server fn n'est pas inscrite au manifeste du bundle et renvoie
+500 en production (voir AGENTS.md). Le piège vise `createServerFn` précisément — une
+fonction exportée ordinaire dans son module se bundle normalement.
 
 ## Contrat serveur et formulaire
 
@@ -136,7 +142,12 @@ permissif que le `fetchFeed` actuel. Garde-fous :
 - `redirect: 'manual'`, boucle de 5 sauts maximum, **`isSafeFeedUrl` revalidé à chaque
   `Location`**. Suivre les redirections automatiquement puis vérifier l'URL finale ne
   suffit pas : la requête vers `169.254.169.254` aurait déjà eu lieu.
-- Timeout 10 s, aligné sur le parseur RSS.
+- Timeout 10 s, aligné sur le parseur RSS, et **budget pour toute la chaîne** : un
+  `AbortSignal` par saut donnerait 60 s en pire cas.
+- Ce garde-fou ne couvre que le téléchargement de page. `fetchFeed` s'appuie sur
+  `rss-parser`, qui suit ses propres redirections sans revalider — comportement
+  antérieur à cette feature, non traité ici, et signalé en commentaire pour qu'on ne
+  croie pas le chemin entier protégé.
 - Corps tronqué à 512 Ko — l'autodiscovery est dans le `<head>`, on n'a pas besoin du reste.
 - `content-type` non-HTML → aucun candidat.
 - Chaque URL candidate est revalidée par `isSafeFeedUrl` avant d'être renvoyée au client
