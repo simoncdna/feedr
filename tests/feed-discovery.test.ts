@@ -36,6 +36,13 @@ describe('platformFeeds', () => {
     ])
   })
 
+  it('propose releases et commits pour un dépôt GitHub avec un slash final', () => {
+    expect(platformFeeds('https://github.com/facebook/react/')).toEqual([
+      { url: 'https://github.com/facebook/react/releases.atom', label: 'Releases' },
+      { url: 'https://github.com/facebook/react/commits.atom', label: 'Commits' },
+    ])
+  })
+
   it('ne dérive rien d’une sous-page GitHub ni d’un profil', () => {
     expect(platformFeeds('https://github.com/facebook/react/issues')).toEqual([])
     expect(platformFeeds('https://github.com/facebook')).toEqual([])
@@ -85,7 +92,9 @@ describe('extractFeedLinks', () => {
 
   it('décode les esperluettes encodées dans le href', () => {
     const html = `<link rel="alternate" type="application/rss+xml" href="/f?a=1&amp;b=2">`
-    expect(extractFeedLinks(html, base)[0].url).toBe('https://exemple.fr/f?a=1&b=2')
+    const candidates = extractFeedLinks(html, base)
+    expect(candidates).toHaveLength(1)
+    expect(candidates[0].url).toBe('https://exemple.fr/f?a=1&b=2')
   })
 
   it('relègue les flux de commentaires en fin de liste', () => {
@@ -121,5 +130,47 @@ describe('extractFeedLinks', () => {
 
   it('ne trouve rien dans une page sans balise', () => {
     expect(extractFeedLinks('<html><body>rien</body></html>', base)).toEqual([])
+  })
+
+  it('ignore un <link> mis en commentaire', () => {
+    const html = `
+      <!-- <link rel="alternate" type="application/rss+xml" href="/mort.xml" title="Mort"> -->
+      <link rel="alternate" type="application/rss+xml" href="/vivant.xml" title="Vivant">
+    `
+    expect(extractFeedLinks(html, base)).toEqual([{ url: 'https://exemple.fr/vivant.xml', label: 'Vivant' }])
+  })
+
+  it('ignore un data-href au profit du vrai href', () => {
+    const html = `<link rel="alternate" type="application/rss+xml" data-href="/tracker.xml" href="/vrai.xml">`
+    expect(extractFeedLinks(html, base)).toEqual([{ url: 'https://exemple.fr/vrai.xml', label: '/vrai.xml' }])
+  })
+
+  it('étiquette par le nom d’hôte un flux sans title à la racine', () => {
+    const html = `<link rel="alternate" type="application/rss+xml" href="https://exemple.fr/">`
+    expect(extractFeedLinks(html, base)).toEqual([{ url: 'https://exemple.fr/', label: 'exemple.fr' }])
+  })
+
+  it('accepte un type avec paramètre, comme "application/rss+xml; charset=utf-8"', () => {
+    const html = `<link rel="alternate" type="application/rss+xml; charset=utf-8" href="/f.xml">`
+    expect(extractFeedLinks(html, base)).toEqual([{ url: 'https://exemple.fr/f.xml', label: '/f.xml' }])
+  })
+
+  it('accepte des valeurs d’attributs sans quotes', () => {
+    const html = `<link rel=alternate type=application/rss+xml href=/nu.xml>`
+    expect(extractFeedLinks(html, base)).toEqual([{ url: 'https://exemple.fr/nu.xml', label: '/nu.xml' }])
+  })
+
+  it('lit une balise dont les attributs sont répartis sur plusieurs lignes', () => {
+    const html = `
+      <link
+        rel="alternate"
+        type="application/rss+xml"
+        href="/multi.xml"
+        title="Multi-lignes"
+      >
+    `
+    expect(extractFeedLinks(html, base)).toEqual([
+      { url: 'https://exemple.fr/multi.xml', label: 'Multi-lignes' },
+    ])
   })
 })

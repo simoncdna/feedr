@@ -7,7 +7,11 @@ export type FeedCandidate = { url: string; label: string }
  *
  * Ne couvre que les sites qui ne servent qu'une coquille JavaScript, où
  * l'autodiscovery n'a rien à lire. YouTube (chaînes) et Mastodon déclarent leur
- * flux dans le <head> et n'ont donc rien à faire ici.
+ * flux dans le <head> et n'ont donc rien à faire ici (mesuré le 2026-08-02).
+ *
+ * Les URLs produites viennent d'hôtes https codés en dur : contrairement aux
+ * candidats d'`extractFeedLinks`, elles ne passent pas par `isSafeFeedUrl` —
+ * leur sûreté tient à leur construction, pas à une vérification.
  */
 export function platformFeeds(pageUrl: string): FeedCandidate[] {
   let u: URL
@@ -46,18 +50,18 @@ export function platformFeeds(pageUrl: string): FeedCandidate[] {
 
 /** Lit la valeur d'un attribut, quel que soit l'ordre des attributs et le style de quotes. */
 function attr(tag: string, name: string): string | null {
-  const m = new RegExp(`\\b${name}\\s*=\\s*("([^"]*)"|'([^']*)'|([^\\s"'>]+))`, 'i').exec(tag)
+  const m = new RegExp(`(?<![-\\w])${name}\\s*=\\s*("([^"]*)"|'([^']*)'|([^\\s"'>]+))`, 'i').exec(tag)
   if (!m) return null
   return m[2] ?? m[3] ?? m[4] ?? null
 }
 
-/** Seule entité qui compte dans un href : &amp; sépare les paramètres de requête. */
+/** Entités qui comptent dans un href : toutes les graphies de &, qui sépare les paramètres. */
 function decodeAmp(href: string): string {
-  return href.replace(/&amp;/gi, '&').replace(/&#0*38;/g, '&')
+  return href.replace(/&(?:amp|#0*38|#[xX]0*26);/gi, '&')
 }
 
 function isCommentFeed({ url, label }: FeedCandidate): boolean {
-  return /comments/i.test(url) || /comments/i.test(label)
+  return /comments/i.test(new URL(url).pathname) || /comments/i.test(label)
 }
 
 /**
@@ -68,7 +72,12 @@ export function extractFeedLinks(html: string, baseUrl: string): FeedCandidate[]
   const found: FeedCandidate[] = []
   const seen = new Set<string>()
 
-  for (const tag of html.match(/<link\b[^>]*>/gi) ?? []) {
+  // On retire les commentaires HTML avant de scanner : un <link> commenté ne
+  // doit pas être traité comme un flux réel. Compromis assumés : une balise
+  // est perdue si un attribut contient un '>' littéral, et le test sur `type`
+  // est volontairement un préfixe pour accepter "application/rss+xml; charset=utf-8".
+  const withoutComments = html.replace(/<!--[\s\S]*?-->/g, '')
+  for (const tag of withoutComments.match(/<link\b[^>]*>/gi) ?? []) {
     const rel = attr(tag, 'rel')
     if (!rel || !/\balternate\b/i.test(rel)) continue
     const type = attr(tag, 'type')
@@ -85,10 +94,12 @@ export function extractFeedLinks(html: string, baseUrl: string): FeedCandidate[]
     const url = resolved.toString()
     if (!isSafeFeedUrl(url) || seen.has(url)) continue
     seen.add(url)
-    found.push({ url, label: attr(tag, 'title')?.trim() || resolved.pathname })
+    const label = attr(tag, 'title')?.trim() || (resolved.pathname === '/' ? resolved.hostname : resolved.pathname)
+    found.push({ url, label })
   }
 
-  // Tri stable : à pertinence égale l'ordre du document est conservé, et un
-  // WordPress typique (articles + commentaires) retombe sur un seul candidat utile.
+  // Tri stable : à pertinence égale l'ordre du document est conservé. On ne
+  // supprime pas les flux de commentaires, on les présente en dernier — le
+  // choix reste à l'utilisateur.
   return found.sort((a, b) => Number(isCommentFeed(a)) - Number(isCommentFeed(b)))
 }
