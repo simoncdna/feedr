@@ -152,10 +152,12 @@ permissif que le `fetchFeed` actuel. Garde-fous :
   `rss-parser`, qui suit ses propres redirections sans revalider — comportement
   antérieur à cette feature, non traité ici, et signalé en commentaire pour qu'on ne
   croie pas le chemin entier protégé.
-- Lecture arrêtée à `</head>`, avec un plafond dur de 2 Mo en repli si la page n'en a pas.
-  Le plafond n'est pas une estimation de la taille d'un `<head>` : **YouTube déclare son
-  flux à ~730 Ko dans le sien**, derrière son JSON inline, et un plafond de 512 Ko coupait
-  la balise — la découverte renvoyait zéro candidat sur le cas d'usage d'origine.
+- Corps lu jusqu'à un plafond de 2 Mo. Ce plafond est un garde-fou contre une réponse
+  sans fin, **pas une estimation de la taille d'un `<head>`** : mesuré le 2026-08-02,
+  YouTube déclare son flux à 733 674 octets, soit ~48 Ko *après* son `</head>` (à
+  685 259) — donc dans le `<body>`. Un plafond de 512 Ko coupait la balise, et
+  s'arrêter à `</head>` la manquerait tout autant. La découverte renvoyait zéro
+  candidat sur le cas d'usage qui a motivé la feature.
 - `content-type` non-HTML → aucun candidat.
 - Chaque URL candidate est revalidée par `isSafeFeedUrl` avant d'être renvoyée au client
   ou fetchée.
