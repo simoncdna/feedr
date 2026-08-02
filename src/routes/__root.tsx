@@ -93,7 +93,14 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }} />
         <div className="lg:flex">
           <Sidebar />
-          <main className="mx-auto w-full max-w-lg pb-28 pt-4 lg:m-0 lg:min-w-0 lg:max-w-none lg:flex-1 lg:p-0">
+          {/* Seul le contenu est animé pendant une transition de page. Sans ce
+              nom, le navigateur anime la racine entière : la TabBar et le bandeau
+              opaque de la barre de statut glissent avec la page — constaté sur
+              simulateur, TabBar dupliquée en plein vol. */}
+          <main
+            style={{ viewTransitionName: 'contenu' }}
+            className="mx-auto w-full max-w-lg pb-28 pt-4 lg:m-0 lg:min-w-0 lg:max-w-none lg:flex-1 lg:p-0"
+          >
             {children}
           </main>
         </div>

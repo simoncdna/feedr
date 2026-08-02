@@ -167,28 +167,36 @@ body::before {
      (voir src/router.tsx). Sans support de `:active-view-transition-type`,
      le fondu croisé par défaut du navigateur s'applique : dégradation propre. */
 
+  /* La racine porte le châssis (bandeau de barre de statut, TabBar, Sidebar) :
+     on la laisse strictement immobile. L'animer faisait glisser le bandeau
+     derrière la Dynamic Island et dupliquait la TabBar en plein vol. */
   ::view-transition-old(root),
   ::view-transition-new(root) {
+    animation: none;
+  }
+
+  ::view-transition-old(contenu),
+  ::view-transition-new(contenu) {
     animation-duration: 220ms;
     animation-timing-function: var(--ease-nav);
   }
 
   /* Ouverture d'un article : le contenu entre par la droite, comme sur iOS. */
   html:active-view-transition-type(nav-forward) {
-    &::view-transition-old(root) {
+    &::view-transition-old(contenu) {
       animation: nav-sortie-gauche 220ms var(--ease-nav) both;
     }
-    &::view-transition-new(root) {
+    &::view-transition-new(contenu) {
       animation: nav-entree-droite 220ms var(--ease-nav) both;
     }
   }
 
   /* Retour : exactement le miroir. */
   html:active-view-transition-type(nav-back) {
-    &::view-transition-old(root) {
+    &::view-transition-old(contenu) {
       animation: nav-sortie-droite 220ms var(--ease-nav) both;
     }
-    &::view-transition-new(root) {
+    &::view-transition-new(contenu) {
       animation: nav-entree-gauche 220ms var(--ease-nav) both;
     }
   }
