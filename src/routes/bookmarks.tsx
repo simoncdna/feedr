@@ -3,6 +3,7 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import { ArticleList } from '@/components/ArticleList'
 import { ArticleDetail } from '@/components/ArticleDetail'
 import { EmptyPane } from '@/components/EmptyPane'
+import { FeedSkeleton } from '@/components/Skeletons'
 import { ResizablePanes } from '@/components/ResizablePanes'
 import { articleQuery, bookmarksQuery } from '@/queries'
 import { bookmarksSearchSchema } from './-search'
@@ -16,6 +17,7 @@ export const Route = createFileRoute('/bookmarks')({
       article ? queryClient.ensureQueryData(articleQuery(article)) : Promise.resolve(),
     ])
   },
+  pendingComponent: FeedSkeleton,
   component: BookmarksPage,
 })
 

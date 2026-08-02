@@ -35,13 +35,31 @@ export function ArticleCard({
   linkProps,
   selected = false,
   featured = false,
+  morphable = false,
 }: {
   article: ArticleCardData
   linkProps: ArticleLinkProps
   selected?: boolean
   featured?: boolean
+  // Autorise ce titre à servir d'élément partagé vers la vue détail.
+  morphable?: boolean
 }) {
   const excerpt = article.description ? stripHtml(article.description) : null
+
+  // Le nom de transition est posé sur le nœud AU MOMENT DU CLIC, pas au rendu :
+  // l'instantané « avant » est pris par le navigateur juste après ce handler et
+  // juste avant la navigation. Le poser au rendu nommerait les 40 rangées, ce
+  // que la spec interdit (un nom doit être unique dans le document).
+  const marquerPourMorph = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (!morphable) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const titre = e.currentTarget.querySelector('h2')
+    if (!titre) return
+    titre.style.viewTransitionName = 'article-hero'
+    // Retiré après la transition, sinon le nom resterait sur une rangée encore
+    // montée (vue scindée en desktop) et entrerait en conflit au clic suivant.
+    window.setTimeout(() => { titre.style.viewTransitionName = '' }, 600)
+  }
 
   if (featured) {
     return (
@@ -58,7 +76,7 @@ export function ArticleCard({
               className="mb-3 aspect-[2/1] w-full rounded object-cover"
             />
           )}
-          <Link {...linkProps} draggable={false} aria-current={selected ? 'page' : undefined} className="block">
+          <Link {...linkProps} draggable={false} onClick={marquerPourMorph} aria-current={selected ? 'page' : undefined} className="block">
             <h2 className="line-clamp-2 text-2xl font-bold leading-tight tracking-tight">{article.title}</h2>
             {excerpt && <p className="mt-1.5 line-clamp-1 text-sm text-muted">{excerpt}</p>}
           </Link>
@@ -74,7 +92,7 @@ export function ArticleCard({
     <div className={`relative flex ${selected ? 'bg-surface' : ''}`}>
       {selected && <span aria-hidden="true" className="absolute inset-y-0 left-0 z-10 w-0.5 bg-accent" />}
       <div className="min-w-0 flex-1 px-4 py-4 lg:px-6">
-        <Link {...linkProps} draggable={false} aria-current={selected ? 'page' : undefined} className="block">
+        <Link {...linkProps} draggable={false} onClick={marquerPourMorph} aria-current={selected ? 'page' : undefined} className="block">
           <h2 className="line-clamp-2 text-lg font-semibold leading-snug tracking-tight">{article.title}</h2>
           {excerpt && <p className="mt-1 line-clamp-1 text-sm text-muted">{excerpt}</p>}
         </Link>

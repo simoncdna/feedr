@@ -15,11 +15,13 @@ import {
   useDeleteFeed,
   useToggleCategoryNotify,
 } from '@/mutations'
+import { SettingsSkeleton } from '@/components/Skeletons'
 import { settingsQuery } from '@/queries'
 import { signOut } from '@/server/mutations'
 
 export const Route = createFileRoute('/settings')({
   loader: ({ context: { queryClient } }) => queryClient.ensureQueryData(settingsQuery()),
+  pendingComponent: SettingsSkeleton,
   component: SettingsPage,
 })
 

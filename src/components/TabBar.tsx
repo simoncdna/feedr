@@ -55,7 +55,9 @@ export function TabBar() {
               // calculons l'état actif, comme dans l'app Next.
               activeOptions={{ exact: true }}
               aria-current={active ? 'page' : undefined}
-              className={`flex flex-1 flex-col items-center gap-1 py-2 transition-colors ${
+              // Retour tactile : un onglet appuyé s'enfonce légèrement. 100 ms,
+              // parce que c'est le geste le plus répété de l'app.
+              className={`flex flex-1 flex-col items-center gap-1 py-2 transition-[color,transform] duration-100 active:scale-[0.94] motion-reduce:transition-none motion-reduce:active:scale-100 ${
                 active ? 'text-accent' : 'text-muted hover:text-foreground'
               }`}
             >

@@ -1,6 +1,7 @@
 import { createFileRoute, Link, notFound } from '@tanstack/react-router'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { ArticleDetail } from '@/components/ArticleDetail'
+import { ArticleSkeleton } from '@/components/Skeletons'
 import { articleQuery } from '@/queries'
 
 // Cible des notifications push : lib/notify.ts construit `/article/${id}`.
@@ -18,6 +19,7 @@ export const Route = createFileRoute('/article/$id')({
     const article = await queryClient.ensureQueryData(articleQuery(id))
     if (!article) throw notFound()
   },
+  pendingComponent: ArticleSkeleton,
   component: ArticlePage,
 })
 

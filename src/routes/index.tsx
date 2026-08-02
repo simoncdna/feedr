@@ -4,6 +4,7 @@ import { ArticleList } from '@/components/ArticleList'
 import { ArticleDetail } from '@/components/ArticleDetail'
 import { CategoryChips } from '@/components/CategoryChips'
 import { EmptyPane } from '@/components/EmptyPane'
+import { FeedSkeleton } from '@/components/Skeletons'
 import { ResizablePanes } from '@/components/ResizablePanes'
 import { articleQuery, categoriesQuery, feedQuery } from '@/queries'
 import { feedSearchSchema } from './-search'
@@ -18,6 +19,7 @@ export const Route = createFileRoute('/')({
       article ? queryClient.ensureQueryData(articleQuery(article)) : Promise.resolve(),
     ])
   },
+  pendingComponent: FeedSkeleton,
   component: FeedPage,
 })
 

@@ -50,7 +50,14 @@ export function ArticleDetail({
           </svg>
         </button>
       </div>
-      <h1 className="mt-2 text-2xl font-semibold leading-tight tracking-tight">{article.title}</h1>
+      {/* Contrepartie de l'élément partagé : le titre de la rangée cliquée
+          arrive ici plutôt que d'apparaître en fondu. */}
+      <h1
+        style={{ viewTransitionName: 'article-hero' }}
+        className="mt-2 text-2xl font-semibold leading-tight tracking-tight"
+      >
+        {article.title}
+      </h1>
       {safe && (
         <div
           className="prose prose-neutral mt-6 max-w-none dark:prose-invert prose-img:rounded"

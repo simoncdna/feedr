@@ -148,3 +148,116 @@ body::before {
     }
   }
 }
+
+/* ────────────────────────────────────────────────────────────────────────────
+   Mouvement — variante « équilibrée »
+   Principe : la navigation est déjà quasi instantanée (retour au fil ~97 ms).
+   L'animation ne doit donc jamais s'interposer : elle s'affiche sur les
+   attentes réelles, et reste sous les 250 ms partout ailleurs.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+@theme inline {
+  /* Départ rapide, arrivée douce — la même courbe partout, pour l'unité. */
+  --ease-nav: cubic-bezier(0.2, 0, 0, 1);
+}
+
+@layer components {
+  /* ── Transitions de page ─────────────────────────────────────────────────
+     Le routeur pose un type de transition selon le sens de navigation
+     (voir src/router.tsx). Sans support de `:active-view-transition-type`,
+     le fondu croisé par défaut du navigateur s'applique : dégradation propre. */
+
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 220ms;
+    animation-timing-function: var(--ease-nav);
+  }
+
+  /* Ouverture d'un article : le contenu entre par la droite, comme sur iOS. */
+  html:active-view-transition-type(nav-forward) {
+    &::view-transition-old(root) {
+      animation: nav-sortie-gauche 220ms var(--ease-nav) both;
+    }
+    &::view-transition-new(root) {
+      animation: nav-entree-droite 220ms var(--ease-nav) both;
+    }
+  }
+
+  /* Retour : exactement le miroir. */
+  html:active-view-transition-type(nav-back) {
+    &::view-transition-old(root) {
+      animation: nav-sortie-droite 220ms var(--ease-nav) both;
+    }
+    &::view-transition-new(root) {
+      animation: nav-entree-gauche 220ms var(--ease-nav) both;
+    }
+  }
+
+  /* Le titre de l'article est l'élément partagé entre la rangée et le détail :
+     il ne disparaît pas pour réapparaître, il se déplace. */
+  ::view-transition-group(article-hero) {
+    animation-duration: 260ms;
+    animation-timing-function: var(--ease-nav);
+  }
+
+  /* ── Squelettes ───────────────────────────────────────────────────────────
+     Volontairement sans « shimmer » : la DA est au trait, pas au dégradé.
+     Une simple respiration d'opacité suffit à dire « ça charge ». */
+  .skeleton {
+    background: var(--surface);
+    border-radius: 2px;
+    animation: skeleton-respire 1.4s ease-in-out infinite;
+  }
+
+  /* ── Apparition en cascade du fil, au premier chargement seulement ─────── */
+  .cascade > * {
+    animation: cascade-entree 320ms var(--ease-nav) both;
+  }
+  /* Au-delà de huit rangées on est sous la ligne de flottaison : inutile de
+     retarder davantage, et ça évite une cascade interminable sur 40 articles. */
+  .cascade > *:nth-child(1) { animation-delay: 0ms }
+  .cascade > *:nth-child(2) { animation-delay: 40ms }
+  .cascade > *:nth-child(3) { animation-delay: 80ms }
+  .cascade > *:nth-child(4) { animation-delay: 120ms }
+  .cascade > *:nth-child(5) { animation-delay: 160ms }
+  .cascade > *:nth-child(6) { animation-delay: 200ms }
+  .cascade > *:nth-child(7) { animation-delay: 240ms }
+  .cascade > *:nth-child(n + 8) { animation-delay: 280ms }
+}
+
+@keyframes nav-entree-droite {
+  from { opacity: 0; transform: translate3d(2.5rem, 0, 0) }
+  to   { opacity: 1; transform: none }
+}
+@keyframes nav-sortie-gauche {
+  from { opacity: 1; transform: none }
+  to   { opacity: 0; transform: translate3d(-1.25rem, 0, 0) }
+}
+@keyframes nav-entree-gauche {
+  from { opacity: 0; transform: translate3d(-2.5rem, 0, 0) }
+  to   { opacity: 1; transform: none }
+}
+@keyframes nav-sortie-droite {
+  from { opacity: 1; transform: none }
+  to   { opacity: 0; transform: translate3d(1.25rem, 0, 0) }
+}
+@keyframes skeleton-respire {
+  0%, 100% { opacity: 1 }
+  50%      { opacity: 0.45 }
+}
+@keyframes cascade-entree {
+  from { opacity: 0; transform: translate3d(0, 0.5rem, 0) }
+  to   { opacity: 1; transform: none }
+}
+
+/* Mouvement réduit : on ne supprime pas le retour d'information, on le fige.
+   Les pages changent toujours, mais sans déplacement ni fondu prolongé. */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+  .skeleton { animation: none }
+  .cascade > * { animation: none }
+}
