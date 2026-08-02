@@ -14,7 +14,7 @@ Lecteur RSS personnel. **TanStack Start v1** (React, Vite), Drizzle + Neon Postg
 
 ```bash
 npm run dev      # développement (port 3001)
-npm test         # 103 tests Vitest
+npm test         # 113 tests Vitest
 npm run build    # build de production -> .output/
 npm start        # sert le build de production
 ```
