@@ -12,48 +12,48 @@
 @plugin "@tailwindcss/typography";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --muted: rgba(23, 23, 23, 0.62);
-  --rule: #dedede;
-  --surface: #fafafa;
-  --accent: #fb923c;
-  --font-geist-sans: 'Geist', ui-sans-serif, system-ui, sans-serif;
-  --font-geist-mono: 'Geist Mono', ui-monospace, monospace;
-  color-scheme: light;
+	--background: #ffffff;
+	--foreground: #171717;
+	--muted: rgba(23, 23, 23, 0.62);
+	--rule: #dedede;
+	--surface: #fafafa;
+	--accent: #fb923c;
+	--font-geist-sans: 'Geist', ui-sans-serif, system-ui, sans-serif;
+	--font-geist-mono: 'Geist Mono', ui-monospace, monospace;
+	color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    --background: #0c0c0e;
-    --foreground: #fafafa;
-    --muted: #7c7d86;
-    --rule: #26272c;
-    --surface: #101013;
-    --accent: #fb923c;
-    color-scheme: dark;
-  }
+	:root:not([data-theme='light']) {
+		--background: #0c0c0e;
+		--foreground: #fafafa;
+		--muted: #7c7d86;
+		--rule: #26272c;
+		--surface: #101013;
+		--accent: #fb923c;
+		color-scheme: dark;
+	}
 }
 
 :root[data-theme='dark'] {
-  --background: #0c0c0e;
-  --foreground: #fafafa;
-  --muted: #7c7d86;
-  --rule: #26272c;
-  --surface: #101013;
-  --accent: #fb923c;
-  color-scheme: dark;
+	--background: #0c0c0e;
+	--foreground: #fafafa;
+	--muted: #7c7d86;
+	--rule: #26272c;
+	--surface: #101013;
+	--accent: #fb923c;
+	color-scheme: dark;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-muted: var(--muted);
-  --color-rule: var(--rule);
-  --color-surface: var(--surface);
-  --color-accent: var(--accent);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+	--color-background: var(--background);
+	--color-foreground: var(--foreground);
+	--color-muted: var(--muted);
+	--color-rule: var(--rule);
+	--color-surface: var(--surface);
+	--color-accent: var(--accent);
+	--font-sans: var(--font-geist-sans);
+	--font-mono: var(--font-geist-mono);
 }
 
 /* Indirection des zones sûres : `env()` n'est pas surchargeable, alors qu'une
@@ -61,71 +61,71 @@
 /* Le fond de l'app est peint sur <html> : c'est lui que l'OS reprend pour les
    surfaces qu'il dessine autour de la vue (écran de lancement notamment). */
 html {
-  background-color: var(--background);
+	background-color: var(--background);
 }
 
 body {
-  line-height: 1.6;
+	line-height: 1.6;
 }
 
 /* Grain « papier journal » : bruit SVG statique en overlay, au-dessus de tout,
    transparent aux interactions. Opacité volontairement subtile. */
 body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-repeat: repeat;
-  opacity: 0.06;
+	content: '';
+	position: fixed;
+	inset: 0;
+	z-index: 60;
+	pointer-events: none;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+	background-repeat: repeat;
+	opacity: 0.06;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) body::before {
-    opacity: 0.08;
-  }
+	:root:not([data-theme='light']) body::before {
+		opacity: 0.08;
+	}
 }
 
 :root[data-theme='dark'] body::before {
-  opacity: 0.08;
+	opacity: 0.08;
 }
 
 :focus-visible {
-  outline: 1px solid var(--foreground);
-  outline-offset: 3px;
+	outline: 1px solid var(--foreground);
+	outline-offset: 3px;
 }
 
 @layer components {
-  .mono-label {
-    font-family: var(--font-geist-mono), monospace;
-    text-transform: uppercase;
-    letter-spacing: 0.18em;
-    font-size: 0.6875rem;
-    color: var(--muted);
-  }
+	.mono-label {
+		font-family: var(--font-geist-mono), monospace;
+		text-transform: uppercase;
+		letter-spacing: 0.18em;
+		font-size: 0.6875rem;
+		color: var(--muted);
+	}
 
-  .cta-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    border-bottom: 1px solid var(--foreground);
-    padding-bottom: 0.25rem;
-  }
+	.cta-link {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		border-bottom: 1px solid var(--foreground);
+		padding-bottom: 0.25rem;
+	}
 
-  .cta-arrow {
-    transition: transform 520ms cubic-bezier(0.16, 1, 0.3, 1);
-  }
+	.cta-arrow {
+		transition: transform 520ms cubic-bezier(0.16, 1, 0.3, 1);
+	}
 
-  .cta-link:hover .cta-arrow {
-    transform: translateX(0.25rem);
-  }
+	.cta-link:hover .cta-arrow {
+		transform: translateX(0.25rem);
+	}
 
-  @media (prefers-reduced-motion: reduce) {
-    .cta-arrow {
-      transition-duration: 1ms;
-    }
-  }
+	@media (prefers-reduced-motion: reduce) {
+		.cta-arrow {
+			transition-duration: 1ms;
+		}
+	}
 }
 
 /* ────────────────────────────────────────────────────────────────────────────
@@ -136,115 +136,195 @@ body::before {
    ──────────────────────────────────────────────────────────────────────────── */
 
 @theme inline {
-  /* Départ rapide, arrivée douce — la même courbe partout, pour l'unité. */
-  --ease-nav: cubic-bezier(0.2, 0, 0, 1);
+	/* Départ rapide, arrivée douce — la même courbe partout, pour l'unité. */
+	--ease-nav: cubic-bezier(0.2, 0, 0, 1);
 }
 
 @layer components {
-  /* ── Transitions de page ─────────────────────────────────────────────────
+	/* ── Transitions de page ─────────────────────────────────────────────────
      Le routeur pose un type de transition selon le sens de navigation
      (voir src/router.tsx). Sans support de `:active-view-transition-type`,
      le fondu croisé par défaut du navigateur s'applique : dégradation propre. */
 
-  /* La racine porte le châssis (bandeau de barre de statut, TabBar, Sidebar) :
+	/* La racine porte le châssis (bandeau de barre de statut, TabBar, Sidebar) :
      on la laisse strictement immobile. L'animer faisait glisser le bandeau
      derrière la Dynamic Island et dupliquait la TabBar en plein vol. */
-  ::view-transition-old(root),
-  ::view-transition-new(root) {
-    animation: none;
-  }
+	::view-transition-old(root),
+	::view-transition-new(root) {
+		animation: none;
+	}
 
-  ::view-transition-old(contenu),
-  ::view-transition-new(contenu) {
-    animation-duration: 220ms;
-    animation-timing-function: var(--ease-nav);
-  }
+	::view-transition-old(contenu),
+	::view-transition-new(contenu) {
+		animation-duration: 220ms;
+		animation-timing-function: var(--ease-nav);
+	}
 
-  /* Ouverture d'un article : le contenu entre par la droite, comme sur iOS. */
-  html:active-view-transition-type(nav-forward) {
-    &::view-transition-old(contenu) {
-      animation: nav-sortie-gauche 220ms var(--ease-nav) both;
-    }
-    &::view-transition-new(contenu) {
-      animation: nav-entree-droite 220ms var(--ease-nav) both;
-    }
-  }
+	/* Ouverture d'un article : le contenu entre par la droite, comme sur iOS. */
+	html:active-view-transition-type(nav-forward) {
+		&::view-transition-old(contenu) {
+			animation: nav-sortie-gauche 220ms var(--ease-nav) both;
+		}
 
-  /* Retour : exactement le miroir. */
-  html:active-view-transition-type(nav-back) {
-    &::view-transition-old(contenu) {
-      animation: nav-sortie-droite 220ms var(--ease-nav) both;
-    }
-    &::view-transition-new(contenu) {
-      animation: nav-entree-gauche 220ms var(--ease-nav) both;
-    }
-  }
+		&::view-transition-new(contenu) {
+			animation: nav-entree-droite 220ms var(--ease-nav) both;
+		}
+	}
 
-  /* Le titre de l'article est l'élément partagé entre la rangée et le détail :
+	/* Retour : exactement le miroir. */
+	html:active-view-transition-type(nav-back) {
+		&::view-transition-old(contenu) {
+			animation: nav-sortie-droite 220ms var(--ease-nav) both;
+		}
+
+		&::view-transition-new(contenu) {
+			animation: nav-entree-gauche 220ms var(--ease-nav) both;
+		}
+	}
+
+	/* Le titre de l'article est l'élément partagé entre la rangée et le détail :
      il ne disparaît pas pour réapparaître, il se déplace. */
-  ::view-transition-group(article-hero) {
-    animation-duration: 260ms;
-    animation-timing-function: var(--ease-nav);
-  }
+	::view-transition-group(article-hero) {
+		animation-duration: 260ms;
+		animation-timing-function: var(--ease-nav);
+	}
 
-  /* ── Squelettes ───────────────────────────────────────────────────────────
+	/* ── Squelettes ───────────────────────────────────────────────────────────
      Volontairement sans « shimmer » : la DA est au trait, pas au dégradé.
      Une simple respiration d'opacité suffit à dire « ça charge ». */
-  .skeleton {
-    background: var(--surface);
-    border-radius: 2px;
-    animation: skeleton-respire 1.4s ease-in-out infinite;
-  }
+	.skeleton {
+		background: var(--surface);
+		border-radius: 2px;
+		animation: skeleton-respire 1.4s ease-in-out infinite;
+	}
 
-  /* ── Apparition en cascade du fil, au premier chargement seulement ─────── */
-  .cascade > * {
-    animation: cascade-entree 320ms var(--ease-nav) both;
-  }
-  /* Au-delà de huit rangées on est sous la ligne de flottaison : inutile de
+	/* ── Apparition en cascade du fil, au premier chargement seulement ─────── */
+	.cascade>* {
+		animation: cascade-entree 320ms var(--ease-nav) both;
+	}
+
+	/* Au-delà de huit rangées on est sous la ligne de flottaison : inutile de
      retarder davantage, et ça évite une cascade interminable sur 40 articles. */
-  .cascade > *:nth-child(1) { animation-delay: 0ms }
-  .cascade > *:nth-child(2) { animation-delay: 40ms }
-  .cascade > *:nth-child(3) { animation-delay: 80ms }
-  .cascade > *:nth-child(4) { animation-delay: 120ms }
-  .cascade > *:nth-child(5) { animation-delay: 160ms }
-  .cascade > *:nth-child(6) { animation-delay: 200ms }
-  .cascade > *:nth-child(7) { animation-delay: 240ms }
-  .cascade > *:nth-child(n + 8) { animation-delay: 280ms }
+	.cascade>*:nth-child(1) {
+		animation-delay: 0ms
+	}
+
+	.cascade>*:nth-child(2) {
+		animation-delay: 40ms
+	}
+
+	.cascade>*:nth-child(3) {
+		animation-delay: 80ms
+	}
+
+	.cascade>*:nth-child(4) {
+		animation-delay: 120ms
+	}
+
+	.cascade>*:nth-child(5) {
+		animation-delay: 160ms
+	}
+
+	.cascade>*:nth-child(6) {
+		animation-delay: 200ms
+	}
+
+	.cascade>*:nth-child(7) {
+		animation-delay: 240ms
+	}
+
+	.cascade>*:nth-child(n + 8) {
+		animation-delay: 280ms
+	}
 }
 
 @keyframes nav-entree-droite {
-  from { opacity: 0; transform: translate3d(2.5rem, 0, 0) }
-  to   { opacity: 1; transform: none }
+	from {
+		opacity: 0;
+		transform: translate3d(2.5rem, 0, 0)
+	}
+
+	to {
+		opacity: 1;
+		transform: none
+	}
 }
+
 @keyframes nav-sortie-gauche {
-  from { opacity: 1; transform: none }
-  to   { opacity: 0; transform: translate3d(-1.25rem, 0, 0) }
+	from {
+		opacity: 1;
+		transform: none
+	}
+
+	to {
+		opacity: 0;
+		transform: translate3d(-1.25rem, 0, 0)
+	}
 }
+
 @keyframes nav-entree-gauche {
-  from { opacity: 0; transform: translate3d(-2.5rem, 0, 0) }
-  to   { opacity: 1; transform: none }
+	from {
+		opacity: 0;
+		transform: translate3d(-2.5rem, 0, 0)
+	}
+
+	to {
+		opacity: 1;
+		transform: none
+	}
 }
+
 @keyframes nav-sortie-droite {
-  from { opacity: 1; transform: none }
-  to   { opacity: 0; transform: translate3d(1.25rem, 0, 0) }
+	from {
+		opacity: 1;
+		transform: none
+	}
+
+	to {
+		opacity: 0;
+		transform: translate3d(1.25rem, 0, 0)
+	}
 }
+
 @keyframes skeleton-respire {
-  0%, 100% { opacity: 1 }
-  50%      { opacity: 0.45 }
+
+	0%,
+	100% {
+		opacity: 1
+	}
+
+	50% {
+		opacity: 0.45
+	}
 }
+
 @keyframes cascade-entree {
-  from { opacity: 0; transform: translate3d(0, 0.5rem, 0) }
-  to   { opacity: 1; transform: none }
+	from {
+		opacity: 0;
+		transform: translate3d(0, 0.5rem, 0)
+	}
+
+	to {
+		opacity: 1;
+		transform: none
+	}
 }
 
 /* Mouvement réduit : on ne supprime pas le retour d'information, on le fige.
    Les pages changent toujours, mais sans déplacement ni fondu prolongé. */
 @media (prefers-reduced-motion: reduce) {
-  ::view-transition-group(*),
-  ::view-transition-old(*),
-  ::view-transition-new(*) {
-    animation: none !important;
-  }
-  .skeleton { animation: none }
-  .cascade > * { animation: none }
+
+	::view-transition-group(*),
+	::view-transition-old(*),
+	::view-transition-new(*) {
+		animation: none !important;
+	}
+
+	.skeleton {
+		animation: none
+	}
+
+	.cascade>* {
+		animation: none
+	}
 }

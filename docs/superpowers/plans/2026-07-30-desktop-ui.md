@@ -213,7 +213,7 @@ export function TabBar() {
   return (
     <nav
       aria-label="Navigation principale"
-      className="fixed inset-x-0 bottom-0 border-t border-rule bg-background/90 backdrop-blur lg:hidden"
+      className="fixed inset-x-0 bottom-0 border-t border-rule bg-background lg:hidden"
     >
       <div className="mx-auto flex max-w-lg pb-[env(safe-area-inset-bottom)]">
         {tabs.map((tab) => {

@@ -32,7 +32,7 @@ export function Sidebar() {
 			: pathname.startsWith(href)
 
 	return (
-		<aside className="sticky top-0 hidden h-11 w-60 shrink-0 flex-col gap-10 overflow-y-auto border-r border-rule px-6 py-8 lg:flex">
+		<aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col gap-10 overflow-y-auto border-r border-rule px-6 py-8 lg:flex">
 			<div className="flex items-center justify-between">
 				<Link to="/" activeOptions={{ exact: true }} className="mono-label text-foreground">
 					Feedr
