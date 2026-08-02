@@ -6,6 +6,10 @@ const THRESHOLD = 72
 const MAX_PULL = 120
 const CONFIRM_HOLD_PX = -56
 const CONFIRM_HOLD_MS = 350
+// Point où la rangée finit de découvrir l'icône (`pr-6` + `w-5`). Avant ça,
+// l'icône est encore sous la rangée : l'animer plus tôt la fait « apparaître »
+// dans le vide.
+const REVEAL_PX = -44
 
 export function SwipeRow({
   action,
@@ -99,6 +103,7 @@ export function SwipeRow({
   }, [finalize])
 
   const armed = dx <= -THRESHOLD || (dx < 0 && settling)
+  const revealed = dx <= REVEAL_PX || pending
   const { ref: swipeRef, ...swipeProps } = handlers
 
   return (
@@ -119,8 +124,10 @@ export function SwipeRow({
           armed || pending ? 'text-accent' : 'text-muted'
         }`}
         style={{
-          opacity: dx < 0 || pending ? 1 : 0,
-          transition: 'opacity 180ms ease, color 120ms ease',
+          opacity: revealed ? 1 : 0,
+          transform: revealed ? 'translateY(0)' : 'translateY(-2px)',
+          transition:
+            'opacity 160ms ease, transform 160ms cubic-bezier(0.22, 1, 0.36, 1), color 120ms ease',
         }}
       >
         <svg
