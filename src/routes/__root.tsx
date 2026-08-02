@@ -32,7 +32,14 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       },
       { title: 'Feedr' },
       { name: 'description', content: 'Personal RSS reader' },
+      // `apple-mobile-web-app-capable` est déprécié (avertissement console en
+      // clair) mais reste nécessaire pour les iOS installés avant la bascule :
+      // on déclare les deux, la forme standard d'abord.
+      { name: 'mobile-web-app-capable', content: 'yes' },
       { name: 'apple-mobile-web-app-capable', content: 'yes' },
+      // `default` : barre de statut opaque peinte par iOS, texte adapté au fond.
+      // C'est ce que réglait le bandeau de styles.css côté PWA — ne pas passer à
+      // `black-translucent` sans revoir ce bandeau.
       { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
       { name: 'apple-mobile-web-app-title', content: 'Feedr' },
       // Les deux `theme-color` ne passent PAS par `head.meta` : le router
