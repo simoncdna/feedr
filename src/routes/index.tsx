@@ -43,8 +43,13 @@ function FeedPage() {
               superposées laissent voir la photo de l'article derrière l'heure et
               la Dynamic Island. En desktop l'en-tête redevient transparent, il n'y
               a pas de barre de statut à couvrir. */}
-					<header className="sticky top-0 z-30 bg-background px-4 pt-3 lg:static lg:bg-transparent lg:px-6 lg:pb-3 lg:pt-8">
-						<h1 className="text-3xl font-bold tracking-tight lg:hidden">Feedr</h1>
+					{/* `-mt-4 pt-4` : l'en-tête remonte dans le `pt-4` de <main> pour que
+					    le titre s'aligne sur ceux de Bookmarks et Settings, qui n'ont pas
+					    de padding haut à eux. Le padding est déplacé ici plutôt que
+					    supprimé — c'est lui qui tient l'air au-dessus du titre une fois
+					    l'en-tête collé, quand le padding de <main> a défilé. */}
+					<header className="sticky top-0 z-30 -mt-4 bg-background px-4 pt-4 lg:static lg:mt-0 lg:bg-transparent lg:px-6 lg:pb-3 lg:pt-8">
+						<h1 className="text-3xl font-bold tracking-tight lg:hidden">Feed</h1>
 						<p className="hidden text-3xl font-bold tracking-tight lg:block">Feed</p>
 						<div className="pt-3 lg:hidden">
 							<CategoryChips categories={cats} activeId={category ?? null} />
