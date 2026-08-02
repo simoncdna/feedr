@@ -58,6 +58,9 @@ export function AddFeedForm({ categories }: { categories: { id: number; name: st
   // installés (« FormEvent doesn't actually exist »).
   function submit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault()
+    // Avant de vider la liste : sans ce garde, une entrée au clavier pendant un
+    // ajout en vol ferait disparaître le picker sans rien soumettre.
+    if (addFeed.isPending) return
     setCandidates(null)
     void tryUrl(url.trim())
   }
