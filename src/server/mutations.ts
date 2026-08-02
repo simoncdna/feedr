@@ -7,6 +7,7 @@ import { user } from '@/db/auth-schema'
 import { articles, categories, feeds, invitations } from '@/db/schema'
 import { auth } from '@/lib/auth'
 import { fetchFeed } from '@/lib/rss'
+import { extractFeedLinks, platformFeeds, type FeedCandidate } from '@/lib/feed-discovery'
 import { isSafeFeedUrl } from '@/lib/url'
 import { generateInvitationToken, invitationExpiry, invitationStatus } from '@/lib/invitations'
 import { getUser, requireUser } from '@/lib/session'
@@ -42,7 +43,92 @@ export const deleteCategory = createServerFn({ method: 'POST' })
       .where(and(eq(categories.id, id), eq(categories.userId, sessionUser.id)))
   })
 
-export type AddFeedResult = { error: string | null }
+const PAGE_TIMEOUT_MS = 10_000
+const MAX_PAGE_CHARS = 512 * 1024
+const MAX_REDIRECTS = 5
+
+/** Lit le corps en s'arrêtant au plafond : l'autodiscovery est dans le <head>. */
+async function readCapped(res: Response): Promise<string | null> {
+  const reader = res.body?.getReader()
+  if (!reader) return null
+  const decoder = new TextDecoder()
+  let html = ''
+  try {
+    while (html.length < MAX_PAGE_CHARS) {
+      const { done, value } = await reader.read()
+      if (done) break
+      html += decoder.decode(value, { stream: true })
+    }
+  } catch {
+    return null
+  } finally {
+    void reader.cancel()
+  }
+  return html
+}
+
+/**
+ * Télécharge une page HTML pour y chercher l'autodiscovery.
+ *
+ * `redirect: 'manual'` et revalidation à chaque saut : laisser fetch suivre les
+ * redirections puis contrôler l'URL finale ne protégerait de rien, la requête
+ * vers l'adresse interne serait déjà partie.
+ */
+async function fetchPage(startUrl: string): Promise<{ html: string; url: string } | null> {
+  let url = startUrl
+  for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+    if (!isSafeFeedUrl(url)) return null
+    let res: Response
+    try {
+      res = await fetch(url, {
+        redirect: 'manual',
+        headers: { accept: 'text/html,application/xhtml+xml' },
+        signal: AbortSignal.timeout(PAGE_TIMEOUT_MS),
+      })
+    } catch {
+      return null
+    }
+    if (res.status >= 300 && res.status < 400) {
+      const location = res.headers.get('location')
+      if (!location) return null
+      try {
+        url = new URL(location, url).toString()
+      } catch {
+        return null
+      }
+      continue
+    }
+    if (!res.ok) return null
+    if (!/text\/html|application\/xhtml\+xml/i.test(res.headers.get('content-type') ?? '')) {
+      return null
+    }
+    const html = await readCapped(res)
+    return html === null ? null : { html, url }
+  }
+  return null
+}
+
+/**
+ * Couches 2 puis 3. Les règles d'URL passent en premier parce qu'elles ne
+ * coûtent aucune requête, et que les sites qu'elles couvrent ne déclarent rien.
+ */
+async function resolveFeedCandidates(url: string): Promise<FeedCandidate[]> {
+  const rules = platformFeeds(url)
+  if (rules.length > 0) return rules
+  const page = await fetchPage(url)
+  return page ? extractFeedLinks(page.html, page.url) : []
+}
+
+/** Couche 1 : l'URL est-elle déjà un flux ? Renvoie son titre, ou null. */
+async function readFeedTitle(url: string): Promise<string | null> {
+  try {
+    return (await fetchFeed(url)).title
+  } catch {
+    return null
+  }
+}
+
+export type AddFeedResult = { error: string | null; candidates?: FeedCandidate[] }
 
 export const addFeed = createServerFn({ method: 'POST' })
   .validator((d: { url: string; categoryId: number }) => d)
@@ -57,14 +143,21 @@ export const addFeed = createServerFn({ method: 'POST' })
       .where(and(eq(categories.id, categoryId), eq(categories.userId, sessionUser.id)))
       .limit(1)
     if (ownedCategory.length === 0) return { error: 'Invalid URL or category' }
-    let title: string
-    try {
-      ;({ title } = await fetchFeed(url))
-    } catch {
-      return { error: 'Could not read this RSS feed' }
+
+    let feedUrl = url
+    let title = await readFeedTitle(url)
+    if (title === null) {
+      const candidates = await resolveFeedCandidates(url)
+      if (candidates.length === 0) return { error: 'No RSS feed found at this address' }
+      // Plusieurs flux : c'est à l'utilisateur de trancher. On ne les valide pas,
+      // ce serait une requête par candidat juste pour peupler une liste.
+      if (candidates.length > 1) return { error: null, candidates }
+      feedUrl = candidates[0].url
+      title = await readFeedTitle(feedUrl)
+      if (title === null) return { error: 'Could not read this RSS feed' }
     }
     try {
-      await db.insert(feeds).values({ url, title, categoryId })
+      await db.insert(feeds).values({ url: feedUrl, title, categoryId })
     } catch {
       return { error: 'This feed already exists' }
     }
