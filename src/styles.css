@@ -226,7 +226,14 @@ body::before {
 		animation: skeleton-respire 1.4s ease-in-out infinite;
 	}
 
-	/* ── Apparition en cascade du fil, au premier chargement seulement ─────── */
+	/* ── Apparition en cascade (« domino ») ───────────────────────────────────
+     Chaque enfant direct monte de 0.5rem en fondu, décalé de son rang. Le pas
+     est réglable : 40 ms convient à des rangées d'articles serrées, il faut le
+     desserrer pour des blocs hauts (Settings) où l'œil doit voyager. */
+	.cascade {
+		--cascade-pas: 40ms;
+	}
+
 	.cascade>* {
 		animation: cascade-entree 320ms var(--ease-nav) both;
 	}
@@ -238,31 +245,31 @@ body::before {
 	}
 
 	.cascade>*:nth-child(2) {
-		animation-delay: 40ms
+		animation-delay: calc(var(--cascade-pas) * 1)
 	}
 
 	.cascade>*:nth-child(3) {
-		animation-delay: 80ms
+		animation-delay: calc(var(--cascade-pas) * 2)
 	}
 
 	.cascade>*:nth-child(4) {
-		animation-delay: 120ms
+		animation-delay: calc(var(--cascade-pas) * 3)
 	}
 
 	.cascade>*:nth-child(5) {
-		animation-delay: 160ms
+		animation-delay: calc(var(--cascade-pas) * 4)
 	}
 
 	.cascade>*:nth-child(6) {
-		animation-delay: 200ms
+		animation-delay: calc(var(--cascade-pas) * 5)
 	}
 
 	.cascade>*:nth-child(7) {
-		animation-delay: 240ms
+		animation-delay: calc(var(--cascade-pas) * 6)
 	}
 
 	.cascade>*:nth-child(n + 8) {
-		animation-delay: 280ms
+		animation-delay: calc(var(--cascade-pas) * 7)
 	}
 }
 

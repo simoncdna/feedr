@@ -37,7 +37,10 @@ function SettingsPage() {
   const leave = useMutation({ mutationFn: () => signOut() })
 
   return (
-    <div className="space-y-12 px-4 lg:max-w-2xl lg:px-8 lg:py-8">
+    // Domino : titre puis sections montent une à une (voir `.cascade`). Pas
+    // desserré à 60 ms — sur des blocs de cette hauteur, 40 ms se lit comme un
+    // seul mouvement d'ensemble et non comme un enchaînement.
+    <div className="cascade space-y-12 px-4 [--cascade-pas:60ms] lg:max-w-2xl lg:px-8 lg:py-8">
       <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
 
       <section className="space-y-3 lg:hidden">
