@@ -7,7 +7,10 @@ import { isSafeFeedUrl } from '@/lib/url'
 // Aligné sur le timeout du parseur RSS (src/lib/rss.ts, 10 s lui aussi) : si on
 // retouche l'un, il faut retoucher l'autre.
 const PAGE_TIMEOUT_MS = 10_000
-const MAX_PAGE_CHARS = 512 * 1024
+// Un garde-fou contre une réponse sans fin, pas une estimation de la taille du
+// <head> : YouTube (ex. /@MKBHD) déclare son flux vers 730 Ko dans la page,
+// derrière une masse de JSON/JS inline. 512 Ko coupait avant d'y arriver.
+const MAX_PAGE_CHARS = 2 * 1024 * 1024
 const MAX_REDIRECTS = 5
 
 function discard(res: Response): void {
@@ -26,9 +29,26 @@ function decoderFor(contentType: string): TextDecoder {
   }
 }
 
-/** Lit le corps en s'arrêtant au plafond : l'autodiscovery est dans le <head>. */
-async function readCapped(res: Response, contentType: string, url: string): Promise<string | null> {
-  const reader = res.body?.getReader()
+/**
+ * Lit le corps jusqu'à la fin du flux ou jusqu'au plafond `MAX_PAGE_CHARS`.
+ *
+ * Ne s'arrête délibérément pas à `</head>`. Une version antérieure le faisait,
+ * sur l'hypothèse que l'autodiscovery vit dans le `<head>` — hypothèse fausse
+ * pour le site le plus important que cible cette fonctionnalité : YouTube
+ * (ex. /@MKBHD) déclare son flux via un `<link rel="alternate">` posé environ
+ * 48 Ko *après* `</head>`, dans le `<body>` (mesuré le 2026-08-02 :
+ * `</head>` à l'octet 685 259, le lien à 733 674, page de 2,5 Mo). S'arrêter au
+ * `<head>` manquait donc précisément le cas qu'il fallait couvrir. Le plafond
+ * ci-dessus est un garde-fou contre une réponse sans fin, pas une estimation de
+ * la taille d'un head — ne pas réintroduire cette optimisation sans revérifier
+ * ce cas.
+ */
+export async function readCapped(
+  stream: ReadableStream<Uint8Array> | null | undefined,
+  contentType: string,
+  url: string,
+): Promise<string | null> {
+  const reader = stream?.getReader()
   if (!reader) return null
   const decoder = decoderFor(contentType)
   let html = ''
@@ -95,7 +115,7 @@ export async function fetchPage(startUrl: string): Promise<{ html: string; url: 
       discard(res)
       return null
     }
-    const html = await readCapped(res, contentType, url)
+    const html = await readCapped(res.body, contentType, url)
     return html === null ? null : { html, url }
   }
   return null
