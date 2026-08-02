@@ -90,8 +90,10 @@ describe('extractFeedLinks', () => {
     expect(extractFeedLinks(html, base).map((c) => c.label)).toEqual(['Articles', '/b.xml'])
   })
 
-  it('décode les esperluettes encodées dans le href', () => {
-    const html = `<link rel="alternate" type="application/rss+xml" href="/f?a=1&amp;b=2">`
+  // Les trois graphies de & : une seule non décodée corrompt la requête, et le
+  // flux répond 404 au moment du fetch.
+  it.each(['&amp;', '&#038;', '&#x26;'])('décode l’esperluette écrite %s', (entity) => {
+    const html = `<link rel="alternate" type="application/rss+xml" href="/f?a=1${entity}b=2">`
     const candidates = extractFeedLinks(html, base)
     expect(candidates).toHaveLength(1)
     expect(candidates[0].url).toBe('https://exemple.fr/f?a=1&b=2')
