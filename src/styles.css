@@ -217,6 +217,14 @@ body::before {
 		animation-timing-function: var(--ease-nav);
 	}
 
+	/* ── Pose du signet ───────────────────────────────────────────────────────
+     Le geste met le favori, mais c'est la carte qui l'acte : le petit signet
+     du bandeau méta se pose au lieu d'apparaître. Léger dépassement d'échelle,
+     même vocabulaire que l'icône du swipe qui passe à 1.15 une fois armée. */
+	.signet-pose {
+		animation: signet-pose 320ms var(--ease-nav) both;
+	}
+
 	/* ── Squelettes ───────────────────────────────────────────────────────────
      Volontairement sans « shimmer » : la DA est au trait, pas au dégradé.
      Une simple respiration d'opacité suffit à dire « ça charge ». */
@@ -227,15 +235,20 @@ body::before {
 	}
 
 	/* ── Apparition en cascade (« domino ») ───────────────────────────────────
-     Chaque enfant direct monte de 0.5rem en fondu, décalé de son rang. Le pas
-     est réglable : 40 ms convient à des rangées d'articles serrées, il faut le
-     desserrer pour des blocs hauts (Settings) où l'œil doit voyager. */
+     Chaque enfant direct monte de 0.5rem en fondu, décalé de son rang.
+     La durée d'un élément est celle d'une transition de page (220 ms) : c'est le
+     même mouvement, il n'y a aucune raison qu'il dure autrement ici — et la
+     doctrine ci-dessus le veut sous 250 ms. Seul le PAS se règle, c'est lui qui
+     donne le domino : desserré pour les blocs hauts de Settings.
+     ATTENTION : ArticleList retire la classe après la cascade, sur un délai
+     câblé en dur — toucher à ces valeurs demande de l'y répercuter. */
 	.cascade {
-		--cascade-pas: 40ms;
+		--cascade-pas: 65ms;
+		--cascade-duree: 220ms;
 	}
 
 	.cascade>* {
-		animation: cascade-entree 320ms var(--ease-nav) both;
+		animation: cascade-entree var(--cascade-duree) var(--ease-nav) both;
 	}
 
 	/* Au-delà de huit rangées on est sous la ligne de flottaison : inutile de
@@ -333,6 +346,23 @@ body::before {
 	}
 }
 
+@keyframes signet-pose {
+	from {
+		opacity: 0;
+		transform: scale(0.4) translateY(-2px)
+	}
+
+	55% {
+		opacity: 1;
+		transform: scale(1.3)
+	}
+
+	to {
+		opacity: 1;
+		transform: none
+	}
+}
+
 @keyframes cascade-entree {
 	from {
 		opacity: 0;
@@ -369,6 +399,11 @@ body::before {
 	}
 
 	.cascade>* {
+		animation: none
+	}
+
+	/* Le signet reste posé — c'est l'information —, il ne bondit simplement pas. */
+	.signet-pose {
 		animation: none
 	}
 }

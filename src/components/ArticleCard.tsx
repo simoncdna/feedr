@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import { publishedLabel, stripHtml } from '@/lib/text'
 // Source unique du type : le dupliquer ici le ferait diverger de la requête.
@@ -10,6 +11,19 @@ export type ArticleLinkProps = {
 }
 
 function Meta({ article }: { article: ArticleCardData }) {
+  // Le signet ne se pose QUE sur la bascule, jamais au montage : sinon toutes
+  // les rangées déjà en favori s'animeraient à chaque affichage du fil.
+  //
+  // Ajustement d'état pendant le rendu, et non dans un effet : un effet ne
+  // s'exécute qu'APRÈS la peinture, et le signet était alors peint une image à
+  // taille pleine avant de repartir à 0.4 — l'à-coup se voit (mesuré).
+  const [pose, setPose] = useState(false)
+  const precedent = useRef(article.bookmarked)
+  if (precedent.current !== article.bookmarked) {
+    precedent.current = article.bookmarked
+    if (article.bookmarked) setPose(true)
+  }
+
   return (
     <p className="mono-label flex min-w-0 items-center gap-1.5">
       <span className="truncate">
@@ -22,7 +36,16 @@ function Meta({ article }: { article: ArticleCardData }) {
         </svg>
       )}
       {article.bookmarked && (
-        <svg viewBox="0 0 24 24" className="h-3 w-3 shrink-0 text-accent" fill="currentColor" aria-hidden="true">
+        <svg
+          viewBox="0 0 24 24"
+          className={`h-3 w-3 shrink-0 text-accent ${pose ? 'signet-pose' : ''}`}
+          fill="currentColor"
+          aria-hidden="true"
+          // Un état, pas une valeur dérivée du rendu : le refetch qui suit la
+          // mutation re-rend la carte en pleine animation, et une classe
+          // recalculée à ce moment-là la couperait net.
+          onAnimationEnd={() => setPose(false)}
+        >
           <path d="M6 4h12v17l-6-4-6 4z" />
         </svg>
       )}

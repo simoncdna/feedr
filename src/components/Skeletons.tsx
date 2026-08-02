@@ -52,7 +52,9 @@ export function ArticleSkeleton() {
 
 export function SettingsSkeleton() {
   return (
-    <div aria-busy="true" aria-label="Loading settings" className="space-y-12 px-4 lg:max-w-2xl lg:px-8 lg:py-8">
+    // `lg:px-6` comme la page elle-même, et comme les volets du fil : sinon le
+    // titre se décale de 8 px au moment où le contenu remplace le squelette.
+    <div aria-busy="true" aria-label="Loading settings" className="space-y-12 px-4 lg:max-w-2xl lg:px-6 lg:py-8">
       <div className="skeleton h-9 w-40" />
       {[0, 1, 2].map((s) => (
         <div key={s} className="space-y-4">
