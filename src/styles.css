@@ -89,6 +89,34 @@ body::after {
   pointer-events: none;
 }
 
+/* Capot de la barre de statut — pour le NAVIGATEUR.
+   Safari compose la zone de la barre de statut / Dynamic Island depuis la couche
+   document : en défilant, le contenu de la page s'y devine. Trois conditions,
+   toutes trouvées par bisection sur simulateur :
+
+   1. `sticky`, pas `fixed`. Un élément `fixed` est découpé à la zone de mise en
+      page, qui commence SOUS la barre — il ne peut donc rien y peindre. `sticky`
+      vit dans le flux du document, le seul calque que Safari reprend là.
+   2. `z-index` AU-DESSUS du grain (60). C'était la cause du premier échec : le
+      grain est une couche `fixed` translucide plein écran, et il passait devant
+      le capot. Pixel dans la bande : 235,192,175 avec un capot en dessous du
+      grain, 255,255,255 au-dessus.
+   3. `margin-top` négatif égal à la hauteur : le capot sort du flux vers le
+      haut, l'élément suivant démarre à 0 — aucun impact sur la mise en page.
+
+   100px couvrent toutes les hauteurs de barre iPhone ; le surplus est hors écran.
+   En PWA installée, `env()` renvoie une hauteur réelle et c'est `body::after` qui
+   prend le relais — les deux mécanismes cohabitent sans se gêner. */
+body > .capot-barre-statut {
+  position: sticky;
+  top: -100px;
+  margin-top: -100px;
+  height: 100px;
+  background-color: var(--background);
+  z-index: 70;
+  pointer-events: none;
+}
+
 /* Grain « papier journal » : bruit SVG statique en overlay, au-dessus de tout,
    transparent aux interactions. Opacité volontairement subtile. */
 body::before {

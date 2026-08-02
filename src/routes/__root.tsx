@@ -91,6 +91,10 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       {/* Châssis repris de src/app/layout.tsx : mêmes classes, même ordre. */}
       <body className="bg-background text-foreground antialiased">
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }} />
+        {/* Doit rester le PREMIER enfant de body : c'est sa position naturelle au
+            sommet du flux qui lui permet de couvrir la barre de statut. Voir le
+            commentaire détaillé dans styles.css. */}
+        <div aria-hidden="true" className="capot-barre-statut" />
         <div className="lg:flex">
           <Sidebar />
           {/* Seul le contenu est animé pendant une transition de page. Sans ce
