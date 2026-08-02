@@ -66,10 +66,14 @@ C'est la couche qui fait le travail.
 Rien trouvé aux trois couches → `'No RSS feed found at this address'`.
 
 On ne teste **pas** de chemins conventionnels (`/feed`, `/rss`, `/atom.xml`…) : on ne
-tape que des URLs que le site a déclarées ou que l'on sait construire. Un site comme
-Hacker News, qui n'a pas d'autodiscovery mais un flux sur `/rss`, échouera — il faudra
-coller l'URL du flux à la main. Compromis assumé pour ne pas ouvrir une surface réseau
-spéculative.
+tape que des URLs que le site a déclarées ou que l'on sait construire. Compromis assumé
+pour ne pas ouvrir une surface réseau spéculative ; un site sans autodiscovery et hors
+des trois règles demandera de coller l'URL du flux à la main.
+
+Cette spec citait Hacker News comme victime de ce compromis. C'était faux : mesuré le
+2026-08-02, HN **déclare** son flux (`<link rel="alternate">` → `/rss`) et la couche 3
+le trouve. L'exemple ne tenait pas, et la longue traîne de sites sans autodiscovery est
+sans doute plus mince que je ne l'avais supposé.
 
 ## Modules
 
@@ -148,7 +152,10 @@ permissif que le `fetchFeed` actuel. Garde-fous :
   `rss-parser`, qui suit ses propres redirections sans revalider — comportement
   antérieur à cette feature, non traité ici, et signalé en commentaire pour qu'on ne
   croie pas le chemin entier protégé.
-- Corps tronqué à 512 Ko — l'autodiscovery est dans le `<head>`, on n'a pas besoin du reste.
+- Lecture arrêtée à `</head>`, avec un plafond dur de 2 Mo en repli si la page n'en a pas.
+  Le plafond n'est pas une estimation de la taille d'un `<head>` : **YouTube déclare son
+  flux à ~730 Ko dans le sien**, derrière son JSON inline, et un plafond de 512 Ko coupait
+  la balise — la découverte renvoyait zéro candidat sur le cas d'usage d'origine.
 - `content-type` non-HTML → aucun candidat.
 - Chaque URL candidate est revalidée par `isSafeFeedUrl` avant d'être renvoyée au client
   ou fetchée.
