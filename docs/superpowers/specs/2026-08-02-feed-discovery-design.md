@@ -93,7 +93,7 @@ export function extractFeedLinks(html: string, baseUrl: string): FeedCandidate[]
 - rejeter tout candidat qui ne passe pas `isSafeFeedUrl` ;
 - dédupliquer par URL ;
 - prendre le `title` de la balise comme libellé, sinon le `pathname` ;
-- **reléguer les flux de commentaires en fin de liste** (URL contenant `/comments/feed`, ou `title` contenant « comments »), pour qu'un WordPress typique retombe sur le cas « un seul candidat pertinent » plutôt que d'imposer un choix.
+- **reléguer les flux de commentaires en fin de liste** (chemin contenant `/comments/`, ou `title` contenant « comments »), pour que le flux utile soit présenté en premier. On ne les supprime pas : un WordPress qui déclare articles + commentaires produit bien deux candidats et passe donc par l'écran de choix — trier ne fait qu'ordonner.
 
 La partie réseau — télécharger la page — reste une fonction locale de
 `src/server/mutations.ts`, à côté de son unique appelant. Pas de `createServerFn`
