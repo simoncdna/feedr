@@ -114,6 +114,16 @@ describe('extractArticle', () => {
     const bavard = Array.from({ length: 60 }, () => '<p><span><b>a</b></span></p>').join('')
     expect(extractArticle(page(`<article>${bavard}</article>`), URL_PAGE)).toBeNull()
   })
+
+  // Un 200 au corps vide servi en text/html arrive jusqu'ici, et le getter
+  // `head` de linkedom lève sur une entrée sans élément racine : sans le
+  // try/catch autour de la préparation du document, la fonction sortirait en
+  // exception au lieu de rendre null.
+  it('rend null sans lever sur une entrée sans élément racine', () => {
+    for (const entree of ['', '   ', 'pas du html', '<!doctype html>']) {
+      expect(extractArticle(entree, URL_PAGE)).toBeNull()
+    }
+  })
 })
 
 describe('stripHtml', () => {
@@ -176,19 +186,18 @@ export const ARTICLE_SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
  * le contenu du flux.
  */
 export function extractArticle(html: string, url: string): string | null {
-  let document: Document
-  try {
-    ;({ document } = parseHTML(html))
-  } catch {
-    return null
-  }
-  if (!document.querySelector('base[href]')) {
-    const base = document.createElement('base')
-    base.setAttribute('href', url)
-    document.head?.prepend(base)
-  }
   let parsed: { content?: string | null } | null = null
   try {
+    const { document } = parseHTML(html)
+    // `document.head` n'est pas un simple accès : sur une entrée sans élément
+    // racine (corps vide, texte nu, doctype seul), le getter de linkedom lève,
+    // et un `?.` n'y peut rien. D'où la préparation du document à l'intérieur
+    // du try — un 200 au corps vide servi en text/html suffit à y arriver.
+    if (!document.querySelector('base[href]')) {
+      const base = document.createElement('base')
+      base.setAttribute('href', url)
+      document.head.prepend(base)
+    }
     // Readability mute le document qu'on lui passe ; il est jetable ici.
     parsed = new Readability(document).parse()
   } catch {
@@ -203,12 +212,12 @@ export function extractArticle(html: string, url: string): string | null {
 - [ ] **Step 5 : lancer les tests**
 
 Run: `npx vitest run tests/extract.test.ts`
-Expected: PASS, 7 tests.
+Expected: PASS, 8 tests.
 
 - [ ] **Step 6 : vérifier que rien d'autre n'a cassé**
 
 Run: `npm test`
-Expected: PASS — 126 tests d'avant + les 7 nouveaux = 133.
+Expected: PASS — 126 tests d'avant + les 8 nouveaux = 134.
 
 - [ ] **Step 7 : commit**
 
@@ -365,7 +374,7 @@ export const fetchFullContent = createServerFn({ method: 'POST' })
 - [ ] **Step 3 : vérifier que le projet compile et que les tests passent**
 
 Run: `npx tsc --noEmit && npm test`
-Expected: aucune erreur de type, 133 tests PASS.
+Expected: aucune erreur de type, 134 tests PASS.
 
 - [ ] **Step 4 : commit**
 
@@ -485,7 +494,7 @@ Le titre, la source, la date et le bouton bookmark restent hors du remplacement 
 - [ ] **Step 4 : vérifier types et tests**
 
 Run: `npx tsc --noEmit && npm test`
-Expected: aucune erreur, 133 tests PASS.
+Expected: aucune erreur, 134 tests PASS.
 
 - [ ] **Step 5 : commit**
 
@@ -530,7 +539,7 @@ Expected: dans les deux cas, le teaser du flux s'affiche, sans message d'erreur,
 
 ```bash
 git add -A
-git commit -m "docs(agents): 133 tests avec l'extraction du texte complet"
+git commit -m "docs(agents): 134 tests avec l'extraction du texte complet"
 ```
 
 Mettre à jour la ligne `npm test # 126 tests Vitest` d'`AGENTS.md` avant ce commit.
