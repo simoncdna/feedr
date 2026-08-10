@@ -243,20 +243,24 @@ export const completeSignup = createServerFn({ method: 'POST' }).handler(async (
  * première — et un échec tardif effacerait un succès. Quand la course est
  * perdue, on relit ce que le gagnant a posé plutôt que de rendre son propre
  * résultat.
+ *
+ * Ne filtre que sur `articles.id`, sans contrôle de propriété : la seule
+ * appelante fait ce contrôle avant d'arriver ici. Cette fonction n'est donc sûre
+ * que par son appelante — à revérifier si une seconde apparaît.
  */
 async function recordAttempt(id: number, content: string | null): Promise<string | null> {
-  const [gagne] = await db
+  const [won] = await db
     .update(articles)
     .set({ fullContent: content, fullContentAt: new Date() })
     .where(and(eq(articles.id, id), isNull(articles.fullContentAt)))
     .returning({ fullContent: articles.fullContent })
-  if (gagne) return gagne.fullContent
-  const [existant] = await db
+  if (won) return won.fullContent
+  const [existing] = await db
     .select({ fullContent: articles.fullContent })
     .from(articles)
     .where(eq(articles.id, id))
     .limit(1)
-  return existant?.fullContent ?? null
+  return existing?.fullContent ?? null
 }
 
 /**
@@ -270,6 +274,9 @@ export const fetchFullContent = createServerFn({ method: 'POST' })
   .validator((id: number) => id)
   .handler(async ({ data: id }): Promise<string | null> => {
     const sessionUser = await requireUser()
+    // Le join sur categories.userId est le cloisonnement multi-utilisateurs.
+    // Ici il vaut plus que d'habitude : sans lui, un id d'article suffirait à
+    // faire partir une requête sortante pour le compte d'un autre utilisateur.
     const [article] = await db
       .select({
         link: articles.link,
@@ -282,8 +289,6 @@ export const fetchFullContent = createServerFn({ method: 'POST' })
       .innerJoin(categories, eq(feeds.categoryId, categories.id))
       .where(and(eq(articles.id, id), eq(categories.userId, sessionUser.id)))
       .limit(1)
-    // Le join sur categories.userId est le cloisonnement multi-utilisateurs :
-    // sans lui, un id suffirait à faire scraper une page pour autrui.
     if (!article) return null
     if (article.fullContentAt) return article.fullContent
     // YouTube rend 0 caractère au travers de Readability (mesuré le
