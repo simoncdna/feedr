@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useMutation, useQueryClient, type QueryKey } from '@tanstack/react-query'
 import {
   articleQuery,
@@ -126,14 +126,25 @@ export function useCreateInvitation() {
  *
  * `attempted` est `article.fullContentAt !== null`, jamais la présence du texte :
  * une tentative ratée pose une date sans corps, et confondre les deux relancerait
- * le scraping à chaque ouverture. En cas d'échec réseau on ne réessaie pas non
- * plus — la server fn a noté la tentative côté base, et l'article retombe sur le
- * contenu du flux.
+ * le scraping à chaque ouverture. En cas d'échec on ne réessaie pas dans ce
+ * rendu, et l'article retombe sur le contenu du flux. Attention : selon l'endroit
+ * où l'échec s'est produit, la base peut ne rien savoir. `recordAttempt` n'est
+ * atteint qu'après le retour de `fetchPage` ; une panne côté plateforme (function
+ * tuée, 502, session expirée) ne note donc aucune tentative, et l'article sera
+ * rescrapé à la prochaine ouverture.
  *
  * La réponse est écrite dans le cache du détail plutôt que la clé invalidée : la
  * server fn rend déjà le contenu, un refetch serait un aller-retour pour rien.
  * La date posée n'est pas celle de la base — le serveur ne la rend pas — mais
  * seule sa présence est lue, jamais sa valeur, qui ne s'affiche nulle part.
+ *
+ * L'annulation avant l'écriture n'est pas décorative, et elle est délibérément
+ * dans `onSuccess` et non dans `onMutate` : le refetch qui pose problème part
+ * *pendant* le scraping (retour au premier plan de la PWA, invalidation par un
+ * bookmark, préchargement de route au survol), donc après le début de la
+ * mutation. Il photographie la ligne avec `full_content_at` encore nul, et sans
+ * cette annulation sa réponse atterrit après la nôtre et la rembobine : le corps
+ * disparaît sous les yeux du lecteur et l'effet repart.
  *
  * L'id voyage en variable de mutation et non par la fermeture, et figure dans les
  * dépendances de l'effet. Les deux tiennent au même mécanisme : `mutate` est une
@@ -146,21 +157,27 @@ export function useCreateInvitation() {
  */
 export function useFullContent(id: number, attempted: boolean) {
   const queryClient = useQueryClient()
-  const { mutate, isError } = useMutation({
+  // L'échec est retenu par article, et non lu sur la mutation. `isPending` comme
+  // `isError` sont l'état de l'observateur, qui survit à l'article auquel il se
+  // rapporte : après un article en échec, le suivant jamais tenté hériterait de
+  // son `isError`, verrait son extrait de flux peint le temps d'une image, puis
+  // le squelette — le clignotement que ce hook existe pour éviter.
+  const [failedId, setFailedId] = useState<number | null>(null)
+  const { mutate } = useMutation({
     mutationFn: (articleId: number) => fetchFullContent({ data: articleId }),
-    onSuccess: (fullContent, articleId) => {
-      queryClient.setQueryData<ArticleDetailData | null>(articleQuery(articleId).queryKey, (a) =>
+    onSuccess: async (fullContent, articleId) => {
+      const queryKey = articleQuery(articleId).queryKey
+      await queryClient.cancelQueries({ queryKey })
+      queryClient.setQueryData<ArticleDetailData | null>(queryKey, (a) =>
         a ? { ...a, fullContent, fullContentAt: new Date() } : a,
       )
     },
+    onError: (_err, articleId) => setFailedId(articleId),
   })
   useEffect(() => {
     if (!attempted) mutate(id)
   }, [id, attempted, mutate])
   // Et non `isPending` : au premier rendu la mutation n'est pas encore partie et
   // l'extrait du flux apparaîtrait le temps d'une image avant le squelette.
-  // `isPending` est de plus partagé entre articles — il vaut encore `true` pour
-  // celui qu'on vient de quitter, et masquerait le texte déjà en cache du suivant
-  // pendant tout le scraping du précédent.
-  return !attempted && !isError
+  return !attempted && failedId !== id
 }
