@@ -35,17 +35,32 @@ export function FeedSkeleton() {
   )
 }
 
+/**
+ * Le corps seul, sans titre ni méta. Sert au squelette de page complet, et à la
+ * place du texte pendant que `useFullContent` va chercher l'article d'origine
+ * sous un titre déjà affiché.
+ *
+ * `mt-6` est la marge du bloc `prose` qu'il remplace dans `ArticleDetail`, pas
+ * un choix esthétique : c'est le seul échange que le lecteur regarde se faire,
+ * et un écart de marge décalerait la première ligne à l'arrivée du texte.
+ */
+export function ArticleBodySkeleton() {
+  return (
+    <div aria-busy="true" aria-label="Loading article text" className="mt-6 space-y-3">
+      {[95, 88, 92, 70, 84, 45].map((largeur, i) => (
+        <div key={i} className="skeleton h-4" style={{ width: `${largeur}%` }} />
+      ))}
+    </div>
+  )
+}
+
 export function ArticleSkeleton() {
   return (
     <div aria-busy="true" aria-label="Loading article" className="px-4 py-6 lg:px-6 lg:py-8">
       <div className="skeleton h-3 w-40" />
       <div className="skeleton mt-4 h-7 w-[90%]" />
       <div className="skeleton mt-2 h-7 w-[60%]" />
-      <div className="mt-8 space-y-3">
-        {[95, 88, 92, 70, 84, 45].map((largeur, i) => (
-          <div key={i} className="skeleton h-4" style={{ width: `${largeur}%` }} />
-        ))}
-      </div>
+      <ArticleBodySkeleton />
     </div>
   )
 }

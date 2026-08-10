@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useMutation, useQueryClient, type QueryKey } from '@tanstack/react-query'
 import {
   articleQuery,
@@ -12,6 +13,7 @@ import {
   createInvitation,
   deleteCategory,
   deleteFeed,
+  fetchFullContent,
   toggleBookmark,
   toggleCategoryNotify,
 } from '@/server/mutations'
@@ -116,4 +118,49 @@ export function useCreateInvitation() {
     mutationFn: (v: { kind: 'signup' | 'recovery'; targetUserId?: string }) =>
       createInvitation({ data: v }),
   })
+}
+
+/**
+ * Va chercher le texte complet à l'ouverture d'un article, une fois par article,
+ * et rend `true` tant qu'il faut afficher un squelette à la place du corps.
+ *
+ * `attempted` est `article.fullContentAt !== null`, jamais la présence du texte :
+ * une tentative ratée pose une date sans corps, et confondre les deux relancerait
+ * le scraping à chaque ouverture. En cas d'échec réseau on ne réessaie pas non
+ * plus — la server fn a noté la tentative côté base, et l'article retombe sur le
+ * contenu du flux.
+ *
+ * La réponse est écrite dans le cache du détail plutôt que la clé invalidée : la
+ * server fn rend déjà le contenu, un refetch serait un aller-retour pour rien.
+ * La date posée n'est pas celle de la base — le serveur ne la rend pas — mais
+ * seule sa présence est lue, jamais sa valeur, qui ne s'affiche nulle part.
+ *
+ * L'id voyage en variable de mutation et non par la fermeture, et figure dans les
+ * dépendances de l'effet. Les deux tiennent au même mécanisme : `mutate` est une
+ * référence stable, et `MutationObserver.setOptions` réinjecte les options du
+ * dernier rendu dans une mutation encore en vol. Sans l'id en dépendance, deux
+ * articles jamais tentés d'affilée ne déclencheraient qu'une requête, pour le
+ * premier ; avec un `onSuccess` qui lirait l'id de la fermeture, changer
+ * d'article pendant le scraping — une dizaine de secondes dans le pire cas —
+ * écrirait le corps du premier dans la clé du second.
+ */
+export function useFullContent(id: number, attempted: boolean) {
+  const queryClient = useQueryClient()
+  const { mutate, isError } = useMutation({
+    mutationFn: (articleId: number) => fetchFullContent({ data: articleId }),
+    onSuccess: (fullContent, articleId) => {
+      queryClient.setQueryData<ArticleDetailData | null>(articleQuery(articleId).queryKey, (a) =>
+        a ? { ...a, fullContent, fullContentAt: new Date() } : a,
+      )
+    },
+  })
+  useEffect(() => {
+    if (!attempted) mutate(id)
+  }, [id, attempted, mutate])
+  // Et non `isPending` : au premier rendu la mutation n'est pas encore partie et
+  // l'extrait du flux apparaîtrait le temps d'une image avant le squelette.
+  // `isPending` est de plus partagé entre articles — il vaut encore `true` pour
+  // celui qu'on vient de quitter, et masquerait le texte déjà en cache du suivant
+  // pendant tout le scraping du précédent.
+  return !attempted && !isError
 }

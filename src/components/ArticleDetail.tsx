@@ -1,6 +1,8 @@
 import sanitizeHtml from 'sanitize-html'
+import { ArticleBodySkeleton } from '@/components/Skeletons'
+import { ARTICLE_SANITIZE_OPTIONS } from '@/lib/sanitize'
 import { relativeDate } from '@/lib/text'
-import { useToggleBookmark } from '@/mutations'
+import { useFullContent, useToggleBookmark } from '@/mutations'
 // Source unique du type : partagé avec la server fn getArticle.
 import type { ArticleDetailData } from '@/server/queries'
 
@@ -14,19 +16,12 @@ export function ArticleDetail({
   categoryId?: number | null
 }) {
   const toggle = useToggleBookmark(categoryId)
-  const raw = article.content ?? article.description
-  const safe = raw
-    ? sanitizeHtml(raw, {
-        allowedTags: [...sanitizeHtml.defaults.allowedTags, 'img'],
-        allowedAttributes: {
-          ...sanitizeHtml.defaults.allowedAttributes,
-          img: ['src', 'alt'],
-        },
-        transformTags: {
-          a: sanitizeHtml.simpleTransform('a', { rel: 'noopener noreferrer' }),
-        },
-      })
-    : null
+  const loadingBody = useFullContent(article.id, article.fullContentAt !== null)
+  // Le texte complet d'abord, le flux en repli. Il est déjà assaini côté
+  // serveur avant d'entrer en base ; on repasse ici parce que `content` et
+  // `description` viennent du flux et n'ont, eux, jamais été filtrés.
+  const raw = article.fullContent ?? article.content ?? article.description
+  const safe = raw ? sanitizeHtml(raw, ARTICLE_SANITIZE_OPTIONS) : null
 
   return (
     <article className="px-4 py-6 lg:px-6 lg:py-8">
@@ -58,11 +53,18 @@ export function ArticleDetail({
       >
         {article.title}
       </h1>
-      {safe && (
-        <div
-          className="prose prose-neutral mt-6 max-w-none dark:prose-invert prose-img:rounded"
-          dangerouslySetInnerHTML={{ __html: safe }}
-        />
+      {/* Titre, source, date et bouton restent en dehors de l'échange : c'est ce
+          qui empêche la page de sauter sous le pouce du lecteur à l'arrivée du
+          texte. Seul le corps est remplacé. */}
+      {loadingBody ? (
+        <ArticleBodySkeleton />
+      ) : (
+        safe && (
+          <div
+            className="prose prose-neutral mt-6 max-w-none dark:prose-invert prose-img:rounded"
+            dangerouslySetInnerHTML={{ __html: safe }}
+          />
+        )
       )}
       <p className="mt-10">
         <a
