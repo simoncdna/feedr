@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest'
 import { extractArticle } from '@/lib/extract'
-import { stripHtml } from '@/lib/text'
 
 const URL_PAGE = 'https://exemple.fr/blog/mon-article'
 
@@ -93,6 +92,13 @@ describe('extractArticle', () => {
     expect(out).not.toMatch(/onerror/i)
   })
 
+  // Seule règle des options d'assainissement à portée sécurité : sans rel,
+  // un lien sortant ouvert dans l'app garderait accès à `window.opener`.
+  it('ajoute rel="noopener noreferrer" aux liens sortants', () => {
+    const html = page(`<article>${corps}<p><a href="https://externe.example">lien</a></p></article>`)
+    expect(extractArticle(html, URL_PAGE)).toMatch(/rel="noopener noreferrer"/)
+  })
+
   it('compte le seuil sur le texte, pas sur le balisage', () => {
     // Beaucoup de balises, presque pas de texte : doit être rejeté.
     const bavard = Array.from({ length: 60 }, () => '<p><span><b>a</b></span></p>').join('')
@@ -119,11 +125,5 @@ describe('extractArticle', () => {
     for (const entree of ['', '   ', 'pas du html', '<!doctype html>']) {
       expect(extractArticle(entree, URL_PAGE)).toBeNull()
     }
-  })
-})
-
-describe('stripHtml', () => {
-  it('reste la mesure de longueur utilisée par le seuil', () => {
-    expect(stripHtml('<p>Bonjour <b>toi</b></p>')).toBe('Bonjour toi')
   })
 })

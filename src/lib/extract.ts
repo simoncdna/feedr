@@ -1,6 +1,7 @@
 import { Readability } from '@mozilla/readability'
 import { parseHTML } from 'linkedom'
 import sanitizeHtml from 'sanitize-html'
+import { ARTICLE_SANITIZE_OPTIONS } from '@/lib/sanitize'
 import { stripHtml } from '@/lib/text'
 
 /**
@@ -15,22 +16,6 @@ import { stripHtml } from '@/lib/text'
  * sémantique différente.
  */
 const MIN_TEXT_CHARS = 500
-
-/**
- * Règles d'assainissement, partagées avec le rendu (`ArticleDetail`). Elles
- * vivent ici parce que c'est ici qu'on assainit avant d'écrire en base : on ne
- * stocke jamais du HTML tiers brut.
- */
-export const ARTICLE_SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
-  allowedTags: [...sanitizeHtml.defaults.allowedTags, 'img'],
-  allowedAttributes: {
-    ...sanitizeHtml.defaults.allowedAttributes,
-    img: ['src', 'alt'],
-  },
-  transformTags: {
-    a: sanitizeHtml.simpleTransform('a', { rel: 'noopener noreferrer' }),
-  },
-}
 
 /**
  * Profondeur d'imbrication au-delà de laquelle on abandonne avant Readability.
