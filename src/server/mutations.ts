@@ -1,4 +1,4 @@
-import { and, eq, isNull, sql } from 'drizzle-orm'
+import { and, eq, isNull, or, sql } from 'drizzle-orm'
 import { createServerFn } from '@tanstack/react-start'
 import { getRequestHeaders } from '@tanstack/react-start/server'
 import { redirect } from '@tanstack/react-router'
@@ -234,25 +234,39 @@ export const completeSignup = createServerFn({ method: 'POST' }).handler(async (
 })
 
 /**
- * Écrit le résultat d'une tentative, sans jamais écraser celui d'une autre.
+ * Écrit le résultat d'une tentative sans écraser un succès — mais un succès a
+ * le droit de remplacer un échec déjà noté.
  *
- * Le `isNull` n'est pas décoratif : le garde de `fetchFullContent` lit
+ * La clause de garde n'est pas décorative : le garde de `fetchFullContent` lit
  * `fullContentAt` bien avant qu'on écrive, donc deux ouvertures simultanées du
  * même article (deux appareils, ou le double effet de StrictMode en dev)
- * passent toutes les deux. Sans cette clause, la seconde écraserait la
- * première — et un échec tardif effacerait un succès. Quand la course est
- * perdue, on relit ce que le gagnant a posé plutôt que de rendre son propre
- * résultat.
+ * passent toutes les deux. Sans elle, un échec tardif effacerait un succès.
+ *
+ * Le premier arrivé ne peut pas gagner à tous les coups pour autant : deux
+ * requêtes simultanées sur le même hôte, c'est précisément ce qui déclenche la
+ * page anti-bot ou la limitation de débit de l'origine, donc `extractArticle`
+ * rendant `null` sur l'une des deux est le cas *attendu*, pas l'exotique. Avec
+ * un simple `isNull(fullContentAt)`, l'échec qui commite en premier condamnait
+ * le succès de l'autre à être jeté, et comme on ne réessaie jamais, l'article
+ * restait sur son extrait de flux *définitivement*. D'où une condition qui
+ * dépend de ce qu'on écrit : un échec ne prend que sur une ligne jamais
+ * tentée ; un succès prend aussi sur une ligne tentée mais restée sans corps.
+ * Quand la course est perdue, on relit ce que le gagnant a posé plutôt que de
+ * rendre son propre résultat.
  *
  * Ne filtre que sur `articles.id`, sans contrôle de propriété : la seule
  * appelante fait ce contrôle avant d'arriver ici. Cette fonction n'est donc sûre
  * que par son appelante — à revérifier si une seconde apparaît.
  */
 async function recordAttempt(id: number, content: string | null): Promise<string | null> {
+  const claimable =
+    content === null
+      ? isNull(articles.fullContentAt)
+      : or(isNull(articles.fullContentAt), isNull(articles.fullContent))
   const [won] = await db
     .update(articles)
     .set({ fullContent: content, fullContentAt: new Date() })
-    .where(and(eq(articles.id, id), isNull(articles.fullContentAt)))
+    .where(and(eq(articles.id, id), claimable))
     .returning({ fullContent: articles.fullContent })
   if (won) return won.fullContent
   const [existing] = await db
