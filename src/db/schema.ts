@@ -31,6 +31,13 @@ export const articles = pgTable('articles', {
   link: text('link').notNull(),
   description: text('description'),
   content: text('content'),
+  // Le corps extrait de la page d'origine, ou null si l'extraction a échoué.
+  fullContent: text('full_content'),
+  // Quand on a *tenté*, succès ou échec. Le couple avec full_content encode
+  // trois états sans colonne de statut : jamais tenté (null), réussi (date +
+  // contenu), échoué (date sans contenu). C'est ce qui empêche de refrapper un
+  // paywall à chaque réouverture de l'article.
+  fullContentAt: timestamp('full_content_at', { withTimezone: true }),
   imageUrl: text('image_url'),
   author: text('author'),
   hasVideo: boolean('has_video').notNull().default(false),
