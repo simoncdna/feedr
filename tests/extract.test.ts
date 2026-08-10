@@ -81,6 +81,34 @@ describe('extractArticle', () => {
     expect(extractArticle(html, URL_PAGE)).toContain('https://exemple.fr/blog/photo.jpg')
   })
 
+  // Le `baseURI` de linkedom, c'est `querySelector('base')` — la première
+  // balise `base`, href ou pas (node_modules/linkedom/esm/interface/node.js:68).
+  // Écrire sur `base[href]`, comme le veut la spec HTML, réécrivait donc une
+  // balise que linkedom ne lit jamais : il retombait sur la première, sans
+  // href, y lisait `null`, et toutes les URLs restaient relatives.
+  it('absolutise malgré une balise <base> sans href posée en premier', () => {
+    const html = page(
+      `<head><base target="_blank"><base href="/blog/"></head>` +
+        `<article>${corps}<img src="photo.jpg" alt="p"></article>`,
+    )
+    expect(extractArticle(html, URL_PAGE)).toContain('https://exemple.fr/blog/photo.jpg')
+  })
+
+  // Un schéma opaque passe `new URL(declared, url)` sans lever — c'est ensuite,
+  // dans Readability, que chaque `new URL(relative, base)` lève et laisse l'URL
+  // relative telle quelle. Le HTML stocké finit dans `dangerouslySetInnerHTML`
+  // sur /article/5 : une `src` relative y taperait sur Feedr lui-même, et un
+  // `<a href="/settings">` d'un tiers promènerait le lecteur dans ses réglages.
+  it.each([['data:text/plain,x'], ['javascript:alert(1)']])(
+    'retombe sur l’URL de la page quand <base href="%s"> n’est ni http ni https',
+    (href) => {
+      const html = page(
+        `<head><base href="${href}"></head><article>${corps}<img src="photo.jpg" alt="p"></article>`,
+      )
+      expect(extractArticle(html, URL_PAGE)).toContain('https://exemple.fr/blog/photo.jpg')
+    },
+  )
+
   it('assainit le HTML extrait', () => {
     const html = page(
       `<article>${corps}<script>alert(1)</script>` +

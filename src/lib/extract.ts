@@ -60,8 +60,10 @@ function exceedsMaxDepth(root: Element, max: number): boolean {
  * d'articles cassées plutôt que de lever (vérifié le 2026-08-10). On calcule
  * donc nous-mêmes l'équivalent de cette résolution — `new URL(declared, url)`
  * — et on réécrit la balise avec le résultat, qu'il y ait déjà une balise ou
- * pas ; une balise déjà absolue n'en est pas changée. Un `href` invalide
- * retombe sur `url` plutôt que de faire lever `extractArticle`.
+ * pas ; une balise déjà absolue n'en est pas changée. Un `href` invalide, ou
+ * résolu sur autre chose que `http:`/`https:`, retombe sur `url` plutôt que de
+ * faire lever `extractArticle` ou de laisser les URLs relatives (détail du
+ * choix des sélecteurs de lecture et d'écriture dans le corps).
  *
  * Rend `null` quand il n'y a rien d'exploitable : à l'appelant de retomber sur
  * le contenu du flux.
@@ -74,16 +76,34 @@ export function extractArticle(html: string, url: string): string | null {
     // racine (corps vide, texte nu, doctype seul), le getter de linkedom lève,
     // et un `?.` n'y peut rien. D'où la préparation du document à l'intérieur
     // du try — un 200 au corps vide servi en text/html suffit à y arriver.
-    const baseEl = document.querySelector('base[href]')
-    const declared = baseEl?.getAttribute('href') ?? url
+    // On lit sur `base[href]` et on écrit sur `base` : ce n'est pas une
+    // inattention. La spec HTML fait foi pour la base *déclarée* — c'est la
+    // première balise pourvue d'un href qui compte — mais linkedom implémente
+    // `baseURI` en `querySelector('base')`, la première balise `base` tout
+    // court (node_modules/linkedom/esm/interface/node.js:68). Sur
+    // `<base target="_blank"><base href="/blog/">`, écrire sur celle que la
+    // spec désigne revenait à réécrire une balise que linkedom ne lit jamais :
+    // il retombait sur la première, sans href, y lisait `null`, et toutes les
+    // URLs restaient relatives.
+    const declared = document.querySelector('base[href]')?.getAttribute('href') ?? url
     let resolved: string
     try {
-      resolved = new URL(declared, url).toString()
+      const candidate = new URL(declared, url)
+      // Un schéma opaque (`data:`, `javascript:`) traverse `new URL` sans
+      // lever ; c'est plus tard, dans Readability, que chaque
+      // `new URL(relatif, base)` lève et laisse l'URL relative en place. Vu que
+      // le HTML stocké est réinjecté tel quel dans la page article, une `src`
+      // relative taperait sur Feedr et un `<a href="/settings">` d'un tiers
+      // promènerait le lecteur dans ses propres réglages. On ignore donc une
+      // base qui n'est pas du web, comme un href invalide.
+      const web = candidate.protocol === 'http:' || candidate.protocol === 'https:'
+      resolved = web ? candidate.toString() : url
     } catch {
       resolved = url
     }
-    if (baseEl) {
-      baseEl.setAttribute('href', resolved)
+    const target = document.querySelector('base')
+    if (target) {
+      target.setAttribute('href', resolved)
     } else {
       const base = document.createElement('base')
       base.setAttribute('href', resolved)
