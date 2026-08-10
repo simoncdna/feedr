@@ -17,6 +17,7 @@
 | Fichier | Responsabilité |
 |---|---|
 | `src/lib/extract.ts` *(créé)* | HTML brut → corps d'article assaini, ou `null`. Aucun réseau, aucune dépendance au framework. |
+| `src/lib/sanitize.ts` *(créé)* | Les règles d'assainissement, seules. Séparées d'`extract.ts` parce qu'`ArticleDetail` les importe côté client : les tirer du module d'extraction embarquerait linkedom et Readability dans le bundle du navigateur (~108 Ko gzip mesurés pour un objet de config de vingt lignes). |
 | `tests/extract.test.ts` *(créé)* | Fixtures HTML en dur, aucun réseau. |
 | `src/db/schema.ts` *(modifié)* | Deux colonnes sur `articles`. |
 | `src/server/queries.ts` *(modifié)* | `getArticle` renvoie les deux nouveaux champs. |
@@ -459,7 +460,7 @@ Dans `src/components/ArticleDetail.tsx`, ajouter les imports :
 
 ```tsx
 import { ArticleBodySkeleton } from '@/components/Skeletons'
-import { ARTICLE_SANITIZE_OPTIONS } from '@/lib/extract'
+import { ARTICLE_SANITIZE_OPTIONS } from '@/lib/sanitize'
 import { useFullContent, useToggleBookmark } from '@/mutations'
 ```
 

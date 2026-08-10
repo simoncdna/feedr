@@ -72,6 +72,54 @@ serveur : on ne stocke jamais en base du HTML tiers non nettoyé. `ArticleDetail
 garde malgré tout son `sanitizeHtml` sur le rendu — le contenu RSS y passe aussi,
 et une défense qui ne coûte rien reste en place.
 
+Les règles d'assainissement elles-mêmes vivent à part, dans `src/lib/sanitize.ts`,
+parce que `ArticleDetail` les importe côté client : les lire depuis le module
+d'extraction embarquerait linkedom et Readability dans le bundle du navigateur —
+mesuré, ~740 Ko contre ~313 Ko pour une entrée qui n'importe que l'objet de
+configuration, soit environ 108 Ko gzip ajoutés à la route article pour vingt
+lignes de config. Ni l'un ni l'autre paquet ne déclare `sideEffects: false`, donc
+rien ne s'élague.
+
+### La base déclarée par la page est résolue, pas respectée telle quelle
+
+Une page peut déclarer sa propre `<base>`. La règle HTML veut que la première
+gagne, et une première version s'y conformait en sautant l'injection — mais
+linkedom n'a pas d'URL de document, donc il ne sait pas résoudre une base
+*relative* comme le ferait un navigateur. Mesuré le 2026-08-10 :
+
+| `<base>` dans la page | en sautant l'injection | en résolvant contre l'URL finale |
+|---|---|---|
+| aucune | `https://exemple.fr/blog/photo.jpg` | idem |
+| `href="https://autre.example/sous/"` | `https://autre.example/sous/photo.jpg` | idem |
+| `href="/"` | `photo.jpg` ⛔ | `https://exemple.fr/photo.jpg` |
+| `href="/blog/"` | `photo.jpg` ⛔ | `https://exemple.fr/blog/photo.jpg` |
+| `href=""` | `photo.jpg` ⛔ | `https://exemple.fr/blog/photo.jpg` |
+
+`<base href="/">` est courant (coquilles Angular/Vue, thèmes de CMS), et comme on
+ne réessaie jamais, le HTML aux images cassées resterait en cache indéfiniment. On
+résout donc la base déclarée contre l'URL finale (`new URL(déclarée, url)`), ce qui
+laisse une base absolue intacte et donne le même résultat qu'un navigateur dans
+tous les cas ci-dessus.
+
+### Un plafond de profondeur, parce que le timeout ne couvre pas l'extraction
+
+Readability coûte superlinéairement en profondeur d'imbrication. Mesuré le
+2026-08-10 :
+
+| profondeur | taille HTML | temps d'extraction |
+|---|---|---|
+| 10 | 1 Ko | 10 ms |
+| 100 | 2 Ko | 29 ms |
+| 500 | 6 Ko | 883 ms |
+| 1000 | 12 Ko | 6 033 ms |
+
+Douze kilo-octets suffisent à brûler six secondes, et `fetchPage` en accepte deux
+mégaoctets. Son timeout de 10 s ne borne que le téléchargement : sans plafond, une
+page pathologique bloquerait la function pendant l'ouverture d'un article. On rend
+donc `null` au-delà de **200 niveaux** — sept fois la profondeur d'un article réel,
+qui plafonne vers 30. Le calcul se fait par un parcours itératif : une récursion
+sur un arbre profond ferait exploser la pile, ce qui annulerait l'intérêt du garde.
+
 ## Schéma
 
 Deux colonnes sur `articles` :
