@@ -113,6 +113,16 @@ Dans l'ordre :
 
 `fetchPage` étant déjà borné à 10 s, la fonction ne peut pas s'éterniser.
 
+Le garde de l'étape 2 est un *check-then-act* : entre sa lecture et l'`UPDATE`
+de l'étape 4, rien ne verrouille la ligne. Ouvrir le même article sur deux
+appareils à quelques centaines de millisecondes d'intervalle les fait donc
+passer tous les deux, avec deux requêtes vers le site pour rien. L'`UPDATE`
+porte pour cette raison un `WHERE full_content_at IS NULL` : le second écrivain
+ne touche aucune ligne et se contente de relire ce que le premier a posé. Ça ne
+supprime pas le double fetch — il faudrait revendiquer la ligne *avant* de
+partir chercher la page — mais ça garantit qu'une seule version est stockée, et
+que ce n'est pas la plus tardive qui gagne par accident.
+
 ## L'UI
 
 `getArticle` renvoie deux champs de plus : `fullContent` et `fullContentAt`.
