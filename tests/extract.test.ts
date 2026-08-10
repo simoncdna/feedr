@@ -65,6 +65,16 @@ describe('extractArticle', () => {
     const bavard = Array.from({ length: 60 }, () => '<p><span><b>a</b></span></p>').join('')
     expect(extractArticle(page(`<article>${bavard}</article>`), URL_PAGE)).toBeNull()
   })
+
+  // Un 200 au corps vide servi en text/html arrive jusqu'ici, et le getter
+  // `head` de linkedom lève sur une entrée sans élément racine : sans le
+  // try/catch autour de la préparation du document, la fonction sortirait en
+  // exception au lieu de rendre null.
+  it('rend null sans lever sur une entrée sans élément racine', () => {
+    for (const entree of ['', '   ', 'pas du html', '<!doctype html>']) {
+      expect(extractArticle(entree, URL_PAGE)).toBeNull()
+    }
+  })
 })
 
 describe('stripHtml', () => {

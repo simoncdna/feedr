@@ -41,19 +41,18 @@ export const ARTICLE_SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
  * le contenu du flux.
  */
 export function extractArticle(html: string, url: string): string | null {
-  let document: Document
-  try {
-    ;({ document } = parseHTML(html))
-  } catch {
-    return null
-  }
-  if (!document.querySelector('base[href]')) {
-    const base = document.createElement('base')
-    base.setAttribute('href', url)
-    document.head?.prepend(base)
-  }
   let parsed: { content?: string | null } | null = null
   try {
+    const { document } = parseHTML(html)
+    // `document.head` n'est pas un simple accès : sur une entrée sans élément
+    // racine (corps vide, texte nu, doctype seul), le getter de linkedom lève,
+    // et un `?.` n'y peut rien. D'où la préparation du document à l'intérieur
+    // du try — un 200 au corps vide servi en text/html suffit à y arriver.
+    if (!document.querySelector('base[href]')) {
+      const base = document.createElement('base')
+      base.setAttribute('href', url)
+      document.head.prepend(base)
+    }
     // Readability mute le document qu'on lui passe ; il est jetable ici.
     parsed = new Readability(document).parse()
   } catch {
