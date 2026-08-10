@@ -24,6 +24,9 @@ todos.json
 # vercel
 .vercel
 
+# réglages locaux d'outils
+.claude/learner.local.json
+
 # divers
 .DS_Store
 *.pem
