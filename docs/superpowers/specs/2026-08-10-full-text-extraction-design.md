@@ -64,7 +64,8 @@ réseau — donc testable seul, comme le reste de `src/lib/`.
 extractArticle(html: string, url: string): string | null
 ```
 
-Parse via linkedom, passe à Readability, assainit le HTML retourné avec
+Parse via linkedom, **injecte une balise `<base href>` portant l'URL finale**,
+passe à Readability, assainit le HTML retourné avec
 `sanitize-html` (mêmes règles que `ArticleDetail`), et rend `null` si Readability
 échoue ou si le texte tombe sous le seuil. **L'assainissement a lieu ici**, côté
 serveur : on ne stocke jamais en base du HTML tiers non nettoyé. `ArticleDetail`
