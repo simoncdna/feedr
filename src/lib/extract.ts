@@ -92,7 +92,18 @@ export function extractArticle(html: string, url: string): string | null {
 
     // Avant Readability, pas après : c'est le coût de Readability sur un
     // arbre pathologique qu'on veut éviter, pas seulement son résultat.
-    if (document.documentElement && exceedsMaxDepth(document.documentElement, MAX_DEPTH)) {
+    //
+    // Le parcours part des enfants élément du document, pas de
+    // `documentElement` : chez linkedom celui-ci est le *premier* enfant
+    // élément du document et non « la balise <html> ». Sur une page servie
+    // sans racine (`<!doctype html><meta charset="utf-8"><div>…`) il vaut
+    // `<meta>`, et le garde annonçait alors une profondeur de 0 en laissant
+    // passer tout le reste : 4 062 ms mesurés à 1 200 niveaux, 49 466 ms à
+    // 2 000, avec un contenu rendu au bout (2026-08-10). Aggravant, le temps
+    // brûlé n'est même pas payé une fois pour toutes — `recordAttempt` n'est
+    // atteint qu'après le retour d'`extractArticle`, donc une fonction tuée en
+    // cours de route ne note aucune tentative et l'ouverture suivante repaie.
+    if (Array.from(document.children).some((el) => exceedsMaxDepth(el, MAX_DEPTH))) {
       console.warn(`extractArticle: document trop profondément imbriqué pour ${url}`)
       return null
     }

@@ -117,6 +117,20 @@ describe('extractArticle', () => {
     expect(extractArticle(imbrique(20), URL_PAGE)).not.toBeNull()
   })
 
+  // Le plafond doit tenir même sans racine <html> : chez linkedom
+  // `documentElement` est le *premier* enfant élément du document, pas « la
+  // balise <html> ». Sur cette forme-là il vaut <meta>, et un garde parti de
+  // `documentElement` ne visitait qu'un sous-arbre vide — l'arbre pathologique
+  // passait entier à Readability (49 466 ms mesurés à 2000 niveaux le
+  // 2026-08-10, avec un contenu rendu au bout).
+  it('rend null au-delà du plafond de profondeur même sans racine <html>', () => {
+    const profondeur = 205
+    const html =
+      `<!doctype html><meta charset="utf-8">` +
+      `<div><article>${'<div>'.repeat(profondeur)}${corps}${'</div>'.repeat(profondeur)}</article></div>`
+    expect(extractArticle(html, URL_PAGE)).toBeNull()
+  })
+
   // Un 200 au corps vide servi en text/html arrive jusqu'ici, et le getter
   // `head` de linkedom lève sur une entrée sans élément racine : sans le
   // try/catch autour de la préparation du document, la fonction sortirait en
