@@ -77,6 +77,8 @@ export type ArticleDetailData = {
   link: string
   description: string | null
   content: string | null
+  fullContent: string | null
+  fullContentAt: Date | null
   publishedAt: Date
   bookmarked: boolean
   feedTitle: string
@@ -93,6 +95,8 @@ export const getArticle = createServerFn({ method: 'GET' })
         link: articles.link,
         description: articles.description,
         content: articles.content,
+        fullContent: articles.fullContent,
+        fullContentAt: articles.fullContentAt,
         publishedAt: articles.publishedAt,
         bookmarked: articles.bookmarked,
         feedTitle: feeds.title,

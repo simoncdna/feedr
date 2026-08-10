@@ -8,6 +8,7 @@ import { articles, categories, feeds, invitations } from '@/db/schema'
 import { auth } from '@/lib/auth'
 import { fetchFeed } from '@/lib/rss'
 import { extractFeedLinks, platformFeeds, type FeedCandidate } from '@/lib/feed-discovery'
+import { extractArticle } from '@/lib/extract'
 import { fetchPage } from '@/lib/fetch-page'
 import { isSafeFeedUrl } from '@/lib/url'
 import { generateInvitationToken, invitationExpiry, invitationStatus } from '@/lib/invitations'
@@ -231,3 +232,64 @@ export const completeSignup = createServerFn({ method: 'POST' }).handler(async (
     WHERE id = ${sessionUser.id}
   `)
 })
+
+/**
+ * Écrit le résultat d'une tentative, sans jamais écraser celui d'une autre.
+ *
+ * Le `isNull` n'est pas décoratif : le garde de `fetchFullContent` lit
+ * `fullContentAt` bien avant qu'on écrive, donc deux ouvertures simultanées du
+ * même article (deux appareils, ou le double effet de StrictMode en dev)
+ * passent toutes les deux. Sans cette clause, la seconde écraserait la
+ * première — et un échec tardif effacerait un succès. Quand la course est
+ * perdue, on relit ce que le gagnant a posé plutôt que de rendre son propre
+ * résultat.
+ */
+async function recordAttempt(id: number, content: string | null): Promise<string | null> {
+  const [gagne] = await db
+    .update(articles)
+    .set({ fullContent: content, fullContentAt: new Date() })
+    .where(and(eq(articles.id, id), isNull(articles.fullContentAt)))
+    .returning({ fullContent: articles.fullContent })
+  if (gagne) return gagne.fullContent
+  const [existant] = await db
+    .select({ fullContent: articles.fullContent })
+    .from(articles)
+    .where(eq(articles.id, id))
+    .limit(1)
+  return existant?.fullContent ?? null
+}
+
+/**
+ * Va chercher le corps de l'article sur le site d'origine, une fois, et le met
+ * en cache sur la ligne.
+ *
+ * `fetchPage` borne la chose à 10 s et porte la protection SSRF de la chaîne de
+ * redirections — c'est pour ça qu'on passe par lui et pas par un `fetch` nu.
+ */
+export const fetchFullContent = createServerFn({ method: 'POST' })
+  .validator((id: number) => id)
+  .handler(async ({ data: id }): Promise<string | null> => {
+    const sessionUser = await requireUser()
+    const [article] = await db
+      .select({
+        link: articles.link,
+        hasVideo: articles.hasVideo,
+        fullContent: articles.fullContent,
+        fullContentAt: articles.fullContentAt,
+      })
+      .from(articles)
+      .innerJoin(feeds, eq(articles.feedId, feeds.id))
+      .innerJoin(categories, eq(feeds.categoryId, categories.id))
+      .where(and(eq(articles.id, id), eq(categories.userId, sessionUser.id)))
+      .limit(1)
+    // Le join sur categories.userId est le cloisonnement multi-utilisateurs :
+    // sans lui, un id suffirait à faire scraper une page pour autrui.
+    if (!article) return null
+    if (article.fullContentAt) return article.fullContent
+    // YouTube rend 0 caractère au travers de Readability (mesuré le
+    // 2026-08-10) : la requête serait pure perte. On note la tentative pour ne
+    // pas repasser ici à chaque ouverture.
+    if (article.hasVideo) return recordAttempt(id, null)
+    const page = await fetchPage(article.link)
+    return recordAttempt(id, page ? extractArticle(page.html, page.url) : null)
+  })
