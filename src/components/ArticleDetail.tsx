@@ -2,7 +2,7 @@ import sanitizeHtml from 'sanitize-html'
 import { ArticleBodySkeleton } from '@/components/Skeletons'
 import { VideoEmbed } from '@/components/VideoEmbed'
 import { ARTICLE_SANITIZE_OPTIONS } from '@/lib/sanitize'
-import { relativeDate } from '@/lib/text'
+import { articleDateLabel, stripHtml } from '@/lib/text'
 import { youtubeVideoId } from '@/lib/youtube'
 import { useFullContent, useToggleBookmark } from '@/mutations'
 // Source unique du type : partagé avec la server fn getArticle.
@@ -18,6 +18,8 @@ export function ArticleDetail({
   categoryId?: number | null
 }) {
   const toggle = useToggleBookmark(categoryId)
+  // Voir ArticleCard : le titre vient brut du flux, entités comprises.
+  const title = stripHtml(article.title)
   const videoId = youtubeVideoId(article.link)
   // Rien à scraper pour une vidéo : la page YouTube ne rend aucun texte au
   // travers de Readability (0 caractère mesuré). La server fn la court-circuite
@@ -35,11 +37,20 @@ export function ArticleDetail({
   const plainText = videoId !== null && article.fullContent === null && article.content === null
   const safe = raw && !plainText ? sanitizeHtml(raw, ARTICLE_SANITIZE_OPTIONS) : null
 
+  // Image de tête : la vignette du fil, affichée SEULEMENT si le corps n'en
+  // apporte aucune. Sans ce garde, une extraction qui contient déjà la photo
+  // d'ouverture (le cas courant chez la presse) l'afficherait deux fois. Le
+  // test porte sur le HTML assaini, donc sur ce qui sera réellement peint.
+  const bodyHasImage = safe !== null && safe.includes('<img')
+  const leadImage =
+    article.imageUrl && videoId === null && !bodyHasImage && !loadingBody ? article.imageUrl : null
+
   return (
     <article className="px-4 py-6 lg:px-6 lg:py-8">
       <div className="flex items-center justify-between gap-3">
         <p className="mono-label">
-          {article.feedTitle} · <span className="text-[0.625rem]">{relativeDate(article.publishedAt)}</span>
+          {article.feedTitle} ·{' '}
+          <span className="text-[0.625rem]">{articleDateLabel(article.publishedAt)}</span>
         </p>
         {/* L'app Next passait par un <form action={serverAction}> ; ici la
             mutation part directement, et l'invalidation rafraîchit le fil. */}
@@ -48,24 +59,30 @@ export function ArticleDetail({
           disabled={toggle.isPending}
           onClick={() => toggle.mutate({ id: article.id, bookmarked: !article.bookmarked })}
           aria-label={article.bookmarked ? 'Remove bookmark' : 'Bookmark'}
-          className={`-m-2 p-2 transition-colors ${
-            article.bookmarked ? 'text-accent' : 'text-muted hover:text-foreground'
-          }`}
+          className={`icon-button ${article.bookmarked ? 'text-accent' : ''}`}
         >
           <svg viewBox="0 0 24 24" className="h-5 w-5" fill={article.bookmarked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
             <path d="M6 4h12v17l-6-4-6 4z" strokeLinejoin="round" />
           </svg>
         </button>
       </div>
-      {/* Contrepartie de l'élément partagé : le titre de la rangée cliquée
-          arrive ici plutôt que d'apparaître en fondu. */}
-      <h1
-        style={{ viewTransitionName: 'article-hero' }}
-        className="mt-2 text-2xl font-semibold leading-tight tracking-tight"
-      >
-        {article.title}
+      {/* `text-3xl` : le titre de l'article est le texte le plus important de
+          l'app, il ne peut pas être plus petit ni plus léger que le mot qui
+          nomme l'onglet. La progression est rangée (18) → carte en avant (24) →
+          article (30), et les titres de page sont redescendus à 24. */}
+      <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-balance">
+        {title}
       </h1>
-      {videoId && <VideoEmbed videoId={videoId} title={article.title} />}
+      {videoId && <VideoEmbed videoId={videoId} title={title} />}
+      {leadImage && (
+        <img
+          src={leadImage}
+          alt=""
+          draggable={false}
+          referrerPolicy="no-referrer"
+          className="mt-6 aspect-[2/1] w-full rounded object-cover"
+        />
+      )}
       {/* Titre, source, date et bouton restent en dehors de l'échange : c'est ce
           qui empêche la page de sauter sous le pouce du lecteur à l'arrivée du
           texte. Seul le corps est remplacé. */}

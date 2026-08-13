@@ -119,6 +119,7 @@ export type ArticleDetailData = {
   content: string | null
   fullContent: string | null
   fullContentAt: Date | null
+  imageUrl: string | null
   publishedAt: Date
   bookmarked: boolean
   feedTitle: string
@@ -137,6 +138,10 @@ export const getArticle = createServerFn({ method: 'GET' })
         content: articles.content,
         fullContent: articles.fullContent,
         fullContentAt: articles.fullContentAt,
+        // Sert d'image de tête quand le corps n'en apporte aucune : c'est la
+        // vignette que le lecteur vient de voir dans le fil, et la faire
+        // disparaître à l'ouverture cassait la continuité de repérage.
+        imageUrl: articles.imageUrl,
         publishedAt: articles.publishedAt,
         bookmarked: articles.bookmarked,
         feedTitle: feeds.title,

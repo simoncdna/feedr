@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { Link } from '@tanstack/react-router'
-import { publishedLabel, stripHtml } from '@/lib/text'
+import { dayLabel, stripHtml, timeLabel } from '@/lib/text'
 // Source unique du type : le dupliquer ici le ferait diverger de la requête.
 import type { ArticleCardData } from '@/server/queries'
 
@@ -10,7 +10,7 @@ export type ArticleLinkProps = {
   params?: Record<string, unknown>
 }
 
-function Meta({ article }: { article: ArticleCardData }) {
+function Meta({ article, withDay }: { article: ArticleCardData; withDay: boolean }) {
   // Le signet ne se pose QUE sur la bascule, jamais au montage : sinon toutes
   // les rangées déjà en favori s'animeraient à chaque affichage du fil.
   //
@@ -26,9 +26,19 @@ function Meta({ article }: { article: ArticleCardData }) {
 
   return (
     <p className="mono-label flex min-w-0 items-center gap-1.5">
+      {/* Seule l'heure : le jour est porté par le séparateur de journée au-dessus
+          du groupe (voir ArticleList). Répéter la date sur chaque rangée
+          transformait le fil en mur de chiffres dès le deuxième jour.
+          `withDay` est l'exception de la carte en avant : `orderWithHero` la
+          remonte hors de l'ordre chronologique, elle ne tombe donc sous aucun
+          séparateur et doit porter son jour elle-même. */}
       <span className="truncate">
         {article.author ?? article.feedTitle} ·{' '}
-        <span className="text-[0.625rem]">{publishedLabel(article.publishedAt)}</span>
+        <span className="text-[0.625rem]">
+          {withDay
+            ? `${dayLabel(article.publishedAt)} ${timeLabel(article.publishedAt)}`
+            : timeLabel(article.publishedAt)}
+        </span>
       </span>
       {article.hasVideo && (
         <svg viewBox="0 0 24 24" className="h-3 w-3 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
@@ -58,31 +68,26 @@ export function ArticleCard({
   linkProps,
   selected = false,
   featured = false,
-  morphable = false,
+  withDay = false,
 }: {
   article: ArticleCardData
   linkProps: ArticleLinkProps
   selected?: boolean
   featured?: boolean
-  // Autorise ce titre à servir d'élément partagé vers la vue détail.
-  morphable?: boolean
+  // Afficher le jour en plus de l'heure, pour une carte hors chronologie.
+  withDay?: boolean
 }) {
-  const excerpt = article.description ? stripHtml(article.description) : null
-
-  // Le nom de transition est posé sur le nœud AU MOMENT DU CLIC, pas au rendu :
-  // l'instantané « avant » est pris par le navigateur juste après ce handler et
-  // juste avant la navigation. Le poser au rendu nommerait les 40 rangées, ce
-  // que la spec interdit (un nom doit être unique dans le document).
-  const marquerPourMorph = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    if (!morphable) return
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    const titre = e.currentTarget.querySelector('h2')
-    if (!titre) return
-    titre.style.viewTransitionName = 'article-hero'
-    // Retiré après la transition, sinon le nom resterait sur une rangée encore
-    // montée (vue scindée en desktop) et entrerait en conflit au clic suivant.
-    window.setTimeout(() => { titre.style.viewTransitionName = '' }, 600)
-  }
+  // Les titres passent par stripHtml eux aussi : ils arrivent bruts du flux, et
+  // The Verge publie ses apostrophes en entités numériques — « Let&#8217;s watch
+  // Trevor » s'affichait tel quel dans le fil. Seuls les extraits étaient
+  // décodés.
+  const title = stripHtml(article.title)
+  // Sous 20 caractères, un extrait n'informe pas : il décore. Hacker News met
+  // « Comments » dans `description` sur CHAQUE entrée, et le fil se retrouvait
+  // avec une ligne inutile sous un titre sur deux. Règle générique, pas un cas
+  // particulier par flux — un extrait trop court est de toute façon du bruit.
+  const texteExtrait = article.description ? stripHtml(article.description) : null
+  const excerpt = texteExtrait && texteExtrait.length >= 20 ? texteExtrait : null
 
   if (featured) {
     return (
@@ -99,12 +104,12 @@ export function ArticleCard({
               className="mb-3 aspect-[2/1] w-full rounded object-cover"
             />
           )}
-          <Link {...linkProps} draggable={false} onClick={marquerPourMorph} aria-current={selected ? 'page' : undefined} className="block">
-            <h2 className="line-clamp-2 text-2xl font-bold leading-tight tracking-tight">{article.title}</h2>
-            {excerpt && <p className="mt-1.5 line-clamp-1 text-sm text-muted">{excerpt}</p>}
+          <Link {...linkProps} draggable={false} aria-current={selected ? 'page' : undefined} className="block">
+            <h2 className="line-clamp-3 text-2xl font-bold leading-tight tracking-tight">{title}</h2>
+            {excerpt && <p className="mt-1.5 line-clamp-2 text-sm text-pretty text-muted">{excerpt}</p>}
           </Link>
           <div className="mt-2">
-            <Meta article={article} />
+            <Meta article={article} withDay={withDay} />
           </div>
         </div>
       </div>
@@ -115,22 +120,29 @@ export function ArticleCard({
     <div className={`relative flex ${selected ? 'bg-surface' : ''}`}>
       {selected && <span aria-hidden="true" className="absolute inset-y-0 left-0 z-10 w-0.5 bg-accent" />}
       <div className="min-w-0 flex-1 px-4 py-4 lg:px-6">
-        <Link {...linkProps} draggable={false} onClick={marquerPourMorph} aria-current={selected ? 'page' : undefined} className="block">
-          <h2 className="line-clamp-2 text-lg font-semibold leading-snug tracking-tight">{article.title}</h2>
-          {excerpt && <p className="mt-1 line-clamp-1 text-sm text-muted">{excerpt}</p>}
+        <Link {...linkProps} draggable={false} aria-current={selected ? 'page' : undefined} className="block">
+          <h2 className="line-clamp-2 text-lg font-semibold leading-snug tracking-tight">{title}</h2>
+          {/* Deux lignes, pas une : une seule ligne tronquée n'informe presque
+              jamais — « Comments » pour Hacker News, une demi-phrase ailleurs. */}
+          {excerpt && <p className="mt-1 line-clamp-2 text-sm text-pretty text-muted">{excerpt}</p>}
         </Link>
         <div className="mt-2">
-          <Meta article={article} />
+          <Meta article={article} withDay={withDay} />
         </div>
       </div>
       {article.imageUrl && (
+        // Ratio FIXE. Sans lui la hauteur de la vignette était celle de la
+        // rangée (mesuré : 96 → 102 px selon la longueur du titre), donc un
+        // recadrage qui changeait d'une rangée à l'autre et un bord droit
+        // irrégulier. `self-start` la laisse en haut quand le texte est plus
+        // haut qu'elle, au lieu de l'étirer.
         <img
           src={article.imageUrl}
           alt=""
           draggable={false}
           loading="lazy"
           referrerPolicy="no-referrer"
-          className="my-4 mr-4 w-24 shrink-0 rounded object-cover lg:mr-6 lg:w-28"
+          className="my-4 mr-4 aspect-[4/3] w-24 shrink-0 self-start rounded object-cover lg:mr-6 lg:w-28"
         />
       )}
     </div>
