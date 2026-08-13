@@ -29,15 +29,39 @@ export function stripHtml(html: string): string {
   return decoded.replace(/\s+/g, ' ').trim()
 }
 
-export function relativeDate(date: Date, now: Date = new Date()): string {
-  const minutes = Math.round((now.getTime() - date.getTime()) / 60_000)
-  if (minutes < 1) return 'just now'
-  if (minutes < 60) return `${minutes}m ago`
-  const hours = Math.round(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.round(hours / 24)
-  if (days < 7) return `${days}d ago`
-  return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
+export function timeLabel(date: Date): string {
+  return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
+}
+
+/**
+ * Le jour d'une date, tel qu'il s'écrit au-dessus d'un groupe de rangées.
+ *
+ * Remplace l'ancien `relativeDate` (« 3h ago », « 2d ago »), qui ne servait que
+ * la vue détail et donnait deux écritures différentes de la même date selon
+ * l'écran — « 06:09 » dans le fil, « 9H AGO » dans le détail.
+ *
+ * La comparaison porte sur la date CIVILE et non sur une différence de durée :
+ * à 00 h 30, « il y a 25 heures » tombe avant-hier, pas hier.
+ */
+export function dayLabel(date: Date, now: Date = new Date()): string {
+  const jours = (d: Date) => Math.floor(new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() / 86_400_000)
+  const ecart = jours(now) - jours(date)
+  if (ecart === 0) return 'Today'
+  if (ecart === 1) return 'Yesterday'
+  return date.toLocaleDateString('en-US', {
+    day: 'numeric',
+    month: 'short',
+    ...(date.getFullYear() !== now.getFullYear() ? { year: 'numeric' } : {}),
+  })
+}
+
+/**
+ * La date d'un article dans sa vue détail : jour ET heure. Le détail s'ouvre
+ * aussi depuis une notification push, sans le fil autour ni le séparateur de
+ * journée qui porte le jour dans une liste — il doit se lire seul.
+ */
+export function articleDateLabel(date: Date, now: Date = new Date()): string {
+  return `${dayLabel(date, now)} at ${timeLabel(date)}`
 }
 
 export function publishedLabel(date: Date, now: Date = new Date()): string {

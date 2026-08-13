@@ -6,10 +6,9 @@ const THRESHOLD = 72
 const MAX_PULL = 120
 const CONFIRM_HOLD_PX = -56
 const CONFIRM_HOLD_MS = 350
-// Point où la rangée finit de découvrir l'icône (`pr-6` + `w-5`). Avant ça,
-// l'icône est encore sous la rangée : l'animer plus tôt la fait « apparaître »
-// dans le vide.
-const REVEAL_PX = -44
+// Largeur du panneau d'action, égale à MAX_PULL : à pleine traction il remplit
+// exactement la zone découverte, sans bord mort.
+const PANEL_PX = MAX_PULL
 
 export function SwipeRow({
   action,
@@ -103,8 +102,22 @@ export function SwipeRow({
   }, [finalize])
 
   const armed = dx <= -THRESHOLD || (dx < 0 && settling)
-  const revealed = dx <= REVEAL_PX || pending
   const { ref: swipeRef, ...swipeProps } = handlers
+  // Le panneau suit le bord de la rangée par une translation, jamais par une
+  // largeur animée : `width` relayoute à chaque image, `transform` reste sur le
+  // compositeur. À dx = 0 il est entièrement hors champ, à dx = -MAX_PULL il est
+  // à sa place. L'icône, posée à 24 px de son bord droit, se découvre donc
+  // d'elle-même une fois la rangée assez tirée — ce que l'ancien seuil de
+  // révélation simulait à la main.
+  const panneau = Math.max(0, PANEL_PX + dx)
+  // Pendant la traction, aucune transition : la rangée et le panneau collent au
+  // doigt. À la fin du geste seulement, la fermeture est amortie.
+  const glissement = settling ? 'transform 260ms cubic-bezier(0.22, 1, 0.36, 1)' : undefined
+  // Le panneau ajoute ses couleurs : posées par une classe Tailwind, elles
+  // seraient écrasées par la propriété `transition` en ligne.
+  const glissementPanneau = glissement
+    ? `${glissement}, background-color 150ms ease, color 150ms ease`
+    : 'background-color 150ms ease, color 150ms ease'
 
   return (
     // iOS : sans ces règles, glisser depuis un <a> ou une <img> démarre le drag
@@ -118,16 +131,20 @@ export function SwipeRow({
       className="relative overflow-hidden [&_a]:[-webkit-user-drag:none] [&_img]:[-webkit-user-drag:none]"
       style={{ touchAction: 'pan-y', WebkitTouchCallout: 'none' }}
     >
+      {/* Panneau d'action. Il n'existait pas : la zone découverte était le fond
+          de la page avec une icône flottante dedans, sans cible lisible ni
+          couleur — à mi-course, rien ne disait si le geste était armé. Le
+          panneau prend l'accent une fois le seuil franchi, et c'est LUI qui dit
+          « relâche ici ». */}
       <div
         aria-hidden="true"
-        className={`absolute inset-y-0 right-0 flex w-32 items-center justify-end pr-6 lg:hidden ${
-          armed || pending ? 'text-accent' : 'text-muted'
+        className={`absolute inset-y-0 right-0 flex items-center justify-end pr-6 lg:hidden ${
+          armed || pending ? 'bg-accent text-background' : 'bg-surface text-muted'
         }`}
         style={{
-          opacity: revealed ? 1 : 0,
-          transform: revealed ? 'translateY(0)' : 'translateY(-2px)',
-          transition:
-            'opacity 160ms ease, transform 160ms cubic-bezier(0.22, 1, 0.36, 1), color 120ms ease',
+          width: PANEL_PX,
+          transform: `translateX(${panneau}px)`,
+          transition: glissementPanneau,
         }}
       >
         <svg

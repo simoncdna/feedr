@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { dayLabel } from '@/lib/text'
 import { useInfiniteScroll } from '@/lib/use-infinite-scroll'
 import { useToggleBookmark } from '@/mutations'
 import type { ArticleCardData } from '@/server/queries'
@@ -6,27 +7,40 @@ import { ArticleCard, type ArticleLinkProps } from './ArticleCard'
 import { ArticleRowsSkeleton } from './Skeletons'
 import { SwipeRow } from './SwipeRow'
 
-// La cascade joue sur deux déclencheurs : l'ARRIVÉE sur une liste (le fil, les
-// bookmarks) depuis ailleurs, et le CHANGEMENT DE CATÉGORIE. Elle ne rejoue pas
-// au retour d'un article — là elle mangerait le retour instantané au fil que la
-// migration a gagné. Le chemin distingue l'arrivée du reste : ouvrir un article
-// ou filtrer par catégorie ne change que la query string.
+// La cascade joue sur deux déclencheurs : la PREMIÈRE arrivée sur une liste
+// pendant la session, et le CHANGEMENT DE CATÉGORIE SERVI PAR LE CACHE.
 //
-// Ce drapeau n'est consulté QUE dans le navigateur : sur le serveur, un module
+// Cette seconde restriction n'est pas un choix, c'est une conséquence mesurée :
+// une catégorie encore jamais chargée fait passer la route par son
+// `pendingComponent`, ce qui remonte ce composant à neuf — le compteur de vague
+// repart donc de zéro. Et c'est très bien ainsi : le squelette porte déjà la
+// transition, une cascade par-dessus serait un second signal pour le même
+// événement. Une bascule entre deux catégories déjà en cache, elle, n'a aucun
+// autre signal — c'est là que la cascade dit « le contenu a changé ».
+//
+// Elle ne rejoue plus au retour sur un onglet déjà visité. Mesuré : revenir sur
+// le fil depuis les favoris relançait 41 animations sur une navigation servie
+// par le cache, donc instantanée — à 180 ms, trois des cinq rangées visibles
+// étaient encore à `opacity: 0`, et il fallait ~480 ms pour que le fil soit
+// lisible. Sur le geste le plus répété de l'app. La doctrine en tête de
+// styles.css dit que l'animation ne doit jamais s'interposer : ici elle
+// s'interposait sur une non-attente.
+//
+// Ce registre n'est consulté QUE dans le navigateur : sur le serveur, un module
 // est partagé par toutes les requêtes, et le premier rendu SSR l'aurait consommé
 // pour tous les visiteurs suivants (constaté — la cascade ne partait jamais).
-let dernierCheminAffiche: string | null = null
+const listesDejaVues = new Set<string>()
 
-function arriveeSurLaListe(): boolean {
-  // Rendu serveur : c'est par définition une arrivée. La classe part dans le
-  // HTML, donc l'animation démarre au premier paint, sans attendre l'hydratation
-  // — et au tout premier rendu client `dernierCheminAffiche` est encore nul,
+function premiereArriveeSurLaListe(): boolean {
+  // Rendu serveur : c'est par définition une première arrivée. La classe part
+  // dans le HTML, donc l'animation démarre au premier paint, sans attendre
+  // l'hydratation — et au tout premier rendu client le registre est encore vide,
   // donc le client conclut comme le serveur : pas de désaccord d'hydratation.
   if (typeof window === 'undefined') return true
   const chemin = window.location.pathname
-  const arrivee = chemin !== dernierCheminAffiche
-  dernierCheminAffiche = chemin
-  return arrivee
+  if (listesDejaVues.has(chemin)) return false
+  listesDejaVues.add(chemin)
+  return true
 }
 
 // Durée totale de la cascade avec les réglages par défaut de `.cascade`
@@ -34,6 +48,22 @@ function arriveeSurLaListe(): boolean {
 // rester SUPÉRIEUR au total, sinon retirer la classe couperait l'animation en
 // vol et les rangées sauteraient à leur état final.
 const CASCADE_FIN_MS = 800
+
+/**
+ * Séparateur de journée. C'est lui qui porte le jour, ce qui autorise les
+ * rangées à n'afficher que l'heure : sans lui, deux jours de flux se lisaient
+ * comme un mur de chiffres sans repère.
+ */
+function SeparateurDeJour({ jour, premier }: { jour: string; premier: boolean }) {
+  return (
+    <div
+      className={`flex items-center gap-3 px-4 pb-1 lg:px-6 ${premier ? 'pt-2' : 'border-t border-rule pt-6'}`}
+    >
+      <p className="mono-label">{jour}</p>
+      <span aria-hidden="true" className="h-px flex-1 bg-rule" />
+    </div>
+  )
+}
 
 export function ArticleList({
   articles,
@@ -67,9 +97,9 @@ export function ArticleList({
   })
   // Décision prise une fois pour ce montage. Dans un ref et non dans
   // l'initialiseur de useState : celui-ci est appelé deux fois en StrictMode, ce
-  // qui consommerait `dernierCheminAffiche` avant le rendu conservé.
+  // qui consommerait le registre avant le rendu conservé.
   const aLArrivee = useRef<boolean | null>(null)
-  if (aLArrivee.current === null) aLArrivee.current = arriveeSurLaListe()
+  if (aLArrivee.current === null) aLArrivee.current = premiereArriveeSurLaListe()
 
   // Numéro de vague plutôt qu'un booléen : changer de catégorie pendant une
   // cascade encore en cours doit relancer le compte à rebours de retrait, ce
@@ -100,35 +130,56 @@ export function ArticleList({
   if (articles.length === 0) {
     return <p className="mono-label mt-16 text-center">{emptyLabel}</p>
   }
+
+  // Le groupement se calcule au fil du rendu, et la carte en avant en est
+  // exclue : `orderWithHero` la remonte hors de l'ordre chronologique, donc son
+  // jour n'ouvre pas le groupe des rangées qui la suivent. Elle porte sa date
+  // complète elle-même (`withDay`), et le groupement commence après.
+  let jourPrecedent: string | null = null
+  // La carte en avant porte son jour SEULEMENT s'il diffère de celui du groupe
+  // qui la suit : sinon on lisait « Today 10:13 » puis, deux centimètres plus
+  // bas, un séparateur « Today ».
+  const jourEnAvant = featuredFirst && articles[0] ? dayLabel(articles[0].publishedAt) : null
+  const jourDuGroupe = featuredFirst && articles[1] ? dayLabel(articles[1].publishedAt) : null
+  const enAvantAvecJour = jourEnAvant !== null && jourEnAvant !== jourDuGroupe
+
   return (
+    // Un seul enfant direct par rangée : les séparateurs vivent DANS ce
+    // wrapper, sinon ils consommeraient des crans de `.cascade > *:nth-child()`
+    // et s'animeraient comme des rangées.
     <div className={enCascade ? 'cascade' : undefined}>
-      {articles.map((a, i) => (
-        <div key={a.id}>
-          {i > 0 && <div aria-hidden="true" className="mx-4 border-t border-rule lg:mx-0" />}
-          {/* SwipeRow appelle `action` dans un startTransition et n'attend pas sa
-              résolution : `mutate` (et non `mutateAsync`) suffit, et la mise à
-              jour optimiste rend la main immédiatement. SwipeRow n'est pas
-              modifié — ses filets iOS sont intouchables. */}
-          <SwipeRow
-            bookmarked={a.bookmarked}
-            action={async () => {
-              toggle.mutate({ id: a.id, bookmarked: !a.bookmarked })
-            }}
-          >
-            <ArticleCard
-              article={a}
-              linkProps={linkPropsFor(a.id)}
-              selected={a.id === selectedId}
-              featured={featuredFirst && i === 0}
-              // Élément partagé : le titre cliqué devient le titre du détail.
-              // Pas de morphing quand un article est déjà ouvert (vue scindée
-              // en desktop) — deux éléments porteraient le même nom et le
-              // navigateur abandonnerait la transition.
-              morphable={selectedId === null}
-            />
-          </SwipeRow>
-        </div>
-      ))}
+      {articles.map((a, i) => {
+        const enAvant = featuredFirst && i === 0
+        const jour = enAvant ? null : dayLabel(a.publishedAt)
+        const ouvreUnJour = jour !== null && jour !== jourPrecedent
+        if (jour !== null) jourPrecedent = jour
+        return (
+          <div key={a.id}>
+            {ouvreUnJour ? (
+              <SeparateurDeJour jour={jour} premier={i === 0} />
+            ) : (
+              i > 0 && <div aria-hidden="true" className="mx-4 border-t border-rule lg:mx-0" />
+            )}
+            {/* SwipeRow appelle `action` dans un startTransition et n'attend pas sa
+                résolution : `mutate` (et non `mutateAsync`) suffit, et la mise à
+                jour optimiste rend la main immédiatement. */}
+            <SwipeRow
+              bookmarked={a.bookmarked}
+              action={async () => {
+                toggle.mutate({ id: a.id, bookmarked: !a.bookmarked })
+              }}
+            >
+              <ArticleCard
+                article={a}
+                linkProps={linkPropsFor(a.id)}
+                selected={a.id === selectedId}
+                featured={enAvant}
+                withDay={enAvant && enAvantAvecJour}
+              />
+            </SwipeRow>
+          </div>
+        )
+      })}
       {pagination && (
         <>
           {/* La sentinelle est rendue tant qu'il reste des pages. Elle disparaît
