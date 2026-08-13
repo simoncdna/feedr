@@ -64,31 +64,43 @@ html {
 	background-color: var(--background);
 }
 
-body {
-	line-height: 1.6;
-}
-
-/* Grain « papier journal » : bruit SVG statique en overlay, au-dessus de tout,
-   transparent aux interactions. Opacité volontairement subtile. */
-body::before {
-	content: '';
-	position: fixed;
-	inset: 0;
-	z-index: 60;
-	pointer-events: none;
-	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-	background-repeat: repeat;
-	opacity: 0.06;
+/* Grain « papier journal » : bruit SVG statique, en IMAGE DE FOND de <body> et
+   non en calque par-dessus la page.
+   C'était un `body::before` fixe en `z-index: 60`, donc au-dessus de TOUT — y
+   compris du mono 11 px gris muet à 0.18em de tracking, le texte le plus
+   fragile de l'app et celui qui a le moins de contraste à perdre. Une image de
+   fond se peint au-dessus de la couleur de fond du même élément et sous tout
+   son contenu : c'est exactement l'ordre voulu, et sans calque composité plein
+   écran ni empilement à arbitrer (un `z-index: -1` sur le pseudo-élément aurait
+   marché aussi, au prix de ce calque et d'une dépendance au contexte
+   d'empilement de <body>).
+   L'opacité est cuite dans le SVG : `background-image` n'a pas d'`opacity`, et
+   une variable par thème porte donc l'URL entière. */
+:root {
+	--grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
 }
 
 @media (prefers-color-scheme: dark) {
-	:root:not([data-theme='light']) body::before {
-		opacity: 0.08;
+	:root:not([data-theme='light']) {
+		--grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E");
 	}
 }
 
-:root[data-theme='dark'] body::before {
-	opacity: 0.08;
+:root[data-theme='dark'] {
+	--grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E");
+}
+
+body {
+	line-height: 1.6;
+	/* `bg-background` (classe Tailwind sur <body>) peint la couleur ; le grain se
+	   pose dessus, et le contenu par-dessus encore. */
+	background-image: var(--grain);
+	background-repeat: repeat;
+	/* Une image de fond ne se peint que dans la boîte de son élément. Sans ce
+	   plancher, une page plus courte que la fenêtre — l'écran de connexion —
+	   verrait le grain s'arrêter net au bas du contenu. L'ancien calque fixe
+	   couvrait la fenêtre par construction. */
+	min-height: 100dvh;
 }
 
 :focus-visible {
@@ -111,6 +123,97 @@ body::before {
 		gap: 0.5rem;
 		border-bottom: 1px solid var(--foreground);
 		padding-bottom: 0.25rem;
+	}
+
+	/* ── Hiérarchie d'action ──────────────────────────────────────────────────
+     `mono-label` ÉTIQUETTE, il n'agit pas : il pose `color: var(--muted)`.
+     Tous les boutons de l'app le portaient, et leur seul signal d'activité
+     était un `hover:text-foreground` — or il n'y a pas de survol sur un
+     téléphone. Ils restaient donc gris muet en permanence, et l'unique action
+     de l'écran de connexion avait l'apparence exacte d'un bouton désactivé.
+     D'où ces classes : une couleur au repos, une taille de doigt, un retour
+     à l'appui. Le mono reste pour les étiquettes, jamais pour les actions. */
+	.btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		/* 2.75rem = 44px, minimum Apple. Vaut aussi pour `.field` : un bouton de
+       44 px à côté d'un champ de 32 px déséquilibre la ligne. */
+		min-height: 2.75rem;
+		padding-inline: 1rem;
+		border-radius: 4px;
+		font-size: 0.9375rem;
+		font-weight: 500;
+		line-height: 1.2;
+		transition: transform 100ms var(--ease-nav), background-color 120ms ease,
+			color 120ms ease, border-color 120ms ease, opacity 120ms ease;
+	}
+
+	.btn:disabled {
+		opacity: 0.5;
+	}
+
+	.btn:active:not(:disabled) {
+		transform: scale(0.97);
+	}
+
+	.btn-primary {
+		background-color: var(--foreground);
+		color: var(--background);
+	}
+
+	.btn-secondary {
+		border: 1px solid var(--rule);
+		background-color: var(--surface);
+		color: var(--foreground);
+	}
+
+	/* Destructif : la couleur porte l'avertissement, pas seulement le texte du
+     dialogue. Ces actions suppriment des articles favoris. */
+	.btn-danger {
+		background-color: #dc2626;
+		color: #ffffff;
+	}
+
+	/* Boutons-icônes. La marge négative fait dépasser la cible de 44 px sans
+     déplacer la mise en page : c'est l'icône, pas la cible, qui occupe la
+     ligne. Corollaire à connaître — deux boutons-icônes voisins ont besoin de
+     `gap-6` pour que leurs cibles se touchent sans se chevaucher. */
+	.icon-button {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.75rem;
+		height: 2.75rem;
+		margin: -0.75rem;
+		color: var(--muted);
+		transition: color 120ms ease, transform 100ms var(--ease-nav);
+	}
+
+	.icon-button:active {
+		transform: scale(0.9);
+	}
+
+	/* Champs de saisie. `font-size: 1rem` n'est pas esthétique : sous 16px,
+     WebKit zoome la page au focus. C'est ce qui obligeait à poser
+     `maximum-scale=1` dans le viewport (voir __root.tsx), lequel bloque le
+     pinch-zoom sur Android — une régression d'accessibilité pour éviter un
+     défaut de mise en page. Les champs à 16px règlent la cause. */
+	.field {
+		min-height: 2.75rem;
+		padding-inline: 0.75rem;
+		border: 1px solid var(--rule);
+		border-radius: 4px;
+		background-color: var(--surface);
+		color: var(--foreground);
+		font-size: 1rem;
+		outline: none;
+		transition: border-color 120ms ease;
+	}
+
+	.field:focus {
+		border-color: var(--foreground);
 	}
 
 	.cta-arrow {
@@ -210,12 +313,16 @@ body::before {
 		}
 	}
 
-	/* Le titre de l'article est l'élément partagé entre la rangée et le détail :
-     il ne disparaît pas pour réapparaître, il se déplace. */
-	::view-transition-group(article-hero) {
-		animation-duration: 260ms;
-		animation-timing-function: var(--ease-nav);
-	}
+	/* Il n'y a PLUS d'élément partagé entre la rangée et le détail. Le titre
+     portait `view-transition-name: article-hero`, ce qui le sortait de
+     l'instantané `contenu` : la page entrait par la droite pendant que le
+     titre, lui, restait sur place et se fondait — deux mouvements
+     contradictoires, sur deux durées (220 / 260 ms) et deux tailles de texte
+     (18px clampé → 24px non clampé, donc un fondu croisé de deux rendus de
+     tailles différentes). Et il ne jouait qu'à chaud : sans préchargement, la
+     vue d'arrivée était un squelette, sans titre, donc sans morph. Le même
+     appui produisait deux animations selon l'état du cache.
+     La poussée latérale seule est cohérente, et elle joue toujours. */
 
 	/* ── Pose du signet ───────────────────────────────────────────────────────
      Le geste met le favori, mais c'est la carte qui l'acte : le petit signet
@@ -223,6 +330,13 @@ body::before {
      même vocabulaire que l'icône du swipe qui passe à 1.15 une fois armée. */
 	.signet-pose {
 		animation: signet-pose 320ms var(--ease-nav) both;
+	}
+
+	/* ── Confirmation destructrice ────────────────────────────────────────────
+     Le dialogue arrive vite et de peu : il interrompt un geste, il ne se met
+     pas en scène. Même durée que la barre d'action du swipe. */
+	dialog[open] {
+		animation: dialogue-entree 160ms var(--ease-nav) both;
 	}
 
 	/* ── Squelettes ───────────────────────────────────────────────────────────
@@ -363,6 +477,18 @@ body::before {
 	}
 }
 
+@keyframes dialogue-entree {
+	from {
+		opacity: 0;
+		transform: scale(0.96)
+	}
+
+	to {
+		opacity: 1;
+		transform: none
+	}
+}
+
 @keyframes cascade-entree {
 	from {
 		opacity: 0;
@@ -404,6 +530,17 @@ body::before {
 
 	/* Le signet reste posé — c'est l'information —, il ne bondit simplement pas. */
 	.signet-pose {
+		animation: none
+	}
+
+	/* Les boutons gardent leur changement de couleur, ils ne s'enfoncent plus. */
+	.btn:active:not(:disabled),
+	.icon-button:active {
+		transform: none
+	}
+
+	/* Le dialogue apparaît net : c'est une interruption, elle doit être lue. */
+	dialog[open] {
 		animation: none
 	}
 }

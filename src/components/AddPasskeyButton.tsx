@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Check } from 'lucide-react'
 import { authClient } from '@/lib/auth-client'
 
 export function AddPasskeyButton() {
@@ -15,18 +16,24 @@ export function AddPasskeyButton() {
     }
   }
 
+  // Voir EnableNotifications : le succès est une phrase, pas un bouton mort.
   return (
-    <div>
-      <button
-        onClick={addPasskey}
-        disabled={status === 'working' || status === 'done'}
-        className="mono-label rounded border border-rule bg-surface px-3 py-1.5 transition-colors hover:text-foreground disabled:opacity-50 motion-reduce:transition-none"
-      >
-        {status === 'done' ? 'Passkey added ✓' : 'Add a passkey on this device'}
-      </button>
-      {status === 'error' && (
-        <p className="mt-2 text-sm text-red-500">Failed — try again.</p>
+    <div aria-live="polite">
+      {status === 'done' ? (
+        <p className="flex items-center gap-2 text-sm text-accent">
+          <Check size={16} strokeWidth={2} aria-hidden="true" />
+          Passkey added on this device
+        </p>
+      ) : (
+        <button
+          onClick={addPasskey}
+          disabled={status === 'working'}
+          className="btn btn-secondary"
+        >
+          {status === 'working' ? 'Waiting for the device…' : 'Add a passkey on this device'}
+        </button>
       )}
+      {status === 'error' && <p className="mt-2 text-sm text-red-500">Failed — try again.</p>}
     </div>
   )
 }

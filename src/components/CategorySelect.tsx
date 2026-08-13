@@ -58,7 +58,7 @@ export function CategorySelect({
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className="flex w-full items-center justify-between gap-2 rounded border border-rule bg-surface px-3 py-1.5 text-sm outline-none focus:border-foreground"
+        className="field flex w-full items-center justify-between gap-2"
       >
         <span className={selected ? '' : 'text-muted'}>{selected?.name ?? 'Category'}</span>
         <ChevronDown
@@ -80,8 +80,8 @@ export function CategorySelect({
                 type="button"
                 onClick={() => choose(i)}
                 onMouseEnter={() => setActiveIndex(i)}
-                className={`flex w-full items-center justify-between px-3 py-1.5 text-left text-sm transition-colors ${
-                  i === activeIndex ? 'bg-surface text-foreground' : 'text-muted'
+                className={`flex w-full items-center justify-between px-3 py-3 text-left text-sm text-foreground transition-colors ${
+                  i === activeIndex ? 'bg-surface' : ''
                 }`}
               >
                 {c.name}

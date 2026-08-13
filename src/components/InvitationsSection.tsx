@@ -43,7 +43,7 @@ export function InvitationsSection({
         <button
           onClick={() => newInvite('signup')}
           disabled={status === 'working'}
-          className="mono-label rounded border border-rule bg-surface px-3 py-1.5 transition-colors hover:text-foreground disabled:opacity-50 motion-reduce:transition-none"
+          className="btn btn-secondary"
         >
           {status === 'working' ? 'Creating…' : 'New invite link'}
         </button>
@@ -52,7 +52,7 @@ export function InvitationsSection({
             <select
               value={selectedUserId}
               onChange={(e) => setSelectedUserId(e.target.value)}
-              className="rounded border border-rule bg-surface px-2 py-1.5 text-sm outline-none focus:border-foreground"
+              className="field"
             >
               {users.map((u) => (
                 <option key={u.id} value={u.id}>{u.name}</option>
@@ -61,7 +61,7 @@ export function InvitationsSection({
             <button
               onClick={() => newInvite('recovery', selectedUserId)}
               disabled={status === 'working' || !selectedUserId}
-              className="mono-label rounded border border-rule bg-surface px-3 py-1.5 transition-colors hover:text-foreground disabled:opacity-50 motion-reduce:transition-none"
+              className="btn btn-secondary"
             >
               New recovery link
             </button>
@@ -74,7 +74,7 @@ export function InvitationsSection({
       )}
 
       {newUrl && (
-        <div className="flex items-center gap-2 rounded border border-rule bg-surface px-3 py-1.5">
+        <div className="flex items-center gap-2 rounded border border-rule bg-surface p-1.5 pl-3">
           <span className="min-w-0 flex-1 truncate text-sm">{newUrl}</span>
           <CopyButton text={newUrl} />
         </div>

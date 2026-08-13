@@ -31,11 +31,15 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       // C'est l'approche de l'app Picta (aucune occurrence de viewport-fit ni de
       // safe-area-inset dans son monorepo), qui fonctionne en PWA installée.
       //
-      // `maximum-scale=1` empêche WebKit de zoomer au focus sur les champs dont
-      // la police est sous 16px — les nôtres sont en text-sm (14px).
+      // PAS de `maximum-scale=1`. Il était là pour empêcher WebKit de zoomer au
+      // focus sur des champs en text-sm (14px), mais il bloque aussi le
+      // pinch-zoom sur Android : une régression d'accessibilité (WCAG 1.4.4)
+      // pour contourner un défaut de mise en page. La cause est traitée à la
+      // source — `.field` (styles.css) pose `font-size: 1rem`, et WebKit ne
+      // zoome pas au-dessus de 16px.
       {
         name: 'viewport',
-        content: 'width=device-width, initial-scale=1, maximum-scale=1',
+        content: 'width=device-width, initial-scale=1',
       },
       { title: 'Feedr' },
       { name: 'description', content: 'Personal RSS reader' },
@@ -65,7 +69,7 @@ function NotFound() {
   return (
     <div className="mx-auto max-w-sm px-4 pt-16">
       <p className="mono-label">Feedr</p>
-      <h1 className="mt-2 text-3xl font-bold tracking-tight">Not found</h1>
+      <h1 className="mt-2 text-2xl font-bold tracking-tight">Not found</h1>
       <p className="mt-8">
         <Link to="/" search={{ category: undefined }} className="cta-link text-sm font-medium">
           Back to the feed
