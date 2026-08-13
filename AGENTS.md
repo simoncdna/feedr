@@ -11,6 +11,7 @@ Lecteur RSS personnel. **TanStack Start v1** (React, Vite), Drizzle + Neon Postg
 - **La base de production n'est jamais une cible de test.** `.env.local` pointe sur la base de dev ; `drizzle.config.ts` refuse de démarrer sur l'endpoint de prod.
 - **Le cron de polling ne vit que dans `vercel.json`, et seulement après un redéploiement.** Éditer l'expression sans redéployer ne change rien. Les horaires sont en **UTC** sans réglage de fuseau, et sur le plan Hobby la **minute est ignorée** (déclenchement n'importe quand dans l'heure visée) avec **une exécution par jour maximum** — une expression plus fréquente fait *échouer le build*. Le cron s'authentifie par l'en-tête `Authorization: Bearer $CRON_SECRET` que Vercel ajoute seul ; `?secret=` reste accepté pour le curl manuel (`src/lib/cron-auth.ts`).
 - **Un seul push récapitulatif par utilisateur et par relevé** (`groupNotificationsByUser`), pas une notification par article : en rythme quotidien un relevé ramène des dizaines d'articles. `notified` dans la réponse de `/api/poll` compte donc les notifications, pas les articles. Un relevé à un seul article garde le lien direct vers l'article.
+- **Chez YouTube, tout le contenu utile d'une entrée vit dans `<media:group>`**, dont les enfants ne sont PAS enfants de l'`<entry>`. Déclarer `media:thumbnail` au niveau de l'item ne les trouve pas et rss-parser jette le sous-arbre entier : une vidéo arrivait donc sans vignette, sans description et avec `hasVideo` à `false` (mesuré le 2026-08-13). `media:content` y déclare encore `application/x-shockwave-flash`, donc inutilisable pour détecter la vidéo — c'est l'id du lien qui sert (`src/lib/youtube.ts`).
 - **Chez linkedom, `documentElement` est le premier enfant élément du document, pas « la balise `<html>` ».** Sur une page servie sans racine (`<!doctype html><meta charset="utf-8"><div>…`) il vaut `<meta>`. Tout parcours global du document part donc de `document.children`, sinon il ne voit qu'un sous-arbre — c'est comme ça que le plafond de profondeur d'`extract.ts` était contournable.
 - **L'extraction du texte complet (`src/lib/extract.ts`) a trois pièges qui ne se voient pas à la lecture.** linkedom n'a pas d'URL de document : il faut lui poser une `<base>` *résolue soi-même* contre l'URL finale, sinon un `<base href="/">` déjà dans la page laisse toutes les images relatives, donc cassées — et l'échec est mis en cache définitivement puisqu'on ne réessaie jamais. Le getter `document.head` de linkedom *lève* sur une entrée sans élément racine (corps vide, texte nu), et un `?.` n'intercepte pas un throw venu d'un getter. Enfin `sanitize-html` n'autorise pas `rel` par défaut sur `<a>` : sans l'ajouter explicitement, le `noopener noreferrer` posé par `transformTags` est retiré juste après (`src/lib/sanitize.ts`). Mesures et raisons dans `docs/superpowers/specs/2026-08-10-full-text-extraction-design.md`.
 
@@ -18,7 +19,7 @@ Lecteur RSS personnel. **TanStack Start v1** (React, Vite), Drizzle + Neon Postg
 
 ```bash
 npm run dev      # développement (port 3001)
-npm test         # 144 tests Vitest
+npm test         # 155 tests Vitest
 npm run build    # build de production -> .output/
 npm start        # sert le build de production
 ```

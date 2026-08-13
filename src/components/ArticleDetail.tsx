@@ -1,7 +1,9 @@
 import sanitizeHtml from 'sanitize-html'
 import { ArticleBodySkeleton } from '@/components/Skeletons'
+import { VideoEmbed } from '@/components/VideoEmbed'
 import { ARTICLE_SANITIZE_OPTIONS } from '@/lib/sanitize'
 import { relativeDate } from '@/lib/text'
+import { youtubeVideoId } from '@/lib/youtube'
 import { useFullContent, useToggleBookmark } from '@/mutations'
 // Source unique du type : partagé avec la server fn getArticle.
 import type { ArticleDetailData } from '@/server/queries'
@@ -16,12 +18,22 @@ export function ArticleDetail({
   categoryId?: number | null
 }) {
   const toggle = useToggleBookmark(categoryId)
-  const loadingBody = useFullContent(article.id, article.fullContentAt !== null)
+  const videoId = youtubeVideoId(article.link)
+  // Rien à scraper pour une vidéo : la page YouTube ne rend aucun texte au
+  // travers de Readability (0 caractère mesuré). La server fn la court-circuite
+  // déjà, mais s'en abstenir dès le client évite d'afficher un squelette par-
+  // dessus la description qu'on a déjà sous la main.
+  const bodyDone = article.fullContentAt !== null || videoId !== null
+  const loadingBody = useFullContent(article.id, bodyDone)
   // Le texte complet d'abord, le flux en repli. Il est déjà assaini côté
   // serveur avant d'entrer en base ; on repasse ici parce que `content` et
   // `description` viennent du flux et n'ont, eux, jamais été filtrés.
   const raw = article.fullContent ?? article.content ?? article.description
-  const safe = raw ? sanitizeHtml(raw, ARTICLE_SANITIZE_OPTIONS) : null
+  // Chez YouTube, `description` vient de media:description : du texte brut dont
+  // les retours à la ligne portent du sens. Le passer par dangerouslySetInnerHTML
+  // les écraserait en un seul paragraphe, d'où le rendu en texte plus bas.
+  const plainText = videoId !== null && article.fullContent === null && article.content === null
+  const safe = raw && !plainText ? sanitizeHtml(raw, ARTICLE_SANITIZE_OPTIONS) : null
 
   return (
     <article className="px-4 py-6 lg:px-6 lg:py-8">
@@ -53,11 +65,18 @@ export function ArticleDetail({
       >
         {article.title}
       </h1>
+      {videoId && <VideoEmbed videoId={videoId} title={article.title} />}
       {/* Titre, source, date et bouton restent en dehors de l'échange : c'est ce
           qui empêche la page de sauter sous le pouce du lecteur à l'arrivée du
           texte. Seul le corps est remplacé. */}
       {loadingBody ? (
         <ArticleBodySkeleton />
+      ) : plainText ? (
+        raw && (
+          <p className="mt-6 whitespace-pre-line text-[0.9375rem] leading-relaxed text-muted">
+            {raw}
+          </p>
+        )
       ) : (
         safe && (
           <div
