@@ -1,6 +1,7 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { useSuspenseInfiniteQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { ArticleList } from '@/components/ArticleList'
+import { BackButton } from '@/components/BackButton'
 import { ArticleDetail } from '@/components/ArticleDetail'
 import { CategoryChips } from '@/components/CategoryChips'
 import { EmptyPane } from '@/components/EmptyPane'
@@ -27,6 +28,7 @@ export const Route = createFileRoute('/')({
 
 function FeedPage() {
 	const { category, article } = Route.useSearch()
+	const navigate = Route.useNavigate()
 	const { data: cats } = useSuspenseQuery(categoriesQuery())
 	const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = useSuspenseInfiniteQuery(
 		feedQuery(category ?? null),
@@ -79,9 +81,9 @@ function FeedPage() {
 				<section className={`${showDetail ? '' : 'hidden'} lg:block lg:overflow-y-auto`}>
 					{showDetail && (
 						<div className="px-4 pt-2 lg:hidden">
-							<Link to="/" search={{ category }} className="mono-label -m-2 p-2 transition-colors hover:text-foreground">
+							<BackButton fallback={() => navigate({ to: '/', search: { category } })}>
 								← Back
-							</Link>
+							</BackButton>
 						</div>
 					)}
 					<ArticleDetailPane id={article} categoryId={category ?? null} />

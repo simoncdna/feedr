@@ -142,7 +142,14 @@ cible de test.
 
 - **Virtualisation de la liste.** À 367 lignes, un `map` suffit ; virtualiser
   casserait le défilement natif et les gestes de `SwipeRow`.
-- **Restauration de la position de défilement** au retour d'un article.
+- ~~Restauration de la position de défilement au retour d'un article.~~ Traité
+  depuis, et ce n'était pas un manque de restauration : `scrollRestoration` est
+  activé dans `src/router.tsx` depuis toujours et fonctionne, mais il ne
+  s'applique qu'aux **retours** d'historique. Le lien « ← Back » était un
+  `<Link to="/">`, donc une navigation *avant*, qui empile une nouvelle entrée —
+  et une nouvelle entrée démarre au sommet. Mesuré le 2026-08-13 : 4750 px
+  restaurés par le bouton du navigateur, 0 par le lien. Voir
+  `src/components/BackButton.tsx`.
 - **La cascade d'animation reste inchangée.** Sa classe est retirée après 800 ms,
   donc les rangées ajoutées ensuite n'héritent de rien. Une page qui arriverait
   dans ces 800 ms animerait ses rangées : cas rare, et le corriger demanderait de

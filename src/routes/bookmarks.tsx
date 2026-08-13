@@ -1,6 +1,7 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { useSuspenseInfiniteQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { ArticleList } from '@/components/ArticleList'
+import { BackButton } from '@/components/BackButton'
 import { ArticleDetail } from '@/components/ArticleDetail'
 import { EmptyPane } from '@/components/EmptyPane'
 import { FeedSkeleton } from '@/components/Skeletons'
@@ -25,6 +26,7 @@ export const Route = createFileRoute('/bookmarks')({
 
 function BookmarksPage() {
   const { article } = Route.useSearch()
+  const navigate = Route.useNavigate()
   const { data, hasNextPage, isFetchingNextPage, fetchNextPage } =
     useSuspenseInfiniteQuery(bookmarksQuery())
   const rows = flattenPages(data)
@@ -52,14 +54,9 @@ function BookmarksPage() {
         <section className={`${showDetail ? '' : 'hidden'} lg:block lg:overflow-y-auto`}>
           {showDetail && (
             <div className="px-4 pt-2 lg:hidden">
-              <Link
-                to="/bookmarks"
-                search={{ article: undefined }}
-                activeOptions={{ explicitUndefined: true }}
-                className="mono-label -m-2 p-2 transition-colors hover:text-foreground"
-              >
+              <BackButton fallback={() => navigate({ to: '/bookmarks', search: {} })}>
                 ← Back
-              </Link>
+              </BackButton>
             </div>
           )}
           <BookmarkDetail id={article} />

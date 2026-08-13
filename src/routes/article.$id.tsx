@@ -1,6 +1,7 @@
-import { createFileRoute, Link, notFound } from '@tanstack/react-router'
+import { createFileRoute, notFound, useNavigate } from '@tanstack/react-router'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { ArticleDetail } from '@/components/ArticleDetail'
+import { BackButton } from '@/components/BackButton'
 import { ArticleSkeleton } from '@/components/Skeletons'
 import { articleQuery } from '@/queries'
 
@@ -25,14 +26,15 @@ export const Route = createFileRoute('/article/$id')({
 
 function ArticlePage() {
   const { id } = Route.useParams()
+  const navigate = useNavigate()
   const { data: article } = useSuspenseQuery(articleQuery(id))
   if (!article) throw notFound()
   return (
     <div>
       <div className="px-4 pt-2 lg:px-6 lg:pt-6">
-        <Link to="/" search={{ category: undefined }} className="mono-label -m-2 p-2 transition-colors hover:text-foreground">
-          ← Feed
-        </Link>
+        {/* Cible des notifications push : arrivé ici depuis une notification,
+            l'historique est vide et le repli sur le fil est le seul chemin. */}
+        <BackButton fallback={() => navigate({ to: '/', search: {} })}>← Feed</BackButton>
       </div>
       <ArticleDetail article={article} />
     </div>
