@@ -131,18 +131,23 @@ export function ArticleCard({
         </div>
       </div>
       {article.imageUrl && (
-        // Ratio FIXE. Sans lui la hauteur de la vignette était celle de la
-        // rangée (mesuré : 96 → 102 px selon la longueur du titre), donc un
-        // recadrage qui changeait d'une rangée à l'autre et un bord droit
-        // irrégulier. `self-start` la laisse en haut quand le texte est plus
-        // haut qu'elle, au lieu de l'étirer.
+        // Largeur fixe, hauteur étirée sur la rangée. Un `aspect-[4/3]` a été
+        // essayé pour garantir un recadrage identique partout, et écarté : il
+        // laissait la colonne de droite à moitié vide (72 px de vignette dans
+        // une rangée de 151).
+        //
+        // L'irrégularité de hauteur qui motivait le ratio fixe a en fait
+        // disparu d'elle-même : l'extrait tenant désormais deux lignes clampées
+        // comme le titre, toutes les rangées ont la même hauteur — 45 vignettes
+        // relevées, toutes à 119 px. Elle ne reviendrait que pour une rangée
+        // dont le titre tiendrait sur une seule ligne.
         <img
           src={article.imageUrl}
           alt=""
           draggable={false}
           loading="lazy"
           referrerPolicy="no-referrer"
-          className="my-4 mr-4 aspect-[4/3] w-24 shrink-0 self-start rounded object-cover lg:mr-6 lg:w-28"
+          className="my-4 mr-4 w-24 shrink-0 rounded object-cover lg:mr-6 lg:w-28"
         />
       )}
     </div>
