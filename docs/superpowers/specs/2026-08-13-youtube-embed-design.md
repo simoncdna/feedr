@@ -62,25 +62,39 @@ iframe, et un id non validé y ouvrirait une injection. Tout le reste rend `null
 
 ## La lecture
 
-Nouveau `src/components/VideoEmbed.tsx`, une seule responsabilité.
+Nouveau `src/components/VideoEmbed.tsx`, une seule responsabilité : une iframe
+`youtube-nocookie.com/embed/<id>?playsinline=1`, en 16/9, `allowFullScreen`,
+montée à l'ouverture de l'article.
 
-Tant qu'on n'a pas cliqué : un `<button>` portant la vignette en 16/9 et un
-chevron de lecture, avec un `aria-label` explicite. Au clic : une iframe
-`youtube-nocookie.com/embed/<id>?autoplay=1`, `allowFullScreen`.
+`ArticleDetail` la monte au-dessus du corps quand `youtubeVideoId(article.link)`
+répond.
 
-Le lecteur n'est monté qu'au clic, délibérément : rien de YouTube — ni cookie, ni
-le mégaoctet de JavaScript du lecteur — ne charge tant qu'on ne lance pas la
-vidéo. Sur une PWA dont le fil ramène des dizaines d'articles par relevé, monter
-l'iframe à l'ouverture ferait payer ce coût même aux vidéos qu'on ne regarde pas.
+### Pourquoi pas une vignette cliquable, alors que c'était le choix initial
 
-`ArticleDetail` monte le composant au-dessus du corps quand
-`youtubeVideoId(article.link)` répond.
+La première version affichait une vignette et ne montait l'iframe qu'au clic,
+pour ne rien charger de YouTube tant qu'on ne regardait pas — vérifié à
+l'époque : seul `i.ytimg.com` était contacté avant le clic, ni cookie ni le
+mégaoctet de JavaScript du lecteur.
 
-**La vignette est recadrée, pas remplacée.** `hqdefault.jpg` fait 480×360, donc du
-4/3 : affichée telle quelle dans une boîte 16/9 elle aurait des bandes noires. On
-la recadre avec `object-cover`. L'alternative `maxresdefault.jpg` est bien en 16/9
-mais renvoie un 404 sur une partie des vidéos, ce qui échangerait une bande noire
-contre une image cassée.
+Elle coûtait un clic de plus sur iPhone. L'iframe naissante recevait
+`?autoplay=1`, que Chrome de bureau honorait mais que Safari sur iOS refuse : il
+exige un geste fait *dans* l'iframe, et le clic sur la vignette avait lieu avant
+qu'elle existe. Le lecteur s'affichait donc en pause, et il fallait cliquer une
+seconde fois. Un clic sur desktop, deux sur mobile — sur une app dont l'usage
+principal est le téléphone.
+
+Arbitrage tranché en faveur du clic unique. **Conséquence assumée : ouvrir un
+article vidéo charge le lecteur YouTube et ses cookies, même sans lancer la
+lecture.** C'est le prix payé, et il n'est pas négligeable ; il est accepté en
+connaissance de cause.
+
+`autoplay` est retiré plutôt que conservé : là où il est honoré, il ferait
+démarrer une vidéo que personne n'a demandée à la simple ouverture d'un article.
+Sans lui, le seul clic est celui de YouTube, le même sur toutes les plateformes.
+`playsinline` pour qu'iOS joue dans la page au lieu de basculer en plein écran.
+
+La vignette reste utilisée par le fil (`imageUrl`) et par la reprise ; seul le
+lecteur ne s'en sert plus.
 
 **La description est rendue en texte**, dans un `<p className="whitespace-pre-line">`
 et non via `dangerouslySetInnerHTML` : c'est du texte brut, le passer pour du HTML

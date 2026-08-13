@@ -52,7 +52,20 @@ export function youtubeThumbnailUrl(id: string): string {
   return `https://i.ytimg.com/vi/${id}/hqdefault.jpg`
 }
 
-/** Lecteur sur le domaine sans cookie — l'iframe n'est montée qu'au clic. */
+/**
+ * Lecteur sur le domaine sans cookie.
+ *
+ * Sans `autoplay`, délibérément. Une version antérieure montait l'iframe au clic
+ * sur une vignette et demandait l'autoplay : Chrome de bureau obéissait, mais
+ * Safari sur iPhone refuse de lancer une vidéo avec son sans geste fait *dans*
+ * l'iframe — le clic sur la vignette avait lieu avant qu'elle existe. Résultat :
+ * deux clics sur mobile, un seul sur desktop. Le lecteur est donc désormais monté
+ * directement et sans autoplay : le seul clic est celui de YouTube, le même
+ * partout, et aucune vidéo ne démarre sans qu'on l'ait demandée.
+ *
+ * `playsinline` pour qu'iOS joue dans la page plutôt que de basculer en plein
+ * écran.
+ */
 export function youtubeEmbedUrl(id: string): string {
-  return `https://www.youtube-nocookie.com/embed/${id}?autoplay=1`
+  return `https://www.youtube-nocookie.com/embed/${id}?playsinline=1`
 }

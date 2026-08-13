@@ -56,6 +56,12 @@ describe('youtubeThumbnailUrl', () => {
 
 describe('youtubeEmbedUrl', () => {
   it('construit une URL d’embed sans cookie', () => {
-    expect(youtubeEmbedUrl(ID)).toBe(`https://www.youtube-nocookie.com/embed/${ID}?autoplay=1`)
+    expect(youtubeEmbedUrl(ID)).toBe(`https://www.youtube-nocookie.com/embed/${ID}?playsinline=1`)
+  })
+
+  // L'autoplay a été retiré : Safari sur iPhone le refuse de toute façon, et là où
+  // il est accepté il ferait démarrer une vidéo que personne n'a demandée.
+  it('ne demande pas l’autoplay', () => {
+    expect(youtubeEmbedUrl(ID)).not.toContain('autoplay')
   })
 })
