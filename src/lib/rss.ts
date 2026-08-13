@@ -1,4 +1,17 @@
 import Parser from 'rss-parser'
+import { youtubeVideoId } from '@/lib/youtube'
+
+/**
+ * Le `<media:group>` de YouTube. Ses enfants ne sont PAS des enfants de
+ * `<entry>` : les déclarer au niveau de l'item ne les trouve pas, et rss-parser
+ * jette alors le sous-arbre entier — vignette, description et tout le reste
+ * (mesuré le 2026-08-13). C'est pour ça que le groupe est déclaré tel quel puis
+ * fouillé à la main.
+ */
+export type MediaGroup = {
+  'media:thumbnail'?: Array<{ $?: { url?: string } }>
+  'media:description'?: string[]
+}
 
 export type RawItem = {
   guid?: string
@@ -14,6 +27,7 @@ export type RawItem = {
   enclosure?: { url?: string; type?: string }
   mediaContent?: Array<{ $?: { url?: string; medium?: string; type?: string } }>
   mediaThumbnail?: Array<{ $?: { url?: string } }>
+  mediaGroup?: MediaGroup   // YouTube: vignette et description, voir MediaGroup
 }
 
 export type NormalizedItem = {
@@ -45,12 +59,20 @@ export function extractImage(item: RawItem): string | null {
   if (media?.$?.url) return media.$.url
   const thumbnail = item.mediaThumbnail?.find((m) => m.$?.url)
   if (thumbnail?.$?.url) return thumbnail.$.url
+  // YouTube ne donne sa vignette que là. Après les sources de niveau item, parce
+  // qu'un flux qui déclare les deux a choisi celle du haut délibérément.
+  const grouped = item.mediaGroup?.['media:thumbnail']?.find((m) => m.$?.url)
+  if (grouped?.$?.url) return grouped.$.url
   const html = item.contentEncoded ?? item.content ?? ''
   const match = html.match(/<img[^>]+src=["']([^"']+)["']/i)
   return match?.[1] ?? null
 }
 
 export function detectVideo(item: RawItem): boolean {
+  // Par le lien, et non par media:content : YouTube y déclare encore
+  // `application/x-shockwave-flash` avec une URL /v/…?version=3 héritée de Flash,
+  // que le test `video/` ci-dessous ne reconnaît pas (mesuré le 2026-08-13).
+  if (item.link && youtubeVideoId(item.link)) return true
   if (item.enclosure?.type?.startsWith('video/')) return true
   if (
     item.mediaContent?.some(
@@ -74,7 +96,11 @@ export function normalizeItem(item: RawItem, now: Date): NormalizedItem | null {
   const parsed = item.isoDate ? new Date(item.isoDate) : now
   // RSS 2.0: <description> → content, <content:encoded> → contentEncoded.
   // Atom: <summary> → summary (teaser), <content> → content (corps complet), pas de contentEncoded.
-  const description = item.summary ?? item.content ?? null
+  // YouTube: media:description est la seule source de texte, et c'est du texte
+  // brut dont les retours à la ligne comptent — le rendu ne doit pas le traiter
+  // comme du HTML. En dernier recours : un flux qui a summary ou content a dit
+  // ce qu'il voulait dire.
+  const description = item.summary ?? item.content ?? item.mediaGroup?.['media:description']?.[0] ?? null
   const content = item.contentEncoded
     ?? (item.summary && item.content && item.content !== item.summary ? item.content : null)
   return {
@@ -99,6 +125,9 @@ const parser = new Parser({
       ['content:encoded', 'contentEncoded'],
       ['media:content', 'mediaContent', { keepArray: true }],
       ['media:thumbnail', 'mediaThumbnail', { keepArray: true }],
+      // Le groupe entier, fouillé ensuite à la main : ses enfants ne sont pas des
+      // enfants de l'item, donc les déclarer ici un par un ne les trouverait pas.
+      ['media:group', 'mediaGroup'],
     ],
   },
 })

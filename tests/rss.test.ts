@@ -16,6 +16,27 @@ const ATOM_XML = `<?xml version="1.0" encoding="UTF-8"?>
   </entry>
 </feed>`
 
+// Forme réelle d'une entrée de chaîne YouTube : tout le contenu utile est niché
+// dans <media:group>, jamais en enfant direct de <entry>.
+const YOUTUBE_XML = `<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns:media="http://search.yahoo.com/mrss/" xmlns="http://www.w3.org/2005/Atom">
+  <title>Marques Brownlee</title>
+  <entry>
+    <id>yt:video:o4SSoURPODY</id>
+    <title>Pixel 11 Impressions</title>
+    <link rel="alternate" href="https://www.youtube.com/watch?v=o4SSoURPODY"/>
+    <published>2026-08-12T14:00:35+00:00</published>
+    <media:group>
+      <media:title>Pixel 11 Impressions</media:title>
+      <media:content url="https://www.youtube.com/v/o4SSoURPODY?version=3" type="application/x-shockwave-flash" width="640" height="390"/>
+      <media:thumbnail url="https://i4.ytimg.com/vi/o4SSoURPODY/hqdefault.jpg" width="480" height="360"/>
+      <media:description>Every year, a new Pixel, and new hopes and dreams...
+
+Protect your Pixel at https://dbrand.com</media:description>
+    </media:group>
+  </entry>
+</feed>`
+
 const RSS_XML = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:media="http://search.yahoo.com/mrss/">
   <channel>
@@ -213,7 +234,35 @@ describe('parseFeedString + normalizeItem (intégration, flux réels)', () => {
   })
 })
 
+// Mesuré le 2026-08-13 sur une vraie chaîne : tout ce qui compte vit dans
+// <media:group>, et media:content y déclare encore du Flash — d'où la détection
+// par l'id du lien plutôt que par le type de media:content.
+describe('flux YouTube (media:group)', () => {
+  it('en tire la vignette, la description et hasVideo', async () => {
+    const { items } = await parseFeedString(YOUTUBE_XML)
+    expect(items).toHaveLength(1)
+    const normalized = normalizeItem(items[0], NOW)
+    expect(normalized).toMatchObject({
+      guid: 'yt:video:o4SSoURPODY',
+      title: 'Pixel 11 Impressions',
+      link: 'https://www.youtube.com/watch?v=o4SSoURPODY',
+      imageUrl: 'https://i4.ytimg.com/vi/o4SSoURPODY/hqdefault.jpg',
+      hasVideo: true,
+    })
+    // La description de YouTube est du texte brut : ses retours à la ligne sont
+    // porteurs de sens et doivent survivre au parsing.
+    expect(normalized?.description).toContain('Every year, a new Pixel')
+    expect(normalized?.description).toContain('\n')
+  })
+})
+
 describe('detectVideo', () => {
+  it('lien de vidéo YouTube, sans aucun média déclaré', () => {
+    expect(detectVideo({ link: 'https://www.youtube.com/watch?v=o4SSoURPODY' })).toBe(true)
+  })
+  it('false sur un lien YouTube qui n’est pas une vidéo', () => {
+    expect(detectVideo({ link: 'https://www.youtube.com/@MKBHD' })).toBe(false)
+  })
   it('enclosure video/*', () => {
     expect(detectVideo({ enclosure: { url: 'https://ex.com/v.mp4', type: 'video/mp4' } })).toBe(true)
   })
