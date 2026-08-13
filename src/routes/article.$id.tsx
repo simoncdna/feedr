@@ -1,7 +1,7 @@
 import { createFileRoute, notFound, useNavigate } from '@tanstack/react-router'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { ArticleDetail } from '@/components/ArticleDetail'
-import { BackButton } from '@/components/BackButton'
+import { DetailPane } from '@/components/DetailPane'
 import { ArticleSkeleton } from '@/components/Skeletons'
 import { articleQuery } from '@/queries'
 
@@ -30,13 +30,11 @@ function ArticlePage() {
   const { data: article } = useSuspenseQuery(articleQuery(id))
   if (!article) throw notFound()
   return (
-    <div>
-      <div className="px-4 pt-2 lg:px-6 lg:pt-6">
-        {/* Cible des notifications push : arrivé ici depuis une notification,
-            l'historique est vide et le repli sur le fil est le seul chemin. */}
-        <BackButton fallback={() => navigate({ to: '/', search: {} })}>← Feed</BackButton>
-      </div>
+    // Cible des notifications push : arrivé ici depuis une notification,
+    // l'historique est vide et le repli sur le fil est le seul chemin — d'où le
+    // `fallback`, que le geste de bord emprunte aussi.
+    <DetailPane showBack fallback={() => navigate({ to: '/', search: {} })} label="Feed">
       <ArticleDetail article={article} />
-    </div>
+    </DetailPane>
   )
 }
