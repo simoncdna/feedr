@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import sanitizeHtml from 'sanitize-html'
 import { ArticleBodySkeleton } from '@/components/Skeletons'
 import { VideoEmbed } from '@/components/VideoEmbed'
@@ -7,6 +8,19 @@ import { youtubeVideoId } from '@/lib/youtube'
 import { useFullContent, useToggleBookmark } from '@/mutations'
 // Source unique du type : partagé avec la server fn getArticle.
 import type { ArticleDetailData } from '@/server/queries'
+
+/**
+ * Largeur minimale d'une source pour servir d'image de tête.
+ *
+ * Le bloc occupe 361 px CSS sur un iPhone, soit 1083 px sur un écran à 3×. Les
+ * flux ne fournissent pas du tout la même chose : BBC publie des vignettes de
+ * 240 px de large — un agrandissement de 4,5×, visiblement mou à côté du texte
+ * — là où The Verge fournit du 11648 px (relevé sur les quatre flux du fil).
+ * On ne décide donc pas sur la présence d'une URL mais sur la taille réelle du
+ * fichier. 800 px sous-échantillonne encore un peu sur un écran à 3×, ce qui ne
+ * se voit pas ; en dessous, si.
+ */
+const TETE_MIN_PX = 800
 
 export function ArticleDetail({
   article,
@@ -37,13 +51,34 @@ export function ArticleDetail({
   const plainText = videoId !== null && article.fullContent === null && article.content === null
   const safe = raw && !plainText ? sanitizeHtml(raw, ARTICLE_SANITIZE_OPTIONS) : null
 
-  // Image de tête : la vignette du fil, affichée SEULEMENT si le corps n'en
-  // apporte aucune. Sans ce garde, une extraction qui contient déjà la photo
-  // d'ouverture (le cas courant chez la presse) l'afficherait deux fois. Le
-  // test porte sur le HTML assaini, donc sur ce qui sera réellement peint.
+  // Le préchargement mesure la source avant qu'elle ne soit peinte : rien de
+  // mou n'apparaît, même une image. Il part au montage, donc en parallèle de la
+  // récupération du texte complet — qui passe par un scrape et prend bien plus
+  // longtemps. La réponse est là avant le corps, et le bloc ne s'insère donc pas
+  // après coup sous le pouce du lecteur.
+  const [teteUtilisable, setTeteUtilisable] = useState(false)
+  useEffect(() => {
+    // Remis à zéro à chaque article : le composant est réutilisé d'un article à
+    // l'autre (aucune `key` ne le distingue), un `true` resterait acquis.
+    setTeteUtilisable(false)
+    if (!article.imageUrl || videoId !== null) return
+    const sonde = new Image()
+    sonde.referrerPolicy = 'no-referrer'
+    sonde.onload = () => setTeteUtilisable(sonde.naturalWidth >= TETE_MIN_PX)
+    sonde.src = article.imageUrl
+    return () => {
+      sonde.onload = null
+    }
+  }, [article.imageUrl, videoId])
+
+  // Image de tête : la vignette du fil, affichée SEULEMENT si elle est assez
+  // grande (voir TETE_MIN_PX) et si le corps n'en apporte aucune. Sans ce
+  // second garde, une extraction qui contient déjà la photo d'ouverture — le
+  // cas courant chez la presse — l'afficherait deux fois. Le test porte sur le
+  // HTML assaini, donc sur ce qui sera réellement peint.
   const bodyHasImage = safe !== null && safe.includes('<img')
   const leadImage =
-    article.imageUrl && videoId === null && !bodyHasImage && !loadingBody ? article.imageUrl : null
+    teteUtilisable && !bodyHasImage && !loadingBody ? article.imageUrl : null
 
   return (
     <article className="px-4 py-6 lg:px-6 lg:py-8">
