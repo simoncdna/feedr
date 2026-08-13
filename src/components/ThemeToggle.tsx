@@ -1,27 +1,50 @@
 import { useSyncExternalStore } from 'react'
-import { Moon, Sun } from 'lucide-react'
+import { Monitor, Moon, Sun } from 'lucide-react'
 
-type Theme = 'light' | 'dark'
+// Trois états, et non deux. Le réglage par défaut est « suivre le système »,
+// mais l'ancien bouton ne faisait qu'alterner clair/sombre : au premier appui il
+// écrivait `localStorage.theme` et il n'existait plus AUCUN chemin de retour vers
+// l'automatique. L'état par défaut de l'app était donc inatteignable une fois
+// quitté.
+type Preference = 'auto' | 'light' | 'dark'
+
+const SUIVANT: Record<Preference, Preference> = {
+  auto: 'light',
+  light: 'dark',
+  dark: 'auto',
+}
+
+const LIBELLE: Record<Preference, string> = {
+  auto: 'Auto',
+  light: 'Light',
+  dark: 'Dark',
+}
+
+// L'état vit dans localStorage, pas dans un état React : le bootstrap de thème
+// (__root.tsx) le lit avant le premier paint, et deux ThemeToggle peuvent être
+// montés (Sidebar, Settings). Ce registre les tient d'accord.
+const abonnes = new Set<() => void>()
 
 function subscribe(onChange: () => void) {
-  const mq = window.matchMedia('(prefers-color-scheme: dark)')
-  mq.addEventListener('change', onChange)
-  const observer = new MutationObserver(onChange)
-  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
+  abonnes.add(onChange)
+  // Un autre onglet a pu changer le réglage.
+  window.addEventListener('storage', onChange)
   return () => {
-    mq.removeEventListener('change', onChange)
-    observer.disconnect()
+    abonnes.delete(onChange)
+    window.removeEventListener('storage', onChange)
   }
 }
 
-function getSnapshot(): Theme {
-  const explicit = document.documentElement.dataset.theme
-  if (explicit === 'dark' || explicit === 'light') return explicit
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+function getSnapshot(): Preference {
+  try {
+    const stored = localStorage.theme
+    if (stored === 'dark' || stored === 'light') return stored
+  } catch {}
+  return 'auto'
 }
 
-// Rendu serveur : thème inconnu, on affiche un placeholder jusqu'à l'hydratation.
-function getServerSnapshot(): Theme | null {
+// Rendu serveur : réglage inconnu, on affiche un placeholder jusqu'à l'hydratation.
+function getServerSnapshot(): Preference | null {
   return null
 }
 
@@ -32,9 +55,17 @@ function getServerSnapshot(): Theme | null {
 // dedicated, React-unaware meta tag and place it first: browsers use the first
 // `meta[name="theme-color"]` whose `media` matches, and a tag with no `media`
 // attribute always matches, so ordering it first makes it always win.
-function applyThemeColor(theme: Theme) {
+//
+// `null` retire l'override : les deux balises médiatisées du shell reprennent la
+// main, ce qui est exactement ce que veut dire « auto ».
+function applyThemeColor(theme: 'light' | 'dark' | null) {
+  const existant = document.querySelector<HTMLMetaElement>('meta[name="theme-color"][data-theme-override]')
+  if (theme === null) {
+    existant?.remove()
+    return
+  }
   const color = theme === 'dark' ? '#0c0c0e' : '#ffffff'
-  let override = document.querySelector<HTMLMetaElement>('meta[name="theme-color"][data-theme-override]')
+  let override = existant
   if (!override) {
     override = document.createElement('meta')
     override.setAttribute('name', 'theme-color')
@@ -44,31 +75,43 @@ function applyThemeColor(theme: Theme) {
   override.content = color
 }
 
-export function ThemeToggle() {
-  const theme = useSyncExternalStore<Theme | null>(subscribe, getSnapshot, getServerSnapshot)
+export function ThemeToggle({ withLabel = false }: { withLabel?: boolean }) {
+  const preference = useSyncExternalStore<Preference | null>(subscribe, getSnapshot, getServerSnapshot)
 
-  function toggle() {
-    const next: Theme = getSnapshot() === 'dark' ? 'light' : 'dark'
-    document.documentElement.dataset.theme = next
-    applyThemeColor(next)
-    try {
-      localStorage.theme = next
-    } catch {}
+  function cycle() {
+    const next = SUIVANT[getSnapshot()]
+    if (next === 'auto') {
+      delete document.documentElement.dataset.theme
+      try {
+        localStorage.removeItem('theme')
+      } catch {}
+    } else {
+      document.documentElement.dataset.theme = next
+      try {
+        localStorage.theme = next
+      } catch {}
+    }
+    applyThemeColor(next === 'auto' ? null : next)
+    abonnes.forEach((notifier) => notifier())
   }
 
+  if (preference === null) {
+    return <span className={withLabel ? 'block h-11' : 'block h-4 w-4'} aria-hidden="true" />
+  }
+
+  const Icone = preference === 'auto' ? Monitor : preference === 'dark' ? Moon : Sun
   return (
     <button
-      onClick={toggle}
-      aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
-      className="-m-2 p-2 text-muted transition-colors hover:text-foreground"
+      type="button"
+      onClick={cycle}
+      // L'état COURANT, plus le suivant : un bouton à trois positions dont
+      // l'icône ne montrerait que la destination n'est pas lisible.
+      aria-label={`Theme: ${LIBELLE[preference]} — switch to ${LIBELLE[SUIVANT[preference]]}`}
+      title={`Theme: ${LIBELLE[preference]}`}
+      className={withLabel ? 'btn btn-secondary' : 'icon-button'}
     >
-      {theme === null ? (
-        <span className="block h-4 w-4" aria-hidden="true" />
-      ) : theme === 'dark' ? (
-        <Sun size={16} strokeWidth={1.5} aria-hidden="true" />
-      ) : (
-        <Moon size={16} strokeWidth={1.5} aria-hidden="true" />
-      )}
+      <Icone size={16} strokeWidth={1.5} aria-hidden="true" />
+      {withLabel && LIBELLE[preference]}
     </button>
   )
 }

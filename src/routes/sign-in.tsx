@@ -24,9 +24,12 @@ export const Route = createFileRoute('/sign-in')({
 function SignInPage() {
   const { isBootstrap } = Route.useLoaderData()
   return (
-    <div className="mx-auto max-w-sm px-4 pt-16">
+    // Centré, et non posé dans le coin haut-gauche d'un écran vide à 65 % :
+    // c'est la porte d'entrée de l'app, juste après l'écran de lancement.
+    // `pb-16` décale le centre optique vers le haut, ce que fait l'œil.
+    <div className="mx-auto flex min-h-[80dvh] max-w-sm flex-col justify-center px-4 pb-16">
       <p className="mono-label">Feedr</p>
-      <h1 className="mt-2 text-3xl font-bold tracking-tight">Sign in</h1>
+      <h1 className="mt-2 text-2xl font-bold tracking-tight">Sign in</h1>
       <div className="mt-8">
         <SignInClient bootstrap={isBootstrap} />
       </div>

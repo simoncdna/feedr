@@ -50,13 +50,15 @@ function SettingsPage() {
           rangées d'articles se lit comme un seul mouvement d'ensemble et non
           comme un enchaînement. */}
       <div className="cascade space-y-12 px-4 [--cascade-pas:80ms] lg:max-w-2xl lg:px-6 lg:py-8">
-        <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
 
         <section className="space-y-3 lg:hidden">
           <h2 className="mono-label border-b border-rule pb-2">Appearance</h2>
-          <div className="flex items-center justify-between">
-            <span className="text-sm">Light / dark theme</span>
-            <ThemeToggle />
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-sm">Theme</span>
+            {/* Avec libellé : le réglage a trois positions, une icône seule ne
+                dit pas laquelle est active. */}
+            <ThemeToggle withLabel />
           </div>
         </section>
 
@@ -66,12 +68,15 @@ function SettingsPage() {
             {cats.map((c) => (
               <li key={c.id} className="flex items-center justify-between gap-2 py-2.5">
                 <span className="text-sm">{c.name}</span>
-                <span className="flex items-center gap-4">
+                {/* `gap-6` et non `gap-4` : les cibles de 44 px d'`.icon-button`
+                    dépassent de 12 px de chaque côté, il faut 24 px d'écart de
+                    mise en page pour qu'elles se touchent sans se chevaucher. */}
+                <span className="flex items-center gap-6">
                   <button
                     type="button"
                     onClick={() => notifyCategory.mutate({ id: c.id, notify: !c.notify })}
                     aria-label="Toggle notifications"
-                    className={`-m-2 p-2 transition-colors ${c.notify ? 'text-accent' : 'text-muted hover:text-foreground'}`}
+                    className={`icon-button ${c.notify ? 'text-accent' : ''}`}
                     title={c.notify ? 'Notifications enabled' : 'Notifications disabled'}
                   >
                     <svg viewBox="0 0 24 24" className="h-5 w-5" fill={c.notify ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
@@ -81,7 +86,7 @@ function SettingsPage() {
                   <ConfirmSubmitButton
                     confirmMessage="Delete this category? Its feeds and articles (including bookmarked ones) will be deleted."
                     ariaLabel="Delete category"
-                    className="-m-2 p-2 text-muted transition-colors hover:text-foreground"
+                    className="icon-button"
                     onConfirmed={() => removeCategory.mutate(c.id)}
                   >
                     <X className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />
@@ -106,11 +111,9 @@ function SettingsPage() {
               value={newCategory}
               onChange={(e) => setNewCategory(e.target.value)}
               placeholder="New category"
-              className="flex-1 rounded border border-rule bg-surface px-3 py-1.5 text-sm outline-none focus:border-foreground"
+              className="field flex-1"
             />
-            <button className="mono-label rounded border border-rule bg-surface px-3 py-1.5 transition-colors hover:text-foreground motion-reduce:transition-none">
-              Add
-            </button>
+            <button className="btn btn-secondary">Add</button>
           </form>
         </section>
 
@@ -129,7 +132,7 @@ function SettingsPage() {
                 <ConfirmSubmitButton
                   confirmMessage="Delete this feed? Its articles (including bookmarked ones) will be deleted."
                   ariaLabel="Delete feed"
-                  className="-m-2 p-2 text-muted transition-colors hover:text-foreground"
+                  className="icon-button"
                   onConfirmed={() => removeFeed.mutate(f.id)}
                 >
                   <X className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />
@@ -156,7 +159,7 @@ function SettingsPage() {
           <button
             type="button"
             onClick={() => leave.mutate()}
-            className="mono-label rounded border border-rule bg-surface px-3 py-1.5 transition-colors hover:text-foreground motion-reduce:transition-none"
+            className="btn btn-secondary"
           >
             Sign out
           </button>

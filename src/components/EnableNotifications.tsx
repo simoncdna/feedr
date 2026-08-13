@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Check } from 'lucide-react'
 
 function urlBase64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {
   const padding = '='.repeat((4 - (base64.length % 4)) % 4)
@@ -36,15 +37,27 @@ export function EnableNotifications({ vapidPublicKey }: { vapidPublicKey: string
     }
   }
 
+  // Le succès n'est PLUS un bouton désactivé. L'abonnement Web Push demande une
+  // à trois secondes et un accord système ; l'état terminal était un bouton
+  // grisé à 50 % d'opacité portant « Notifications enabled ✓ », c'est-à-dire
+  // l'apparence exacte d'une commande morte pour la réussite de l'action la plus
+  // importante des réglages. `aria-live` annonce la bascule.
   return (
-    <div>
-      <button
-        onClick={enable}
-        disabled={status === 'working' || status === 'done'}
-        className="mono-label rounded border border-rule bg-surface px-3 py-1.5 transition-colors hover:text-foreground disabled:opacity-50 motion-reduce:transition-none"
-      >
-        {status === 'done' ? 'Notifications enabled ✓' : 'Enable notifications on this device'}
-      </button>
+    <div aria-live="polite">
+      {status === 'done' ? (
+        <p className="flex items-center gap-2 text-sm text-accent">
+          <Check size={16} strokeWidth={2} aria-hidden="true" />
+          Notifications enabled on this device
+        </p>
+      ) : (
+        <button
+          onClick={enable}
+          disabled={status === 'working'}
+          className="btn btn-primary"
+        >
+          {status === 'working' ? 'Enabling…' : 'Enable notifications on this device'}
+        </button>
+      )}
       {status === 'error' && (
         <p className="mt-2 text-sm text-red-500">
           Failed — check the PWA is installed (home screen) and notifications are allowed.

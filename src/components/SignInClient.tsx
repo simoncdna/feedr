@@ -43,12 +43,12 @@ export function SignInClient({ bootstrap }: { bootstrap: boolean }) {
             onChange={(e) => setName(e.target.value)}
             required
             placeholder="Your name"
-            className="w-full rounded border border-rule bg-surface px-3 py-1.5 text-sm outline-none focus:border-foreground"
+            className="field w-full"
           />
           <button
             onClick={createOwner}
             disabled={status === 'working'}
-            className="mono-label rounded border border-rule bg-surface px-3 py-1.5 transition-colors hover:text-foreground disabled:opacity-50"
+            className="btn btn-primary w-full"
           >
             {status === 'working' ? 'Creating…' : 'Create owner account'}
           </button>
@@ -57,7 +57,7 @@ export function SignInClient({ bootstrap }: { bootstrap: boolean }) {
         <button
           onClick={signIn}
           disabled={status === 'working'}
-          className="mono-label rounded border border-rule bg-surface px-3 py-1.5 transition-colors hover:text-foreground disabled:opacity-50"
+          className="btn btn-primary w-full"
         >
           {status === 'working' ? 'Waiting for passkey…' : 'Sign in with passkey'}
         </button>
