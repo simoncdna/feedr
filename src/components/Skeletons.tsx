@@ -6,12 +6,23 @@ function Ligne({ avecImage }: { avecImage: boolean }) {
   return (
     <div className="flex gap-4 px-4 py-4 lg:px-6">
       <div className="min-w-0 flex-1 space-y-2">
+        {/* Titre sur deux lignes, puis EXTRAIT sur deux lignes, puis méta : la
+            rangée mesure 151 px depuis que l'extrait n'est plus clampé à une
+            seule ligne, et un squelette plus court produirait le saut que ce
+            fichier existe pour éviter. */}
         <div className="skeleton h-5 w-[92%]" />
         <div className="skeleton h-5 w-[64%]" />
+        <div className="skeleton mt-3 h-4 w-[88%]" />
+        <div className="skeleton h-4 w-[52%]" />
         <div className="skeleton mt-3 h-3 w-[45%]" />
       </div>
-      {/* `aspect-[4/3]` comme la vraie vignette, qui a désormais un ratio fixe. */}
-      {avecImage && <div className="skeleton my-1 aspect-[4/3] w-24 shrink-0 lg:w-28" />}
+      {/* Ni hauteur, ni ratio, ni marge verticale : `align-items: stretch` lui
+          donne alors toute la hauteur de la boîte de contenu, ce qui est
+          exactement là où la vraie vignette atterrit (mesuré : 119 px pour une
+          rangée de 151). Avec un `my-4` ici, le bloc tombait 27 px trop court —
+          un <img> remplacé et un <div> vide ne résolvent pas leurs marges
+          pareil sous `stretch`. */}
+      {avecImage && <div className="skeleton w-24 shrink-0 lg:w-28" />}
     </div>
   )
 }
