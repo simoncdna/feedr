@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
+import { useInfiniteScroll } from '@/lib/use-infinite-scroll'
 import { useToggleBookmark } from '@/mutations'
 import type { ArticleCardData } from '@/server/queries'
 import { ArticleCard, type ArticleLinkProps } from './ArticleCard'
+import { ArticleRowsSkeleton } from './Skeletons'
 import { SwipeRow } from './SwipeRow'
 
 // La cascade joue sur deux déclencheurs : l'ARRIVÉE sur une liste (le fil, les
@@ -40,6 +42,7 @@ export function ArticleList({
   emptyLabel,
   categoryId = null,
   featuredFirst = false,
+  pagination,
 }: {
   articles: ArticleCardData[]
   linkPropsFor: (id: number) => ArticleLinkProps
@@ -48,8 +51,20 @@ export function ArticleList({
   // Sert à la mise à jour optimiste : c'est la clé de cache du fil affiché.
   categoryId?: number | null
   featuredFirst?: boolean
+  // Absent = liste non paginée. Présent = sentinelle en fin de liste.
+  pagination?: {
+    hasNextPage: boolean
+    isFetchingNextPage: boolean
+    fetchNextPage: () => void
+  }
 }) {
   const toggle = useToggleBookmark(categoryId)
+  const sentinelle = useRef<HTMLDivElement | null>(null)
+  useInfiniteScroll(sentinelle, {
+    hasNextPage: pagination?.hasNextPage ?? false,
+    isFetchingNextPage: pagination?.isFetchingNextPage ?? false,
+    fetchNextPage: pagination?.fetchNextPage ?? (() => {}),
+  })
   // Décision prise une fois pour ce montage. Dans un ref et non dans
   // l'initialiseur de useState : celui-ci est appelé deux fois en StrictMode, ce
   // qui consommerait `dernierCheminAffiche` avant le rendu conservé.
@@ -114,6 +129,17 @@ export function ArticleList({
           </SwipeRow>
         </div>
       ))}
+      {pagination && (
+        <>
+          {/* La sentinelle est rendue tant qu'il reste des pages. Elle disparaît
+              avec la dernière, ce qui débranche l'observateur du même coup. */}
+          {pagination.hasNextPage && <div ref={sentinelle} aria-hidden="true" className="h-px" />}
+          {pagination.isFetchingNextPage && <ArticleRowsSkeleton />}
+          {!pagination.hasNextPage && !pagination.isFetchingNextPage && (
+            <p className="mono-label py-8 text-center">End of feed</p>
+          )}
+        </>
+      )}
     </div>
   )
 }

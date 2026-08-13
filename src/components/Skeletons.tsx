@@ -15,6 +15,24 @@ function Ligne({ avecImage }: { avecImage: boolean }) {
   )
 }
 
+/**
+ * Le bas de liste pendant le chargement d'une page. Reprend `Ligne`, comme le
+ * squelette d'arrivée : deux rangées suffisent à dire « ça vient » sans faire
+ * croire à une page entière déjà là.
+ */
+export function ArticleRowsSkeleton() {
+  return (
+    <div aria-busy="true" aria-label="Loading more articles">
+      {[0, 1].map((i) => (
+        <div key={i}>
+          <div aria-hidden="true" className="mx-4 border-t border-rule lg:mx-0" />
+          <Ligne avecImage={i === 0} />
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export function FeedSkeleton() {
   return (
     <div aria-busy="true" aria-label="Loading feed">

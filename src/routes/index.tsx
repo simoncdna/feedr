@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { useSuspenseQuery } from '@tanstack/react-query'
+import { useSuspenseInfiniteQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { ArticleList } from '@/components/ArticleList'
 import { ArticleDetail } from '@/components/ArticleDetail'
 import { CategoryChips } from '@/components/CategoryChips'
 import { EmptyPane } from '@/components/EmptyPane'
 import { FeedSkeleton } from '@/components/Skeletons'
 import { ResizablePanes } from '@/components/ResizablePanes'
+import { flattenPages, orderWithHero, pickHero } from '@/lib/feed-pages'
 import { articleQuery, categoriesQuery, feedQuery } from '@/queries'
 import { feedSearchSchema } from './-search'
 
@@ -15,7 +16,8 @@ export const Route = createFileRoute('/')({
 	loader: async ({ context: { queryClient }, deps: { category, article } }) => {
 		await Promise.all([
 			queryClient.ensureQueryData(categoriesQuery()),
-			queryClient.ensureQueryData(feedQuery(category ?? null)),
+			// La première page seulement : les suivantes viennent au défilement.
+			queryClient.ensureInfiniteQueryData(feedQuery(category ?? null)),
 			article ? queryClient.ensureQueryData(articleQuery(article)) : Promise.resolve(),
 		])
 	},
@@ -26,13 +28,20 @@ export const Route = createFileRoute('/')({
 function FeedPage() {
 	const { category, article } = Route.useSearch()
 	const { data: cats } = useSuspenseQuery(categoriesQuery())
-	const { data: rows } = useSuspenseQuery(feedQuery(category ?? null))
+	const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = useSuspenseInfiniteQuery(
+		feedQuery(category ?? null),
+	)
 	const showDetail = Boolean(article)
 
-	// L'article mis en avant est le plus récent qui possède une image ;
-	// le reste du fil garde l'ordre chronologique.
-	const hero = rows.find((r) => r.imageUrl) ?? rows[0]
-	const ordered = hero ? [hero, ...rows.filter((r) => r.id !== hero.id)] : rows
+	// L'article mis en avant est le plus récent qui possède une image ; le reste du
+	// fil garde l'ordre chronologique.
+	//
+	// Le héros est choisi sur la PREMIÈRE PAGE seulement. Sur la liste complète, une
+	// page suivante apportant une image alors que la première n'en avait pas
+	// changerait le héros, et le fil se réordonnerait sous le doigt du lecteur.
+	const rows = flattenPages(data)
+	const hero = pickHero(data.pages[0]?.rows ?? [])
+	const ordered = orderWithHero(rows, hero)
 
 	return (
 		<ResizablePanes
@@ -62,6 +71,7 @@ function FeedPage() {
 						categoryId={category ?? null}
 						featuredFirst
 						emptyLabel="No articles — add feeds in settings"
+						pagination={{ hasNextPage, isFetchingNextPage, fetchNextPage }}
 					/>
 				</section>
 			}

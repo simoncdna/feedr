@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { useSuspenseQuery } from '@tanstack/react-query'
+import { useSuspenseInfiniteQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { ArticleList } from '@/components/ArticleList'
 import { ArticleDetail } from '@/components/ArticleDetail'
 import { EmptyPane } from '@/components/EmptyPane'
 import { FeedSkeleton } from '@/components/Skeletons'
 import { ResizablePanes } from '@/components/ResizablePanes'
+import { flattenPages } from '@/lib/feed-pages'
 import { articleQuery, bookmarksQuery } from '@/queries'
 import { bookmarksSearchSchema } from './-search'
 
@@ -13,7 +14,8 @@ export const Route = createFileRoute('/bookmarks')({
   loaderDeps: ({ search: { article } }) => ({ article }),
   loader: async ({ context: { queryClient }, deps: { article } }) => {
     await Promise.all([
-      queryClient.ensureQueryData(bookmarksQuery()),
+      // La première page seulement : les suivantes viennent au défilement.
+      queryClient.ensureInfiniteQueryData(bookmarksQuery()),
       article ? queryClient.ensureQueryData(articleQuery(article)) : Promise.resolve(),
     ])
   },
@@ -23,7 +25,9 @@ export const Route = createFileRoute('/bookmarks')({
 
 function BookmarksPage() {
   const { article } = Route.useSearch()
-  const { data: rows } = useSuspenseQuery(bookmarksQuery())
+  const { data, hasNextPage, isFetchingNextPage, fetchNextPage } =
+    useSuspenseInfiniteQuery(bookmarksQuery())
+  const rows = flattenPages(data)
   const showDetail = Boolean(article)
 
   return (
@@ -40,6 +44,7 @@ function BookmarksPage() {
             linkPropsFor={(id) => ({ to: '/bookmarks', search: { article: id } })}
             selectedId={article ?? null}
             emptyLabel="No bookmarked articles."
+            pagination={{ hasNextPage, isFetchingNextPage, fetchNextPage }}
           />
         </section>
       }

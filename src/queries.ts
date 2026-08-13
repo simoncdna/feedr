@@ -1,4 +1,5 @@
-import { queryOptions } from '@tanstack/react-query'
+import { infiniteQueryOptions, queryOptions } from '@tanstack/react-query'
+import type { FeedCursor } from '@/lib/feed-pages'
 import {
   getArticle,
   listBookmarks,
@@ -16,16 +17,23 @@ export const categoriesQuery = () =>
     queryFn: () => listCategories(),
   })
 
+// Les deux listes sont paginées par curseur. Les CLÉS NE CHANGENT PAS : les
+// mutations invalident par préfixe `['feed']`, et les renommer casserait cette
+// invalidation en silence.
 export const feedQuery = (categoryId: number | null) =>
-  queryOptions({
+  infiniteQueryOptions({
     queryKey: ['feed', categoryId],
-    queryFn: () => listFeedArticles({ data: categoryId }),
+    queryFn: ({ pageParam }) => listFeedArticles({ data: { categoryId, cursor: pageParam } }),
+    initialPageParam: null as FeedCursor | null,
+    getNextPageParam: (derniere) => derniere.nextCursor,
   })
 
 export const bookmarksQuery = () =>
-  queryOptions({
+  infiniteQueryOptions({
     queryKey: ['bookmarks'],
-    queryFn: () => listBookmarks(),
+    queryFn: ({ pageParam }) => listBookmarks({ data: pageParam }),
+    initialPageParam: null as FeedCursor | null,
+    getNextPageParam: (derniere) => derniere.nextCursor,
   })
 
 export const articleQuery = (id: number) =>

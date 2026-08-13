@@ -17,14 +17,17 @@ import {
   toggleBookmark,
   toggleCategoryNotify,
 } from '@/server/mutations'
+import { patchRow, type InfiniteFeed } from '@/lib/feed-pages'
 import type { ArticleCardData, ArticleDetailData } from '@/server/queries'
 
 // Ces hooks remplacent les revalidatePath() de l'app Next : chaque mutation
 // invalide exactement les clés qu'elle périme.
 
-function patchList(rows: ArticleCardData[] | undefined, id: number, bookmarked: boolean) {
-  return rows?.map((r) => (r.id === id ? { ...r, bookmarked } : r))
-}
+// Le fil et les bookmarks sont paginés : sous ces clés, React Query stocke
+// `{ pages, pageParams }` et non un tableau. Un patch écrit pour un tableau plat
+// n'y trouverait rien, sans erreur ni avertissement — la bascule cesserait
+// simplement d'être immédiate au swipe. D'où `patchRow`, et ses tests.
+type FeedData = InfiniteFeed<ArticleCardData> | undefined
 
 /**
  * Bascule de bookmark, optimiste — c'est un gain explicite de la spec : le swipe
@@ -53,10 +56,8 @@ export function useToggleBookmark(categoryId: number | null = null) {
         [bookmarksKey, queryClient.getQueryData(bookmarksKey)],
         [articleKey, queryClient.getQueryData(articleKey)],
       ]
-      queryClient.setQueryData<ArticleCardData[]>(feedKey, (rows) => patchList(rows, id, bookmarked))
-      queryClient.setQueryData<ArticleCardData[]>(bookmarksKey, (rows) =>
-        patchList(rows, id, bookmarked),
-      )
+      queryClient.setQueryData<FeedData>(feedKey, (d) => patchRow(d, id, { bookmarked }))
+      queryClient.setQueryData<FeedData>(bookmarksKey, (d) => patchRow(d, id, { bookmarked }))
       queryClient.setQueryData<ArticleDetailData | null>(articleKey, (a) =>
         a ? { ...a, bookmarked } : a,
       )
