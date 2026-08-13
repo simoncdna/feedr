@@ -71,7 +71,7 @@ function FeedPage() {
 					    la Dynamic Island. C'est cette bande qui tient désormais le haut de
 					    l'écran en PWA. En desktop elle redevient transparente et statique,
 					    il n'y a pas de barre de statut à couvrir. */}
-					<div className="sticky top-0 z-30 mt-3 bg-background px-4 lg:static lg:mt-0 lg:bg-transparent lg:px-6 lg:pb-3">
+					<div className="fondu-bas sticky top-0 z-30 mt-3 bg-background px-4 lg:static lg:mt-0 lg:bg-transparent lg:px-6 lg:pb-3 lg:after:hidden">
 						<CategoryChips categories={cats} activeId={category ?? null} />
 					</div>
 					<ArticleList

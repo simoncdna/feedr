@@ -125,6 +125,22 @@ body {
 		padding-bottom: 0.25rem;
 	}
 
+	/* Fondu sous une bande collante. Une bande opaque tranche forcément le texte
+     qui passe dessous, au milieu d'une ligne : ce dégradé court le laisse se
+     dissoudre au lieu d'être coupé net. Il se pose SOUS le filet, qui reste la
+     frontière — la DA est au trait, le fondu ne le remplace pas.
+     `transparent` vaut rgba(0,0,0,0) et les dégradés s'interpolent en
+     prémultiplié : pas de bande grise en chemin, même sur fond sombre. */
+	.fondu-bas::after {
+		content: '';
+		position: absolute;
+		inset-inline: 0;
+		top: 100%;
+		height: 1rem;
+		pointer-events: none;
+		background-image: linear-gradient(to bottom, var(--background), transparent);
+	}
+
 	/* ── Hiérarchie d'action ──────────────────────────────────────────────────
      `mono-label` ÉTIQUETTE, il n'agit pas : il pose `color: var(--muted)`.
      Tous les boutons de l'app le portaient, et leur seul signal d'activité
