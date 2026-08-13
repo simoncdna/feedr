@@ -31,8 +31,21 @@ const tabs = [
 
 const HIDDEN_ON = ['/sign-in', '/invite']
 
+// Appuyer sur l'onglet DÉJÀ actif remonte en haut de liste. C'est universel sur
+// iOS, et c'est le seul raccourci vers le haut du fil : le grand titre défile
+// désormais avec le contenu, et en PWA il n'y a pas de barre d'adresse à taper.
+// La barre d'onglets étant `lg:hidden`, le conteneur de défilement est bien la
+// fenêtre — en desktop ce sont les volets qui défilent, mais la barre n'y est
+// pas affichée.
+function remonterEnHaut(e: React.MouseEvent) {
+  e.preventDefault()
+  const reduit = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  window.scrollTo({ top: 0, behavior: reduit ? 'auto' : 'smooth' })
+}
+
 export function TabBar() {
 	const pathname = useRouterState({ select: (s) => s.location.pathname })
+	const article = useRouterState({ select: (s) => (s.location.search as { article?: number }).article })
 	if (HIDDEN_ON.some((p) => pathname === p || pathname.startsWith(`${p}/`))) return null
 	return (
 		<nav
@@ -51,10 +64,18 @@ export function TabBar() {
 						tab.href === '/'
 							? pathname === '/' || pathname.startsWith('/article')
 							: pathname.startsWith(tab.href)
+					// La liste elle-même, pas seulement l'onglet. Un article ouvert vit
+					// sous le MÊME chemin (`/?article=42`) : sans le test sur la query,
+					// l'appui remonterait la page au lieu de refermer l'article.
+					// `category`, en revanche, n'entre pas dans le test : un fil filtré
+					// reste le fil, et les chips sont là pour changer de filtre. Appuyer
+					// sur Feed depuis « Tech » remonte donc en haut de Tech.
+					const surLaListe = pathname === tab.href && !article
 					return (
 						<Link
 							key={tab.href}
 							to={tab.href}
+							onClick={surLaListe ? remonterEnHaut : undefined}
 							// `exact` est indispensable : sans lui le routeur considère `to="/"`
 							// actif sur TOUTES les routes (correspondance par préfixe) et pose
 							// aria-current="page" sur l'onglet Feed partout. C'est nous qui

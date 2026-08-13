@@ -10,7 +10,38 @@ function Ligne({ avecImage }: { avecImage: boolean }) {
         <div className="skeleton h-5 w-[64%]" />
         <div className="skeleton mt-3 h-3 w-[45%]" />
       </div>
-      {avecImage && <div className="skeleton my-1 h-16 w-24 shrink-0 lg:w-28" />}
+      {/* `aspect-[4/3]` comme la vraie vignette, qui a désormais un ratio fixe. */}
+      {avecImage && <div className="skeleton my-1 aspect-[4/3] w-24 shrink-0 lg:w-28" />}
+    </div>
+  )
+}
+
+function Lignes({ combien }: { combien: number }) {
+  return (
+    <>
+      {Array.from({ length: combien }, (_, i) => (
+        <div key={i}>
+          <div aria-hidden="true" className="mx-4 border-t border-rule lg:mx-0" />
+          <Ligne avecImage={i % 2 === 0} />
+        </div>
+      ))}
+    </>
+  )
+}
+
+/**
+ * Une liste sans carte en avant : les favoris. Ils affichaient `FeedSkeleton`,
+ * dont l'emplacement d'image 2/1 promettait une mise en page que la page ne
+ * livre jamais — exactement le saut au remplacement que ces squelettes
+ * cherchent à éviter.
+ */
+export function ListSkeleton() {
+  return (
+    <div aria-busy="true" aria-label="Loading list">
+      <div className="px-4 pb-3 lg:px-6 lg:pt-8">
+        <div className="skeleton h-8 w-40" />
+      </div>
+      <Lignes combien={6} />
     </div>
   )
 }
@@ -43,12 +74,7 @@ export function FeedSkeleton() {
         <div className="skeleton mt-2 h-7 w-[55%]" />
         <div className="skeleton mt-3 h-3 w-[40%]" />
       </div>
-      {[0, 1, 2, 3, 4].map((i) => (
-        <div key={i}>
-          <div aria-hidden="true" className="mx-4 border-t border-rule lg:mx-0" />
-          <Ligne avecImage={i % 2 === 0} />
-        </div>
-      ))}
+      <Lignes combien={5} />
     </div>
   )
 }
@@ -74,10 +100,11 @@ export function ArticleBodySkeleton() {
 
 export function ArticleSkeleton() {
   return (
+    // Hauteurs de titre à `h-8` : le titre de l'article est passé en text-3xl.
     <div aria-busy="true" aria-label="Loading article" className="px-4 py-6 lg:px-6 lg:py-8">
       <div className="skeleton h-3 w-40" />
-      <div className="skeleton mt-4 h-7 w-[90%]" />
-      <div className="skeleton mt-2 h-7 w-[60%]" />
+      <div className="skeleton mt-4 h-8 w-[90%]" />
+      <div className="skeleton mt-2 h-8 w-[60%]" />
       <ArticleBodySkeleton />
     </div>
   )
@@ -88,12 +115,13 @@ export function SettingsSkeleton() {
     // `lg:px-6` comme la page elle-même, et comme les volets du fil : sinon le
     // titre se décale de 8 px au moment où le contenu remplace le squelette.
     <div aria-busy="true" aria-label="Loading settings" className="space-y-12 px-4 lg:max-w-2xl lg:px-6 lg:py-8">
-      <div className="skeleton h-9 w-40" />
+      <div className="skeleton h-8 w-40" />
       {[0, 1, 2].map((s) => (
         <div key={s} className="space-y-4">
           <div className="skeleton h-3 w-28" />
           <div className="skeleton h-4 w-2/3" />
-          <div className="skeleton h-8 w-48" />
+          {/* `h-11` : les boutons font désormais 44 px. */}
+          <div className="skeleton h-11 w-48" />
         </div>
       ))}
     </div>
