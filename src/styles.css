@@ -64,43 +64,43 @@ html {
 	background-color: var(--background);
 }
 
-/* Grain « papier journal » : bruit SVG statique, en IMAGE DE FOND de <body> et
-   non en calque par-dessus la page.
-   C'était un `body::before` fixe en `z-index: 60`, donc au-dessus de TOUT — y
-   compris du mono 11 px gris muet à 0.18em de tracking, le texte le plus
-   fragile de l'app et celui qui a le moins de contraste à perdre. Une image de
-   fond se peint au-dessus de la couleur de fond du même élément et sous tout
-   son contenu : c'est exactement l'ordre voulu, et sans calque composité plein
-   écran ni empilement à arbitrer (un `z-index: -1` sur le pseudo-élément aurait
-   marché aussi, au prix de ce calque et d'une dépendance au contexte
-   d'empilement de <body>).
-   L'opacité est cuite dans le SVG : `background-image` n'a pas d'`opacity`, et
-   une variable par thème porte donc l'URL entière. */
-:root {
-	--grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+/* Grain « papier journal » : bruit SVG statique en calque fixe au-dessus de la
+   page, transparent aux interactions. Opacité volontairement subtile.
+
+   Il a été essayé en `background-image` de <body>, pour passer SOUS le texte
+   plutôt qu'au-dessus. Écarté : une image de fond ne se peint que dans la boîte
+   de son élément, et le fil comme les réglages posent par-dessus un conteneur
+   `bg-background` OPAQUE (il doit l'être, c'est lui qui couvre la zone de la
+   barre de statut en PWA). Le grain n'apparaissait donc plus que là où aucun de
+   ces conteneurs ne le couvrait — une bande de 16 px en haut de page, mesurée,
+   qui donnait deux fonds visiblement différents.
+
+   Le rendre uniforme par le dessous demanderait de le poser sur chacune de ces
+   surfaces opaques, et la rangée du fil en est une (elle glisse au-dessus du
+   panneau d'action). Un calque unique par-dessus reste donc la bonne réponse. */
+body::before {
+	content: '';
+	position: fixed;
+	inset: 0;
+	z-index: 60;
+	pointer-events: none;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+	background-repeat: repeat;
+	opacity: 0.06;
 }
 
 @media (prefers-color-scheme: dark) {
-	:root:not([data-theme='light']) {
-		--grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E");
+	:root:not([data-theme='light']) body::before {
+		opacity: 0.08;
 	}
 }
 
-:root[data-theme='dark'] {
-	--grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E");
+:root[data-theme='dark'] body::before {
+	opacity: 0.08;
 }
 
 body {
 	line-height: 1.6;
-	/* `bg-background` (classe Tailwind sur <body>) peint la couleur ; le grain se
-	   pose dessus, et le contenu par-dessus encore. */
-	background-image: var(--grain);
-	background-repeat: repeat;
-	/* Une image de fond ne se peint que dans la boîte de son élément. Sans ce
-	   plancher, une page plus courte que la fenêtre — l'écran de connexion —
-	   verrait le grain s'arrêter net au bas du contenu. L'ancien calque fixe
-	   couvrait la fenêtre par construction. */
-	min-height: 100dvh;
 }
 
 :focus-visible {
@@ -318,14 +318,26 @@ body {
 		}
 	}
 
-	/* Retour : exactement le miroir. */
+	/* Retour : AUCUNE animation. Asymétrie assumée, demandée par Simon.
+     Le retour est déjà servi par le cache (~97 ms) et la position de lecture est
+     restaurée en une seule image (mesuré : 0 → 1500 px entre deux frames). La
+     glissade de 220 ms qui se jouait par-dessus donnait l'impression d'un
+     défilement animé jusqu'à l'article, alors que rien ne défilait : elle
+     s'interposait sur une navigation instantanée, exactement ce que la doctrine
+     en tête de ce fichier interdit.
+
+     `opacity: 0` sur l'ancien instantané n'est pas décoratif : privés
+     d'animation, les deux instantanés d'une paire restent opaques et la feuille
+     UA les compose en `plus-lighter`, donc leurs couleurs s'additionnent — même
+     piège que pour `root` et `barre-onglets` plus haut. */
 	html:active-view-transition-type(nav-back) {
 		&::view-transition-old(contenu) {
-			animation: nav-sortie-droite 220ms var(--ease-nav) both;
+			animation: none;
+			opacity: 0;
 		}
 
 		&::view-transition-new(contenu) {
-			animation: nav-entree-gauche 220ms var(--ease-nav) both;
+			animation: none;
 		}
 	}
 

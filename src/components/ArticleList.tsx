@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import { dayLabel } from '@/lib/text'
 import { useInfiniteScroll } from '@/lib/use-infinite-scroll'
 import { useToggleBookmark } from '@/mutations'
 import type { ArticleCardData } from '@/server/queries'
@@ -48,22 +47,6 @@ function premiereArriveeSurLaListe(): boolean {
 // rester SUPÉRIEUR au total, sinon retirer la classe couperait l'animation en
 // vol et les rangées sauteraient à leur état final.
 const CASCADE_FIN_MS = 800
-
-/**
- * Séparateur de journée. C'est lui qui porte le jour, ce qui autorise les
- * rangées à n'afficher que l'heure : sans lui, deux jours de flux se lisaient
- * comme un mur de chiffres sans repère.
- */
-function SeparateurDeJour({ jour, premier }: { jour: string; premier: boolean }) {
-  return (
-    <div
-      className={`flex items-center gap-3 px-4 pb-1 lg:px-6 ${premier ? 'pt-2' : 'border-t border-rule pt-6'}`}
-    >
-      <p className="mono-label">{jour}</p>
-      <span aria-hidden="true" className="h-px flex-1 bg-rule" />
-    </div>
-  )
-}
 
 export function ArticleList({
   articles,
@@ -131,55 +114,29 @@ export function ArticleList({
     return <p className="mono-label mt-16 text-center">{emptyLabel}</p>
   }
 
-  // Le groupement se calcule au fil du rendu, et la carte en avant en est
-  // exclue : `orderWithHero` la remonte hors de l'ordre chronologique, donc son
-  // jour n'ouvre pas le groupe des rangées qui la suivent. Elle porte sa date
-  // complète elle-même (`withDay`), et le groupement commence après.
-  let jourPrecedent: string | null = null
-  // La carte en avant porte son jour SEULEMENT s'il diffère de celui du groupe
-  // qui la suit : sinon on lisait « Today 10:13 » puis, deux centimètres plus
-  // bas, un séparateur « Today ».
-  const jourEnAvant = featuredFirst && articles[0] ? dayLabel(articles[0].publishedAt) : null
-  const jourDuGroupe = featuredFirst && articles[1] ? dayLabel(articles[1].publishedAt) : null
-  const enAvantAvecJour = jourEnAvant !== null && jourEnAvant !== jourDuGroupe
-
   return (
-    // Un seul enfant direct par rangée : les séparateurs vivent DANS ce
-    // wrapper, sinon ils consommeraient des crans de `.cascade > *:nth-child()`
-    // et s'animeraient comme des rangées.
     <div className={enCascade ? 'cascade' : undefined}>
-      {articles.map((a, i) => {
-        const enAvant = featuredFirst && i === 0
-        const jour = enAvant ? null : dayLabel(a.publishedAt)
-        const ouvreUnJour = jour !== null && jour !== jourPrecedent
-        if (jour !== null) jourPrecedent = jour
-        return (
-          <div key={a.id}>
-            {ouvreUnJour ? (
-              <SeparateurDeJour jour={jour} premier={i === 0} />
-            ) : (
-              i > 0 && <div aria-hidden="true" className="mx-4 border-t border-rule lg:mx-0" />
-            )}
-            {/* SwipeRow appelle `action` dans un startTransition et n'attend pas sa
-                résolution : `mutate` (et non `mutateAsync`) suffit, et la mise à
-                jour optimiste rend la main immédiatement. */}
-            <SwipeRow
-              bookmarked={a.bookmarked}
-              action={async () => {
-                toggle.mutate({ id: a.id, bookmarked: !a.bookmarked })
-              }}
-            >
-              <ArticleCard
-                article={a}
-                linkProps={linkPropsFor(a.id)}
-                selected={a.id === selectedId}
-                featured={enAvant}
-                withDay={enAvant && enAvantAvecJour}
-              />
-            </SwipeRow>
-          </div>
-        )
-      })}
+      {articles.map((a, i) => (
+        <div key={a.id}>
+          {i > 0 && <div aria-hidden="true" className="mx-4 border-t border-rule lg:mx-0" />}
+          {/* SwipeRow appelle `action` dans un startTransition et n'attend pas sa
+              résolution : `mutate` (et non `mutateAsync`) suffit, et la mise à
+              jour optimiste rend la main immédiatement. */}
+          <SwipeRow
+            bookmarked={a.bookmarked}
+            action={async () => {
+              toggle.mutate({ id: a.id, bookmarked: !a.bookmarked })
+            }}
+          >
+            <ArticleCard
+              article={a}
+              linkProps={linkPropsFor(a.id)}
+              selected={a.id === selectedId}
+              featured={featuredFirst && i === 0}
+            />
+          </SwipeRow>
+        </div>
+      ))}
       {pagination && (
         <>
           {/* La sentinelle est rendue tant qu'il reste des pages. Elle disparaît

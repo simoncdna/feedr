@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { Link } from '@tanstack/react-router'
-import { dayLabel, stripHtml, timeLabel } from '@/lib/text'
+import { publishedLabel, stripHtml } from '@/lib/text'
 // Source unique du type : le dupliquer ici le ferait diverger de la requête.
 import type { ArticleCardData } from '@/server/queries'
 
@@ -10,7 +10,7 @@ export type ArticleLinkProps = {
   params?: Record<string, unknown>
 }
 
-function Meta({ article, withDay }: { article: ArticleCardData; withDay: boolean }) {
+function Meta({ article }: { article: ArticleCardData }) {
   // Le signet ne se pose QUE sur la bascule, jamais au montage : sinon toutes
   // les rangées déjà en favori s'animeraient à chaque affichage du fil.
   //
@@ -26,19 +26,14 @@ function Meta({ article, withDay }: { article: ArticleCardData; withDay: boolean
 
   return (
     <p className="mono-label flex min-w-0 items-center gap-1.5">
-      {/* Seule l'heure : le jour est porté par le séparateur de journée au-dessus
-          du groupe (voir ArticleList). Répéter la date sur chaque rangée
-          transformait le fil en mur de chiffres dès le deuxième jour.
-          `withDay` est l'exception de la carte en avant : `orderWithHero` la
-          remonte hors de l'ordre chronologique, elle ne tombe donc sous aucun
-          séparateur et doit porter son jour elle-même. */}
+      {/* La date complète sur chaque rangée : heure pour aujourd'hui, jour sinon.
+          Un temps, le jour était porté par un séparateur de journée au-dessus de
+          chaque groupe, ce qui permettait aux rangées de ne garder que l'heure —
+          les séparateurs ont été retirés, la date revient donc ici, sinon plus
+          rien ne situerait un article de la semaine dernière. */}
       <span className="truncate">
         {article.author ?? article.feedTitle} ·{' '}
-        <span className="text-[0.625rem]">
-          {withDay
-            ? `${dayLabel(article.publishedAt)} ${timeLabel(article.publishedAt)}`
-            : timeLabel(article.publishedAt)}
-        </span>
+        <span className="text-[0.625rem]">{publishedLabel(article.publishedAt)}</span>
       </span>
       {article.hasVideo && (
         <svg viewBox="0 0 24 24" className="h-3 w-3 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
@@ -68,14 +63,11 @@ export function ArticleCard({
   linkProps,
   selected = false,
   featured = false,
-  withDay = false,
 }: {
   article: ArticleCardData
   linkProps: ArticleLinkProps
   selected?: boolean
   featured?: boolean
-  // Afficher le jour en plus de l'heure, pour une carte hors chronologie.
-  withDay?: boolean
 }) {
   // Les titres passent par stripHtml eux aussi : ils arrivent bruts du flux, et
   // The Verge publie ses apostrophes en entités numériques — « Let&#8217;s watch
@@ -109,7 +101,7 @@ export function ArticleCard({
             {excerpt && <p className="mt-1.5 line-clamp-2 text-sm text-pretty text-muted">{excerpt}</p>}
           </Link>
           <div className="mt-2">
-            <Meta article={article} withDay={withDay} />
+            <Meta article={article} />
           </div>
         </div>
       </div>
@@ -127,7 +119,7 @@ export function ArticleCard({
           {excerpt && <p className="mt-1 line-clamp-2 text-sm text-pretty text-muted">{excerpt}</p>}
         </Link>
         <div className="mt-2">
-          <Meta article={article} withDay={withDay} />
+          <Meta article={article} />
         </div>
       </div>
       {article.imageUrl && (
