@@ -25,7 +25,7 @@ npm run dev
 Les flux sont relus par le cron Vercel déclaré dans `vercel.json`, une fois par jour :
 
 ```json
-{ "path": "/api/poll", "schedule": "30 5 * * *" }
+{ "path": "/api/poll", "schedule": "30 8 * * *" }
 ```
 
 Vercel envoie de lui-même `Authorization: Bearer $CRON_SECRET` dès que la variable
@@ -35,11 +35,10 @@ déploiement.
 
 Trois limites du plan Hobby à garder en tête :
 
-- **Les horaires sont en UTC**, sans réglage de fuseau. `30 5` vise 7h30 à Paris en
-  heure d'été ; en heure d'hiver le même cron tombe à 6h30. Passer à `30 6` fin octobre
-  pour rester sur 7h30 toute l'année.
+- **Les horaires sont en UTC**, sans réglage de fuseau. `30 8` vise 10h30 à Paris en
+  heure d'été ; en heure d'hiver le même cron tombe à 9h30.
 - **La minute n'est pas respectée** : Vercel déclenche n'importe quand dans l'heure
-  indiquée, donc entre 7h00 et 7h59 (heure d'été). La minute ne documente que l'intention.
+  indiquée, donc entre 8h00 et 8h59 UTC. La minute ne documente que l'intention.
 - **Une exécution par jour maximum.** Une expression plus fréquente (`*/5 * * * *`)
   ne se déploie pas du tout : le build échoue. Pour un polling plus serré il faut soit
   Vercel Pro (jusqu'à la minute), soit un planificateur externe type

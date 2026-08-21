@@ -13,7 +13,10 @@ import tailwindcss from '@tailwindcss/vite'
 // sur un preview). Nitro détecte l'hébergeur en CI et émet le format attendu —
 // aucun preset à déclarer pour Vercel. En local, la sortie est .output/.
 const config = defineConfig({
-  server: { port: 3001 },
+  server: {
+    port: 3001,
+    allowedHosts: process.env.AMP_ORB ? ['.onamp.dev'] : undefined,
+  },
   resolve: { tsconfigPaths: true },
   // qrcode() affiche un QR de l'URL réseau au démarrage — utile pour ouvrir l'app
   // sur un vrai iPhone. Nécessite `--host` (voir le script `dev:phone`), sinon le
