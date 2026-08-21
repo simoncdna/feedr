@@ -26,6 +26,7 @@ todos.json
 
 # réglages locaux d'outils
 .claude/learner.local.json
+.amp/portals/*
 
 # divers
 .DS_Store

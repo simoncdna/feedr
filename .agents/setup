@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$repo_root"
+
+echo "[setup] Preparing local environment"
+if [[ ! -f .env.local ]]; then
+  cp -- .env.example .env.local
+fi
+
+echo "[setup] Installing npm dependencies"
+time npm ci
+
+echo "[setup] Complete"
